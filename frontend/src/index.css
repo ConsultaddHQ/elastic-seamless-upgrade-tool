@@ -71,3 +71,8 @@ button:focus-visible {
 @import "tailwindcss/base";
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
+@import "@fontsource/manrope";
+
+body {
+  @apply bg-black text-white;
+}
