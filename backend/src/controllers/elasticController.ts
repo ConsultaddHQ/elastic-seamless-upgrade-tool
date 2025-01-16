@@ -28,9 +28,20 @@ export const getClusterDetails = async (req: Request, res: Response) => {
     const healtDetails = await client.getClient().cluster.health();
 
     res.send({
-      ...healtDetails,
-      ...clusterDetails,
-    });
+      clusterName: clusterDetails.cluster_name,
+      clusterUUID: clusterDetails.cluster_uuid,
+      status: healtDetails.status,
+      version: clusterDetails.version.number,
+      timedOut: healtDetails.timed_out,
+      numberOfDataNodes: healtDetails.number_of_data_nodes,
+      numberOfNodes: healtDetails.number_of_nodes,
+      activePrimaryShards: healtDetails.active_primary_shards,
+      activeShards: healtDetails.unassigned_shards,
+      unassignedShards: healtDetails.unassigned_shards,
+      initializingShards: healtDetails.initializing_shards,
+      relocatingShards: healtDetails.relocating_shards
+    }
+);
   } catch (err: any) {
     console.log(err);
     res.status(400).send({ message: err.message });
