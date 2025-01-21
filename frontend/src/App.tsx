@@ -11,7 +11,7 @@ function App() {
     <>
       <div className="flex flex-row">
         <Sidebar />
-        <div>
+        <div className='w-full'>
             <Navbar />
             <Pages />
         </div>
