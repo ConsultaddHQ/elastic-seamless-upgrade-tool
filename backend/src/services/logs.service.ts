@@ -16,10 +16,15 @@ export const getLogs = async (
   nodeId: string,
   timestamp: Date | undefined,
 ): Promise<ILog[]> => {
-  const query: any = { clusterId: clusterId, nodeId: nodeId };
-  if (timestamp) {
-    query.timestamp = { $gt: timestamp };
+  try {
+    const query: any = { clusterId: clusterId, nodeId: nodeId };
+    if (timestamp) {
+      query.timestamp = { $gt: timestamp };
+    }
+    const docs = await Log.find(query);
+    return docs;
+  } catch (err) {
+    logger.error('Failed to get logs', err);
+    throw err;
   }
-  const docs = await Log.find(query);
-  return docs;
 };
