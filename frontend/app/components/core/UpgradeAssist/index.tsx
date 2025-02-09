@@ -180,14 +180,14 @@ function UpgradeAssistant() {
 							criticalValue={data?.elastic.deprecations.critical ?? "NaN"}
 							warningValue={data?.elastic.deprecations.warning ?? "NaN"}
 							isDisabled={step2Data?.isDisabled}
-							to="/elastic-deprecation-logs"
+							to="/elastic/deprecation-logs"
 						/>
 						<DeprectedSettings
 							title="Kibana"
 							criticalValue={data?.kibana.deprecations.critical ?? "NaN"}
 							warningValue={data?.kibana.deprecations.warning ?? "NaN"}
 							isDisabled={step2Data?.isDisabled}
-							to="/kibana-deprecation-logs"
+							to="/kibana/deprecation-logs"
 						/>
 					</Box>
 				</Box>
@@ -220,7 +220,7 @@ function UpgradeAssistant() {
 					</Box>
 					<OutlinedBorderButton
 						component={Link}
-						to="/elastic-upgrade"
+						to="/elastic/upgrade"
 						disabled={step3Data?.isDisabled}
 						icon={Flash}
 						filledIcon={Flash}
@@ -256,7 +256,7 @@ function UpgradeAssistant() {
 					</Box>
 					<OutlinedBorderButton
 						component={Link}
-						to="/kibana-upgrade"
+						to="/kibana/upgrade"
 						disabled={step4Data?.isDisabled}
 						icon={Flash}
 						filledIcon={Flash}

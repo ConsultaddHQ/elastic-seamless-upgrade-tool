@@ -4,6 +4,7 @@
 
 html,
 body {
+	background: #0a0a0a;
 	@apply bg-white dark:bg-neutral-950;
 
 	@media (prefers-color-scheme: dark) {

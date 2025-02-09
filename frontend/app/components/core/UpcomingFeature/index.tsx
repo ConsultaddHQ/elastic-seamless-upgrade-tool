@@ -29,7 +29,7 @@ function UpcomingFeature({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChan
 			size="full"
 			onOpenChange={onOpenChange}
 			placement="top"
-			classNames={{ base: "bg-[#0D0D0D]" }}
+			classNames={{ base: "bg-[#0A0A0A]" }}
 			motionProps={{
 				variants: {
 					enter: {

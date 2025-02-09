@@ -28,7 +28,7 @@ function ElasticDeprecationLogs() {
 						</Typography>
 					</Link>
 					<Typography color="#BDA0FF" fontSize="12px" fontWeight="500" lineHeight="normal">
-						elastic deprecated logs
+						Elasticsearch deprecated logs
 					</Typography>
 				</Breadcrumbs>
 			</Box>

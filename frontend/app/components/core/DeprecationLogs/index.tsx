@@ -1,8 +1,23 @@
-import { Input, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react"
+import {
+	Input,
+	Skeleton,
+	Spinner,
+	Table,
+	TableBody,
+	TableCell,
+	TableColumn,
+	TableHeader,
+	TableRow,
+} from "@heroui/react"
 import { Box, Typography } from "@mui/material"
+import { useQuery } from "@tanstack/react-query"
 import { Alarm, SearchNormal1 } from "iconsax-react"
 import { useCallback, type Key } from "react"
 import { FiAlertTriangle } from "react-icons/fi"
+import { toast } from "sonner"
+import axiosJSON from "~/apis/http"
+import StorageManager from "~/constants/StorageManager"
+import LocalStorageHandler from "~/lib/LocalHanlder"
 
 const rows = [
 	{
@@ -86,6 +101,35 @@ const columns: DeprecationColumnType = [
 ]
 
 function DeprecationLogs({ clusterType }: { clusterType: "ELASTIC" | "KIBANA" }) {
+	const getLogs = async () => {
+		const clusterId = LocalStorageHandler.getItem(StorageManager.CLUSTER_ID) || "cluster-id"
+		let response: any = []
+		await axiosJSON
+			.get(
+				`/api/elastic/clusters/${clusterId}/deprecations/${
+					clusterType === "ELASTIC" ? "elastic-search" : "kibana"
+				}`
+			)
+			.then((res) => {
+				response = res.data?.map((item: any, index: number): DeprecationRowType => {
+					return {
+						key: String(index),
+						issue: item?.issue,
+						status: item?.type.toUpperCase(),
+						issue_details: item?.issueDetails,
+						resolution: item?.resolution,
+					}
+				})
+			})
+			.catch((err) => toast.error(err?.response?.data.err))
+		return response
+	}
+
+	const { data, isLoading, isRefetching, refetch } = useQuery({
+		queryKey: ["get-deprecation-logs"],
+		queryFn: getLogs,
+	})
+
 	const renderCell = useCallback((row: DeprecationRowType, columnKey: Key) => {
 		const cellValue = row[columnKey as keyof DeprecationRowType]
 
@@ -147,7 +191,7 @@ function DeprecationLogs({ clusterType }: { clusterType: "ELASTIC" | "KIBANA" })
 						lineHeight="normal"
 						letterSpacing="0.18px"
 					>
-						Kibana deprecated logs
+						{clusterType ==="ELASTIC" ? "Elasticserach" : "Kibana"} deprecated logs
 					</Typography>
 					<Typography
 						maxWidth="737px"
@@ -215,9 +259,26 @@ function DeprecationLogs({ clusterType }: { clusterType: "ELASTIC" | "KIBANA" })
 								</TableColumn>
 							)}
 						</TableHeader>
-						<TableBody items={rows}>
+						<TableBody
+							items={data as DeprecationRowType[] || []}
+							isLoading={isLoading || isRefetching}
+							loadingContent={
+								<Spinner
+									classNames={{
+										circle2: "border-b-[#8351F5]",
+										circle1: "border-b-[#8351F5]",
+									}}
+								/>
+							}
+							emptyContent={
+								<Typography fontSize="13px" fontWeight="400" lineHeight="20px" color="#6E6E6E">
+									No deprecation available.
+								</Typography>
+							}
+						>
 							{(item) => (
-								<TableRow key={item.key}>
+								// @ts-ignore
+								<TableRow key={item?.key}>
 									{(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
 								</TableRow>
 							)}

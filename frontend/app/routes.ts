@@ -7,9 +7,9 @@ export default [
 		route("upgrade-assistant", "routes/upgradeAssist.tsx"),
 	]),
 	layout("layouts/common.tsx", [
-		route("elastic-deprecation-logs", "routes/elasticDeprecationLogs.tsx"),
-		route("kibana-deprecation-logs", "routes/kibanaDeprecationLogs.tsx"),
-		route("elastic-upgrade", "routes/clusterUpgrade.tsx"),
-		route("kibana-upgrade", "routes/kibanaUpgrade.tsx"),
+		route("elastic/deprecation-logs", "routes/elasticDeprecationLogs.tsx"),
+		route("elastic/upgrade", "routes/clusterUpgrade.tsx"),
+		route("kibana/deprecation-logs", "routes/kibanaDeprecationLogs.tsx"),
+		route("kibana/upgrade", "routes/kibanaUpgrade.tsx"),
 	]),
 ] satisfies RouteConfig

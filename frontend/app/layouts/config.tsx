@@ -95,7 +95,7 @@ function ConfigLayout() {
 
 	return (
 		<Box className="flex flex-col w-full" height="var(--window-height)">
-			<Box className="flex flex-row gap-2 justify-between z-[9999] bg-[#0D0D0D]" padding="16px 32px 10px 40px">
+			<Box className="flex flex-row gap-2 justify-between bg-[#0A0A0A]" padding="16px 32px 10px 40px" zIndex={isOpen ? "99999": "0"}>
 				<img src={AssetsManager.LOGO_PLUS_NAMED} width="161.6px" height="36px" />
 				<OutlinedBorderButton
 					icon={Magicpen}

@@ -8,7 +8,7 @@ export function meta({}: Route.MetaArgs) {
 
 export default function ClusterOverview() {
 	return (
-		<Box className="flex w-full" padding={{xs: "16px 24px", md: "16px 32px"}}>
+		<Box className="flex w-full bg-[#0a0a0a]" padding={{xs: "16px 24px", md: "16px 32px"}}>
 			<ClusterInfo />
 		</Box>
 	)
