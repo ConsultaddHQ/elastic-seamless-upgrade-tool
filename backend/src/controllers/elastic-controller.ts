@@ -22,6 +22,7 @@ import {
   getElasticNodeById,
   syncNodeData,
   triggerNodeUpgrade,
+  triggerUpgradeAll,
 } from '../services/elastic-node.service.';
 import cluster from 'cluster';
 import { runPlaybookWithLogging } from './ansible-controller';
@@ -145,7 +146,7 @@ export const getUpgradeDetails = async (req: Request, res: Response) => {
     const isESUpgraded = elasticNodes.length === 0;
     res.send({
       elastic: {
-        isUpgradable: isESUpgraded,
+        isUpgradable: !isESUpgraded,
         deprecations: { ...esDeprecationCount },
         snapshot: {
           snapshot: snapshots.length > 0 ? snapshots[0] : null,
@@ -153,7 +154,7 @@ export const getUpgradeDetails = async (req: Request, res: Response) => {
         }
       },
       kibana: {
-        isUpgradable: isKibanaUpgraded,
+        isUpgradable: !isKibanaUpgraded,
         deprecations: { ...kibanaDeprecationCount },
       },
     });
@@ -242,6 +243,22 @@ export const handleUpgrades = async (req: Request, res: Response) => {
     res.status(400).send({ message: err.message });
   }
 };
+
+export const handleUpgradeAll = async(req: Request, res: Response)=>{
+  try{
+    const clusterId = req.params.clusterId;
+    await triggerUpgradeAll(clusterId);
+    res.json({
+      message: "Check inventory"
+    })
+  }
+  catch(error){
+    res.json({
+      message: "error"
+    })
+  }
+}
+
 
 export const getLogsStream = async (req: Request, res: Response) => {
   const { clusterId, nodeId } = req.params;

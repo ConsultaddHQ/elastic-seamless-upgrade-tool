@@ -1,3 +1,4 @@
+import { error } from 'console';
 import { ElasticClient } from '../clients/elastic.client';
 import {
   createAnsibleInventory,
@@ -153,3 +154,21 @@ export const triggerNodeUpgrade = async (nodeId: string,clusterId: string) => {
 };
 
 /// /upgrade (exec)
+
+
+export const triggerUpgradeAll = async(clusterId: string)=>{
+  try {
+    const nodes = await getAllElasticNodes(clusterId);
+    const clusterInfo = await getClusterInfoById(clusterId);
+
+    if (!clusterInfo.pathToKey || clusterInfo.pathToKey.trim() === "") {
+      throw new Error("Path to key is not specified");
+    }
+    createAnsibleInventory(nodes, clusterInfo.pathToKey);
+    
+
+  } catch (error) {
+    console.error("Error triggering upgrade:", error);
+    throw error; 
+  }
+}
