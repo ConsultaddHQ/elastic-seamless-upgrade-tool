@@ -19,13 +19,13 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
       
       - name: Initialize CodeQL
-        uses: github/codeql-action/init
+        uses: github/codeql-action/init@v2
         with:
           languages: javascript and typescript
           queries: security-and-quality.qls
       
       - name: Autobuild
-        uses: github/codeql-action/autobuild
+        uses: github/codeql-action/autobuild@v2
       
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze
+        uses: github/codeql-action/analyze@v2
