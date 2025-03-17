@@ -1,0 +1,31 @@
+name: Code Quality and Security Analysis
+run-name: Code Quality and Security Analysis
+on:
+  push:
+    branches:
+      - main
+      - hpf-39-creating-a-code-quality-pipeline
+  pull_request:
+    branches:
+      - main
+      - hpf-39-creating-a-code-quality-pipeline
+jobs:
+  codeql-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v1
+        with:
+          languages: javascript and typescript
+          queries: security-and-quality.qls
+      
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v1
+      
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v1
