@@ -19,7 +19,7 @@ export interface IKibanaInfo {
 export interface IClusterInfo {
   clusterId: string;
   elastic: IElasticInfo;
-  kibana?: IKibanaInfo;
+  kibana: IKibanaInfo;
   certificateIds?: string[];
   targetVersion?: string;
   infrastructureType?: string;

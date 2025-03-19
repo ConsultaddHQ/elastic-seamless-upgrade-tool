@@ -15,6 +15,8 @@ import {
   getClusterInfoById,
   getElasticsearchDeprecation,
   getKibanaDeprecation,
+  verifyElasticCredentials,
+  verifyKibanaCredentials,
 } from '../services/cluster-info.service';
 import { addLogs, getLogs } from '../services/logs.service';
 import {
@@ -116,8 +118,19 @@ export const addOrUpdateClusterDetail = async (req: Request, res: Response) => {
       key: sshKey,
       kibanaConfigs: kibanaConfigs
     };
-
+    const elasticCredsVerificationResult = await verifyElasticCredentials(clusterInfo.elastic);
+    const kibanaCredsVerificationResult = await verifyKibanaCredentials(clusterInfo.kibana);
+    if(!elasticCredsVerificationResult){
+      res.status(400).send({ err: 'Invalid Elastic credentials' });
+      return;
+    }
+    if(!kibanaCredsVerificationResult){
+      res.status(400).send({ err: 'Invalid Kibana credentials' });
+      return;
+    }
     const result = await createOrUpdateClusterInfo(clusterInfo);
+
+
     if(kibanaConfigs && kibanaConfigs.length && kibana.username && kibana.password){
       await createKibanaNodes(kibanaConfigs,clusterId);
     }

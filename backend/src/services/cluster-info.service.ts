@@ -1,8 +1,9 @@
 import { ElasticClient } from "../clients/elastic.client"
 import { DeprecationCounts, DeprecationSetting } from "../interfaces"
-import ClusterInfo, { IClusterInfo, IClusterInfoDocument } from "../models/cluster-info.model"
+import ClusterInfo, { IClusterInfo, IClusterInfoDocument, IElasticInfo, IKibanaInfo } from "../models/cluster-info.model"
 import { MigrationDeprecationsDeprecation } from "@elastic/elasticsearch/lib/api/types"
 import { DeprecationDetail, KibanaClient } from "../clients/kibana.client"
+import { ElasticClusterBaseRequest } from ".."
 
 export const createOrUpdateClusterInfo = async (clusterInfo: IClusterInfo): Promise<IClusterInfoDocument> => {
 	// TODO These needs to be updated when we want to support multiple clusters
@@ -54,7 +55,7 @@ export const getClusterInfoById = async (clusterId: string): Promise<IClusterInf
 	return {
 		clusterId,
 		elastic: clusterInfo?.elastic!!,
-		kibana: clusterInfo?.kibana,
+		kibana: clusterInfo?.kibana!!,
 		targetVersion: clusterInfo?.targetVersion,
 		infrastructureType: clusterInfo?.infrastructureType,
 		certificateIds: clusterInfo?.certificateIds,
@@ -161,3 +162,41 @@ export const getKibanaDeprecation = async (
 	}
 }
 
+
+export const verifyElasticCredentials = async(elastic: IElasticInfo): Promise<boolean> =>{
+	try {
+	   const body: ElasticClusterBaseRequest = {
+			url: elastic?.url!!,
+			ssl: {},
+			username: elastic?.username!!,
+			password: elastic?.password!!,
+		  };
+	    const client = new ElasticClient(body);
+	    const healthDetails = await client.getClient().cluster.health();
+		if (
+			healthDetails.status &&
+			typeof healthDetails.number_of_nodes === 'number'
+		  ) {
+			return true; 
+		  }
+		  else{
+			return false;
+		  }
+	} catch (error) {
+	  console.error('Elasticsearch connection failed:', error);
+	  return false;
+	}
+  }
+
+  export const verifyKibanaCredentials = async(kibana: IKibanaInfo): Promise<boolean> =>{
+	try{
+		const client = new KibanaClient(kibana);
+		const version = await client.getKibanaVersion();
+		
+		return true;
+	}
+	catch(error){
+		console.error('Kibana connection failed:', error);
+		return false;
+	}
+  }
