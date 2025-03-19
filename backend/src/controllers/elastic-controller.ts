@@ -472,3 +472,22 @@ export const handleKibanaUpgrades = async (req: Request, res: Response) => {
   }
 }
 
+export const hanldeUpgradeAll = async (req: Request, res: Response) => {
+  const clusterId = req.params.clusterId;
+  const { nodes } = req.body;
+  try {
+    nodes.forEach((nodeId: string) => {
+      const triggered = triggerNodeUpgrade(nodeId,clusterId);
+      if (!triggered) {
+        res.status(400).send({ err: 'Upgrade failed node not available' });
+      }
+      else{
+        return;
+      }
+    });
+    res.status(200).send({ message: 'Upgradation triggered' });
+  } catch (err: any) {
+    logger.error('Error performing upgrade:', err);
+    res.status(400).send({ err: err.message });
+  }
+}

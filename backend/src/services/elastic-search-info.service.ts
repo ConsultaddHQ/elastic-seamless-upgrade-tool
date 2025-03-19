@@ -27,11 +27,18 @@ export const syncElasticSearchInfo = async (clusterId: string)=> {
         const healthDetails = await client.getClient().cluster.health();
         const nodes = await getAllElasticNodes(clusterId);
         let underUpgradation = false;
+        let upgradeComplete = true;
         nodes.forEach((node: IElasticNode)=>{
             if(node.status !== 'available'){
             underUpgradation = true;
             }
+            if(node.status !== 'upgraded'){
+                upgradeComplete = false;
+            }
         })
+        if(upgradeComplete){
+            underUpgradation = false;
+        }
         const elasticSearchInfo: IElasticSearchInfo = {
             clusterName: clusterDetails?.cluster_name ?? null,
             clusterUUID: clusterDetails?.cluster_uuid ?? null,
@@ -50,7 +57,7 @@ export const syncElasticSearchInfo = async (clusterId: string)=> {
             lastSyncedAt: new Date(),
         }
         await createOrUpdateElasticSearchInfo(elasticSearchInfo);
-       
+
     }
     catch(err){
         throw new Error("Unable to sync with Elastic search instance! Maybe the connection is breaked")
