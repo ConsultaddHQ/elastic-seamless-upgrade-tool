@@ -177,6 +177,10 @@ export const syncKibanaNodes = async(clusterId: string)=>{
         const kibanaNodes = await KibanaNode.find({clusterId: clusterId});
         for(const kibanaNode of kibanaNodes){
             const { version, os, roles } = await getKibanaNodeDetails(`http://${kibanaNode.ip}:5601`, clusterInfo.kibana?.username, clusterInfo.kibana?.password);
+            if(kibanaNode.status === "upgraded" && version !== clusterInfo.targetVersion){
+              kibanaNode.status = "available";
+              kibanaNode.progress = 0;
+            }
             kibanaNode.version = version;
             kibanaNode.os = os;
             kibanaNode.roles = roles;
