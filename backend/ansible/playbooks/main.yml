@@ -1,0 +1,18 @@
+- name: Elastic package download
+  import_playbook: elastic/pre-download-check.yml
+
+- name: Kibana package download
+  import_playbook: kibana/pre-download-check.yml
+
+- name: Elasticsearch data node upgrade
+  import_playbook: elastic/elasticsearch-upgrade.yml
+  vars:
+      elasticsearch_node: elasticsearch_data
+
+- name: Elasticsearch master node upgrade
+  import_playbook: elastic/elasticsearch-upgrade.yml
+  vars:
+      elasticsearch_node: elasticsearch_master
+
+- name: Kibana upgrade
+  import_playbook: kibana/kibana-upgrade.yml

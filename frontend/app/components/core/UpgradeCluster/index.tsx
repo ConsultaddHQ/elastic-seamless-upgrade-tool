@@ -105,8 +105,8 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 					progress: item.progress,
 					isMaster: item.isMaster,
 					disabled: item.disabled ? item.disabled : false,
-						// (item.isMaster && res.data.filter((i: any) => i.status !== "upgraded" && i.isMaster).length > 0) ||
-						// res.data.some((i: any) => i.status === "upgrading"),
+						// (item.isMaster && res.data.filter((i: any) => i.status !== "UPGRADED" && i.isMaster).length > 0) ||
+						// res.data.some((i: any) => i.status === "UPGRADING"),
 				}))
 			})
 			.catch((err) => toast.error(err?.response?.data.err ?? StringManager.GENERIC_ERROR))
@@ -145,7 +145,7 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 		queryFn: getNodesInfo,
 		refetchInterval: (data) => {
 			const nodes = data.state.data
-			const isUpgrading = nodes?.some((node: any) => node.status === "upgrading")
+			const isUpgrading = nodes?.some((node: any) => node.status === "UPGRADING")
 			return isUpgrading ? 1000 : false
 		},
 		refetchIntervalInBackground: true,
@@ -172,7 +172,7 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 				case "action":
 					return (
 						<>
-							{row.status === "available" ? (
+							{row.status === "AVAILABLE" ? (
 								<Box className="flex justify-end">
 									<OutlinedBorderButton
 										onClick={() => {
@@ -185,9 +185,9 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 										Upgrade
 									</OutlinedBorderButton>
 								</Box>
-							) : row.status === "upgrading" ? (
+							) : row.status === "UPGRADING" ? (
 								<ProgressBar progress={row.progress ? row.progress : 0} />
-							) : row.status === "upgraded" ? (
+							) : row.status === "UPGRADED" ? (
 								UPGRADE_ENUM["completed"]
 							) : (
 								UPGRADE_ENUM["failed"]
@@ -208,7 +208,7 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 					<Typography color="#FFF" fontSize="14px" fontWeight="600" lineHeight="22px">
 						Node Details
 					</Typography>
-					<OutlinedBorderButton onClick={performUpgradeAll} icon={Flash} filledIcon={Flash} disabled={isPending || (data && (data.filter((item: any) => (item.status !== "available" && item.status !== "upgraded")).length > 0))}>
+					<OutlinedBorderButton onClick={performUpgradeAll} icon={Flash} filledIcon={Flash} disabled={isPending || (data && (data.filter((item: any) => (item.status !== "AVAILABLE" && item.status !== "UPGRADED")).length > 0))}>
 						Upgrade all
 					</OutlinedBorderButton>
 				</Box>

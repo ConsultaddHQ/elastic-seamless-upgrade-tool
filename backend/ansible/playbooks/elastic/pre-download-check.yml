@@ -1,0 +1,18 @@
+- hosts: elasticsearch
+  become: true
+  any_errors_fatal: true
+  gather_facts: no
+
+  tasks:
+      - name: Validate elasticsearch Version
+        fail: msg="Invalid ELK Version"
+        when: elk_version is undefined or not elk_version is match("\d+\.\d+\.\d+")
+
+      - name: Get elasticsearch current version
+        command: dpkg-query -W -f='${Version}' elasticsearch
+        # changed_when: False
+        register: version_found
+
+      - name: Pre-download elasticsearch install package
+        command: apt-get install --download-only elasticsearch
+        when: version_found.stdout is version_compare(elk_version, '<')

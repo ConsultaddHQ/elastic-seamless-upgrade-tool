@@ -1,0 +1,17 @@
+- hosts: kibana
+  gather_facts: no
+  become: true
+
+  tasks:
+      - name: Validate kibana Version
+        fail: msg="Invalid ELK Version"
+        when: elk_version is undefined or not elk_version is match("\d+\.\d+\.\d+")
+
+      - name: Get kibana current version
+        command: dpkg-query -W -f='${Version}' kibana
+        changed_when: False
+        register: version_found
+
+      - name: Pre-download kibana install package
+        command: apt-get install --download-only kibana
+        when: version_found.stdout is version_compare(elk_version, '<')

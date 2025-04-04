@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import http from "http";
 import { Server, Socket } from "socket.io";
-import webhookRouter from "./routes/webhook.router"
+import webhookRouter from "./routes/webhook.router";
 
 dotenv.config();
 
@@ -38,7 +38,16 @@ export interface ElasticClusterHealthRequest extends ElasticClusterBaseRequest {
 
 //routes
 app.use("/api/elastic/clusters", elasticRouter);
-app.use("/webhook",webhookRouter);
+app.use("/webhook", webhookRouter);
+
+app.use((req, res) => {
+	logger.info(`The requested route '${req.originalUrl}' was not found.`);
+	res.status(404).json({
+		error: "Not Found",
+		path: req.originalUrl,
+		message: `The requested route '${req.originalUrl}' was not found.`,
+	});
+});
 
 const io = new Server(server);
 io.of("/notification").on("connection", (socket: Socket) => {

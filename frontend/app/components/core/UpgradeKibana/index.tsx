@@ -105,8 +105,8 @@ function UpgradeKibana({ clusterType }: TUpgradeKibana) {
 					progress: item.progress,
 					isMaster: false,
 					disabled: false,
-					// (item.isMaster && res.data.filter((i: any) => i.status !== "upgraded" && i.isMaster).length > 0) ||
-					// res.data.some((i: any) => i.status === "upgrading"),
+					// (item.isMaster && res.data.filter((i: any) => i.status !== "UPGRADED" && i.isMaster).length > 0) ||
+					// res.data.some((i: any) => i.status === "UPGRADING"),
 				}))
 			})
 			.catch((err) => toast.error(err?.response?.data.err ?? StringManager.GENERIC_ERROR))
@@ -135,7 +135,7 @@ function UpgradeKibana({ clusterType }: TUpgradeKibana) {
 		queryFn: getNodesInfo,
 		refetchInterval: (data) => {
 			const nodes = data.state.data
-			const isUpgrading = nodes?.some((node: any) => node.status === "upgrading")
+			const isUpgrading = nodes?.some((node: any) => node.status === "UPGRADING")
 			return isUpgrading ? 1000 : false
 		},
 		refetchIntervalInBackground: true,
@@ -163,7 +163,7 @@ function UpgradeKibana({ clusterType }: TUpgradeKibana) {
 				case "action":
 					return (
 						<>
-							{row.status === "available" ? (
+							{row.status === "AVAILABLE" ? (
 								<Box className="flex justify-end">
 									<OutlinedBorderButton
 										onClick={() => {
@@ -176,9 +176,9 @@ function UpgradeKibana({ clusterType }: TUpgradeKibana) {
 										Upgrade
 									</OutlinedBorderButton>
 								</Box>
-							) : row.status === "upgrading" ? (
+							) : row.status === "UPGRADING" ? (
 								<ProgressBar progress={row.progress ? row.progress : 0} />
-							) : row.status === "upgraded" ? (
+							) : row.status === "UPGRADED" ? (
 								UPGRADE_ENUM["completed"]
 							) : (
 								UPGRADE_ENUM["failed"]

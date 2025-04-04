@@ -59,7 +59,7 @@ export const createKibanaNodes = async (kibanaConfigs: KibanaConfig[], clusterId
 			);
 			const nodeId = `node-${kibanaConfig.ip}`;
 			const progress = 0;
-			const status: NodeStatus =  NodeStatus.AVAILABLE;
+			const status: NodeStatus = NodeStatus.AVAILABLE;
 			const kibanaNode: IKibanaNode = {
 				nodeId,
 				clusterId,
@@ -135,21 +135,16 @@ export const updateKibanaNodeProgress = async (nodeId: string, progress: number)
 	}
 };
 
-
-export const updateKibanaNode = async(identifier: Record<string,any>,updatedNodeValues: Partial<IKibanaNode>)=>{
-  try{
-    const updatedNode = await KibanaNode.findOneAndUpdate(
-      identifier,
-      { $set: updatedNodeValues },
-      { new: true } 
-    )
-    if (!updatedNode) {
-      throw new Error(`Node with identfier ${identifier} not found`)
-    }
-  }catch(error){
-    throw new Error(`Unable to fin`)
-  }
-}
+export const updateKibanaNode = async (identifier: Record<string, any>, updatedNodeValues: Partial<IKibanaNode>) => {
+	try {
+		const updatedNode = await KibanaNode.findOneAndUpdate(identifier, { $set: updatedNodeValues }, { new: true });
+		if (!updatedNode) {
+			throw new Error(`Node with identfier ${identifier} not found`);
+		}
+	} catch (error) {
+		throw new Error(`Unable to fin`);
+	}
+};
 
 export const getKibanaNodeById = async (nodeId: string): Promise<IKibanaNode | null> => {
 	const kibanaNode = await KibanaNode.findOne({ nodeId: nodeId });
@@ -170,15 +165,11 @@ export const triggerKibanaNodeUpgrade = async (nodeId: string, clusterId: string
 			return false;
 		}
 
-		ansibleExecutionManager.runPlaybook(
-			"ansible/main.yml",
-			"ansible_inventory.ini",
-			{
-				elk_version: clusterInfo.targetVersion,
-				username: clusterInfo.elastic.username,
-				password: clusterInfo.elastic.password,
-			},
-		);
+		ansibleExecutionManager.runPlaybook("ansible/main.yml", "ansible_inventory.ini", {
+			elk_version: clusterInfo.targetVersion,
+			username: clusterInfo.elastic.username,
+			password: clusterInfo.elastic.password,
+		});
 		return new Promise((resolve, reject) => resolve(true));
 	} catch (error) {
 		logger.error(`Error performing upgrade for node with id ${nodeId}`);
