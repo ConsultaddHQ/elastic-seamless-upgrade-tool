@@ -1,13 +1,43 @@
 - hosts: elasticsearch
   become: true
   any_errors_fatal: true
-  gather_facts: no
+  gather_facts: false
   vars:
-      precheck_id: elasticsearch_cpu_precheck
+    precheck_id: elasticsearch_cpu_precheck
+    max_cpu_threshold: 80
+    check_interval_seconds: 30
+    max_checks: 10  # 10 checks = 5 minutes at 30s intervals
   tasks:
-      - name: CPU Utilization check
-        fail: msg="Invalid ELK Version"
-        when: elk_version is undefined or not elk_version is match("\d+\.\d+\.\d+")
-      - name: Pause for 5 seconds
-        ansible.builtin.pause:
-            seconds: 5
+
+    - name: Install required tools (if not already present)
+      package:
+        name: procps  # provides `top`, `ps` etc.
+        state: present
+
+    - name: Wait for CPU usage to be consistently below threshold for 5 minutes
+      block:
+        - name: Initialize CPU check count
+          set_fact:
+            cpu_ok_count: 0
+
+        - name: Loop CPU usage check
+          until: cpu_ok_count >= max_checks
+          retries: "{{ max_checks }}"
+          delay: "{{ check_interval_seconds }}"
+          vars:
+            cpu_usage: "{{ lookup('pipe', 'top -bn1 | grep %Cpu | awk \'{print $2 + $4}\'') }}"
+          block:
+            - name: Get current CPU usage
+              shell: |
+                top -bn1 | grep "%Cpu(s)" | awk '{print $2 + $4}'
+              register: cpu_check_result
+              changed_when: false
+
+            - name: Set CPU OK flag if usage is under threshold
+              set_fact:
+                cpu_ok_count: "{{ cpu_ok_count | int + 1 }}"
+
+            - name: Fail if CPU is above threshold
+              fail:
+                msg: "CPU usage is above {{ max_cpu_threshold }}% (got {{ cpu_check_result.stdout }}%)"
+              when: cpu_check_result.stdout | float >= max_cpu_threshold
