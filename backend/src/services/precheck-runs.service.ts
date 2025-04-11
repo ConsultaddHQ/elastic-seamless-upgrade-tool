@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { getPrecheckById } from "../config/precheck-config";
+import { ELASTIC_PRECHECK_CONFIG, getPrecheckById } from "../config/precheck-config";
 import { PrecheckStatus } from "../enums";
 import logger from "../logger/logger";
 import NodePrecheckRun, { INodePrecheckRun, INodePrecheckRunDocument } from "../models/node-precheck-runs.model";
@@ -111,7 +111,7 @@ export const updateRunStatus = async (
 	}
 };
 
-export const runPrecheck = async (precheckIds: string[], nodes: IElasticNode[], clusterId: string) => {
+export const runPrecheck = async (nodes: IElasticNode[], clusterId: string) => {
 	const runId = randomUUID();
 	const clusterInfo = await getClusterInfoById(clusterId);
 	if (!clusterInfo.pathToKey) {
@@ -130,7 +130,7 @@ export const runPrecheck = async (precheckIds: string[], nodes: IElasticNode[], 
 			clusterId: clusterId,
 		}))
 		.map((precheck) => {
-			return precheckIds.map((precheckId) => ({
+			return ELASTIC_PRECHECK_CONFIG.individuals.map(({ id: precheckId }) => ({
 				...precheck,
 				precheckId,
 			}));

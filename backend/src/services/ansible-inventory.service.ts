@@ -59,7 +59,6 @@ class AnsibleInventoryService {
 		}
 	};
 
-	///////////////////Kibana////////////////////////
 	public createAnsibleInventoryForKibana = async (kibanaNodes: IKibanaNode[], pathToKey: string) => {
 		try {
 			const roleGroups: Record<"kibana", string[]> = {

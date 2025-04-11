@@ -69,7 +69,7 @@ router.post("/:clusterId/prechecks", runAllPrecheksHandler);
 
 router.get("/:clusterId/prechecks", getPrecheckRunByClusterIdHandler);
 
-router.post("/:clusterId/prechecks/:precheckId/nodes/:nodeId", runPrechekByNodeIdHandler);
+router.post("/:clusterId/prechecks/nodes/:nodeId", runPrechekByNodeIdHandler);
 
 router.get("/verify", verfiyCluster);
 

@@ -196,5 +196,3 @@ export const triggerUpgradeAll = async (nodes: IElasticNode[], clusterId: string
 		throw new Error(`Error performing upgrade for nodes:  ${nodes}`);
 	}
 };
-
-/// /upgrade (exec)
