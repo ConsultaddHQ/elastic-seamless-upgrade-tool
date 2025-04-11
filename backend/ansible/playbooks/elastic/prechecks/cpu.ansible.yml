@@ -1,13 +1,60 @@
-- hosts: elasticsearch
+- name: CPU Precheck for Elasticsearch Nodes
+  hosts: elasticsearch
   become: true
   any_errors_fatal: true
-  gather_facts: no
+  gather_facts: false
+
   vars:
-      precheck_id: elasticsearch_cpu_precheck
+    precheck_id: elasticsearch_cpu_precheck
+    max_cpu_threshold: 80
+    check_interval_seconds: 30
+    max_checks: 10
+    cpu_usage_pass: true
+
   tasks:
-      - name: CPU Utilization check
-        fail: msg="Invalid ELK Version"
-        when: elk_version is undefined or not elk_version is match("\d+\.\d+\.\d+")
-      - name: Pause for 5 seconds
-        ansible.builtin.pause:
-            seconds: 5
+    - name: Install required tools (if not already present)
+      package:
+        name: procps
+        state: present
+
+    - name: Initialize CPU check results
+      set_fact:
+        cpu_results: []
+        any_failure: false
+
+    - name: Perform CPU checks
+      block:
+        - name: Run CPU check {{ item }} of {{ max_checks }}
+          shell: |
+            top -bn1 | grep "%Cpu(s)" | awk '{print $2 + $4}'
+          register: cpu_check
+          changed_when: false
+          with_sequence: start=1 end="{{ max_checks }}"
+          loop_control:
+            loop_var: item
+            pause: "{{ check_interval_seconds }}"
+
+        - name: Display each CPU check result
+          debug:
+            msg: "Check {{ item.0 + 1 }}/{{ max_checks }}: CPU usage was {{ item.1.stdout | float }}% (threshold: {{ max_cpu_threshold }}%)"
+          with_indexed_items: "{{ cpu_check.results }}"
+          loop_control:
+            label: "Check {{ item.0 + 1 }}/{{ max_checks }}"
+
+        - name: Store all CPU results
+          set_fact:
+            cpu_results: "{{ cpu_check.results | map(attribute='stdout') | map('float') | list }}"
+            any_failure: "{{ cpu_check.results | map(attribute='stdout') | map('float') | select('>', max_cpu_threshold) | list | length > 0 }}"
+
+        - name: Display summary of all checks
+          debug:
+            msg:
+              - "All CPU measurements: {{ cpu_results }}"
+              - "Max CPU usage: {{ cpu_results | max }}"
+              - "Min CPU usage: {{ cpu_results | min }}"
+              - "Avg CPU usage: {{ (cpu_results | sum) / (cpu_results | length) }}"
+
+        - name: Fail if CPU threshold was exceeded during any check
+          fail:
+            msg: "CPU usage exceeded {{ max_cpu_threshold }}% during one or more checks."
+          when: any_failure | bool
