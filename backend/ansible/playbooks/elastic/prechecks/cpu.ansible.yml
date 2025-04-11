@@ -5,6 +5,7 @@
   gather_facts: false
 
   vars:
+    precheck_id: elasticsearch_cpu_precheck
     max_cpu_threshold: 80
     check_interval_seconds: 30
     max_checks: 10
