@@ -19,6 +19,8 @@ RUN yarn build
 # Stage 2: Production Stage
 FROM node:18-bullseye
 
+ENV ANSIBLE_PLAYBOOKS_PATH="/app/ansible"
+ENV MONGO_URI=mongodb://admin:admin123@mongodb:27017
 # Install dependencies and Ansible
 RUN apt-get update && \
     apt-get install -y python3 python3-pip && \
@@ -43,6 +45,9 @@ COPY --from=builder /app/package*.json ./
 
 #Copy ansible files
 COPY --from=builder /app/ansible/ ./ansible/
+
+# Copy prechecks.yaml file
+COPY --from=builder /app/prechecks.yaml ./prechecks.yaml
 
 # Install only production dependencies
 RUN yarn install --production
