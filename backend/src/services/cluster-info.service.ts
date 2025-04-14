@@ -15,8 +15,17 @@ const cache: Record<string, IClusterInfo | null> = {};
 export const createOrUpdateClusterInfo = async (clusterInfo: IClusterInfo): Promise<IClusterInfoDocument> => {
 	// TODO These needs to be updated when we want to support multiple clusters
 	const clusterId = "cluster-id"; //clusterInfo.clusterId
-	const { elastic, kibana, certificateIds, targetVersion, infrastructureType, pathToKey, key, kibanaConfigs } =
-		clusterInfo;
+	const {
+		elastic,
+		kibana,
+		certificateIds,
+		targetVersion,
+		infrastructureType,
+		pathToKey,
+		key,
+		kibanaConfigs,
+		sshUser,
+	} = clusterInfo;
 	const data = await ClusterInfo.findOneAndUpdate(
 		{ clusterId: clusterId },
 		{
@@ -29,6 +38,7 @@ export const createOrUpdateClusterInfo = async (clusterInfo: IClusterInfo): Prom
 			pathToKey: pathToKey,
 			key: key,
 			kibanaConfigs: kibanaConfigs,
+			sshUser: sshUser,
 		},
 		{ new: true, upsert: true, runValidators: true }
 	);
