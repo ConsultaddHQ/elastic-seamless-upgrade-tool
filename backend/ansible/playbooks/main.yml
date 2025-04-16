@@ -19,13 +19,13 @@
   when: ACTION == "UPGRADE"
 
 - name: Elasticsearch data node UPGRADE
-  import_playbook: elastic/elasticsearch-UPGRADE.yml
+  import_playbook: elastic/elasticsearch-upgrade.yml
   vars:
       elasticsearch_node: elasticsearch_data
   when: ACTION == "UPGRADE"
 
 - name: Elasticsearch master node UPGRADE
-  import_playbook: elastic/elasticsearch-UPGRADE.yml
+  import_playbook: elastic/elasticsearch-upgrade.yml
   vars:
       elasticsearch_node: elasticsearch_master
   when: ACTION == "UPGRADE"
