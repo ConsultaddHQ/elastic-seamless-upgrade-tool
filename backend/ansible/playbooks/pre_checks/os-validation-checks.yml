@@ -119,11 +119,6 @@
       msg: "Cluster is in {{ cluster_health.json.status }}"
     run_once: true
   
-  - name: Display cluster health
-    debug:
-      msg: "pre_checks {{ precheck_id }}"
-    run_once: true
-  
   - name: Fail if cluster health is not green
     fail:
       msg: "Cluster is in {{ cluster_health.json.status }}, upgrade not recommended!"
