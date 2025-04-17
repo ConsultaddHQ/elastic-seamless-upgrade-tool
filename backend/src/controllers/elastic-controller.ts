@@ -143,7 +143,7 @@ export const getUpgradeDetails = async (req: Request, res: Response) => {
 		const esDeprecationCount = elasticsearchDeprecation.counts;
 		const kibanaDeprecationCount = kibanaDeprecation.counts;
 		const allPrechecks = prechecks.flat();
-		if (allPrechecks.length === 0) {
+		if (allPrechecks.length === 0 && snapshots.length > 0) {
 			const runId = await runPrecheck(elasticNodes, clusterId);
 			logger.info(`Prechecks initiated successfully for cluster '${clusterId}' with Playbook Run ID '${runId}'.`);
 		}
@@ -200,8 +200,9 @@ export const getNodesInfo = async (req: Request, res: Response) => {
 		const elasticNodes = await getAllElasticNodes(clusterId);
 		const isDataNodeDisabled = elasticNodes.some((node) => node.status === NodeStatus.UPGRADING);
 		const isMasterDisabled =
-			elasticNodes.some((node) => node.roles.includes("data") && node.status !== NodeStatus.UPGRADED) ||
-			isDataNodeDisabled;
+			elasticNodes.some(
+				(node) => node.roles.includes("data") && !node.isMaster && node.status !== NodeStatus.UPGRADED
+			) || isDataNodeDisabled;
 		let nodes = elasticNodes.map((node) => {
 			if (node.isMaster) {
 				return {
@@ -463,12 +464,7 @@ export const handleKibanaUpgrades = async (req: Request, res: Response) => {
 	const { nodes } = req.body;
 	try {
 		nodes.forEach((nodeId: string) => {
-			const triggered = triggerKibanaNodeUpgrade(nodeId, clusterId);
-			if (!triggered) {
-				res.status(400).send({ err: "Upgrade failed node not available" });
-			} else {
-				return;
-			}
+			triggerKibanaNodeUpgrade(nodeId, clusterId);
 		});
 		res.status(200).send({ message: "Upgradation triggered" });
 	} catch (err: any) {

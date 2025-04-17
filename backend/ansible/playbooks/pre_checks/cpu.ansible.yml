@@ -1,27 +1,57 @@
 - hosts: all
   become: true
   any_errors_fatal: true
-  gather_facts: no
+  gather_facts: true
   vars:
       precheck_id: elasticsearch_cpu_precheck
-      CPU_LIMIT: 80
+      max_cpu_threshold: 80
+      check_interval_seconds: 30
+      max_checks: 5
+      cpu_usage_pass: true
+
   tasks:
-      - name: Monitor CPU usage
-        shell: "top -b -d 300 -n 1 | grep 'Cpu' | awk '{print $2}' | cut -d'%' -f1"
-        register: cpu_utilization
-        changed_when: false
+      - name: Install required tools (if not already present)
+        package:
+            name: procps
+            state: present
 
-      - name: Calculate average CPU usage over 5 minutes
+      - name: Initialize CPU check results
         set_fact:
-            avg_cpu: "{{ cpu_utilization.stdout_lines | map('float') | list | sum / cpu_utilization.stdout_lines | length }}"
+            cpu_results: []
+            any_failure: false
 
-      - name: Show CPU utilization
-        debug:
-            msg: "Average CPU utilization over 5 minutes: {{ avg_cpu }}%"
+      - name: Perform CPU checks
+        block:
+            - name: Run CPU check {{ item }} of {{ max_checks }}
+              shell: top -bn1 | grep "%Cpu(s)" | awk '{print $2 + $4}'
+              register: cpu_check
+              changed_when: false
+              with_sequence: start=1 end="{{ max_checks }}"
+              loop_control:
+                  loop_var: item
+                  pause: "{{ check_interval_seconds }}"
 
-      - name: Validating Node CPU utilization
-        assert:
-            that:
-                - ( avg_cpu | float ) < CPU_LIMIT
-            fail_msg: "CPU Utilization is more than {{ CPU_LIMIT }}"
-            success_msg: "CPU Utilization is less than {{ CPU_LIMIT }}"
+            - name: Display each CPU check result
+              debug:
+                  msg: "Check {{ item.0 + 1 }}/{{ max_checks }}: CPU usage was {{ item.1.stdout | float }}% (threshold: {{ max_cpu_threshold }}%)"
+              with_indexed_items: "{{ cpu_check.results }}"
+              loop_control:
+                  label: "Check {{ item.0 + 1 }}/{{ max_checks }}"
+
+            - name: Store all CPU results
+              set_fact:
+                  cpu_results: "{{ cpu_check.results | map(attribute='stdout') | map('float') | list }}"
+                  any_failure: "{{ cpu_check.results | map(attribute='stdout') | map('float') | select('>', max_cpu_threshold) | list | length > 0 }}"
+
+            - name: Display summary of all checks
+              debug:
+                  msg:
+                      - "All CPU measurements: {{ cpu_results }}"
+                      - "Max CPU usage: {{ cpu_results | max }}"
+                      - "Min CPU usage: {{ cpu_results | min }}"
+                      - "Avg CPU usage: {{ (cpu_results | sum) / (cpu_results | length) }}"
+
+            - name: Fail if CPU threshold was exceeded during any check
+              fail:
+                  msg: "CPU usage exceeded {{ max_cpu_threshold }}% during one or more checks."
+              when: any_failure | bool

@@ -4,50 +4,51 @@
   gather_facts: no
 
   tasks:
-  - name: Validate ELK Version
-    fail: msg="Invalid ELK Version"
-    when: elk_version is undefined or not elk_version is match("\d+\.\d+\.\d+")
+  
+      - name: Validate ELK Version
+        fail: msg="Invalid ELK Version"
+        when: elk_version is undefined or not elk_version is match("\d+\.\d+\.\d+")
 
-  - block:
-    - name: Update kibana
-      apt:
-        name: kibana={{ elk_version }}
-        state: present
+      - block:
+            - name: Update kibana
+              apt:
+                  name: kibana={{ elk_version }}
+                  state: present
 
-    - name: Restart kibana
-      systemd:
-        name: kibana
-        state: restarted
-        daemon_reload: yes
+            - name: Restart kibana
+              systemd:
+                  name: kibana
+                  state: restarted
+                  daemon_reload: yes
 
-    - name: Wait for kibana to start listening
-      wait_for:
-        port: 5601
-        delay: 5
+            - name: Wait for kibana to start listening
+              wait_for:
+                  port: 5601
+                  delay: 5
 
-    - name: Wait for kibana to be ready
-      uri:
-        url: http://localhost:5601/api/kibana/settings
-        method: GET
-        url_es_username: "{{ es_username }}"
-        url_es_password: "{{ es_password }}"
-        validate_certs: false
-        force_basic_auth: true
-      register: response
-      until: "'kbn_name' in response and response.status == 200"
-      retries: 30
-      delay: 5
+            - name: Wait for kibana to be ready
+              uri:
+                  url: http://localhost:5601/api/kibana/settings
+                  method: GET
+                  url_username: "{{ es_username }}"
+                  url_password: "{{ es_password }}"
+                  validate_certs: false
+                  force_basic_auth: true
+              register: response
+              until: "'kbn_name' in response and response.status == 200"
+              retries: 30
+              delay: 5
 
-    - name: Set Default Index
-      uri:
-        url: http://localhost:5601/api/kibana/settings
-        method: POST
-        url_es_username: "{{ es_username }}"
-        url_es_password: "{{ es_password }}"
-        validate_certs: false
-        force_basic_auth: true
-        body_format: json
-        body: "{{ set_default_index }}"
-        headers:
-          "kbn-version": "{{ elk_version }}"
-    when: version_found.stdout is version_compare(elk_version, '<')
+            - name: Set Default Index
+              uri:
+                  url: http://localhost:5601/api/kibana/settings
+                  method: POST
+                  url_username: "{{ es_username }}"
+                  url_password: "{{ es_password }}"
+                  validate_certs: false
+                  force_basic_auth: true
+                  body_format: json
+                  body: "{{ set_default_index }}"
+                  headers:
+                      "kbn-version": "{{ elk_version }}"
+        when: version_found.stdout is version_compare(elk_version, '<')

@@ -115,7 +115,9 @@ function UpgradeAssistant() {
 				// 	Toast({varient: "SUCCESS", msg:"done"})
 				// }
 
-				handleRoutingStates(step2Status, setPrecheckAllowed)
+				if (step2Status !== "NOTVISITED") {
+					setPrecheckAllowed(true)
+				}
 				handleRoutingStates(step3Status, setDeprecationChangesAllowed)
 				handleRoutingStates(step4Status, setElasticNodeUpgradeAllowed)
 				handleRoutingStates(step5Status, setKibanaNodeUpgradeAllowed)
@@ -203,7 +205,8 @@ function UpgradeAssistant() {
 									fontWeight="400"
 									lineHeight="18px"
 									color="#F3D07C"
-									minWidth="76px"
+									minWidth="90px"
+									textAlign="right"
 								>
 									{formatTime(remainingTime)}
 								</Typography>
@@ -255,7 +258,9 @@ function UpgradeAssistant() {
 							lineHeight="20px"
 							letterSpacing="0.26px"
 						>
-							One liner goes here.
+							Prechecks verify your cluster's readiness for upgrade by running essential health and
+							configuration checks. Your Cluster needs to pass all the Prechecks to be eligible for
+							upgrade.
 						</Typography>
 					</Box>
 				</Box>

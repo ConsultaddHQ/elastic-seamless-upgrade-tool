@@ -22,8 +22,8 @@
         uri:
             url: "{{ es_host_protocol }}://localhost:{{ es_http_port }}"
             method: GET
-            url_es_username: "{{ es_username }}"
-            url_es_password: "{{ es_password }}"
+            url_username: "{{ es_username }}"
+            url_password: "{{ es_password }}"
             validate_certs: false
         register: version_found
         retries: 10
@@ -53,8 +53,8 @@
             - name: Enable shard allocation for the cluster
               uri:
                   url: "{{ es_host_protocol }}://localhost:{{ es_http_port }}/_cluster/settings"
-                  url_es_username: "{{ es_username }}"
-                  url_es_password: "{{ es_password }}"
+                  url_username: "{{ es_username }}"
+                  url_password: "{{ es_password }}"
                   validate_certs: false
                   method: PUT
                   body_format: json
@@ -63,8 +63,8 @@
             - name: Wait for cluster health to return to green
               uri:
                   url: "{{ es_host_protocol }}://localhost:{{ es_http_port }}/_cluster/health"
-                  url_es_username: "{{ es_username }}"
-                  url_es_password: "{{ es_password }}"
+                  url_username: "{{ es_username }}"
+                  url_password: "{{ es_password }}"
                   validate_certs: false
                   method: GET
               register: response
@@ -75,8 +75,8 @@
             - name: Disable shard allocation for the cluster
               uri:
                   url: "{{ es_host_protocol }}://localhost:{{ es_http_port }}/_cluster/settings"
-                  url_es_username: "{{ es_username }}"
-                  url_es_password: "{{ es_password }}"
+                  url_username: "{{ es_username }}"
+                  url_password: "{{ es_password }}"
                   method: PUT
                   validate_certs: false
                   body_format: json
@@ -85,8 +85,8 @@
             - name: Perform a synced flush
               uri:
                   url: "{{ es_host_protocol }}://localhost:{{ es_http_port }}/_flush"
-                  url_es_username: "{{ es_username }}"
-                  url_es_password: "{{ es_password }}"
+                  url_username: "{{ es_username }}"
+                  url_password: "{{ es_password }}"
                   validate_certs: false
                   method: POST
                   status_code: "200, 409"
@@ -105,8 +105,8 @@
             - name: Wait for all shards to be reallocated
               uri:
                   url: "{{ es_host_protocol }}://{{ es_host }}:{{ es_http_port }}/_cluster/health"
-                  url_es_username: "{{ es_username }}"
-                  url_es_password: "{{ es_password }}"
+                  url_username: "{{ es_username }}"
+                  url_password: "{{ es_password }}"
                   method: GET
                   validate_certs: false
               register: response
@@ -119,8 +119,8 @@
               systemd:
                   name: elasticsearch
                   state: restarted
-                  # enabled: yes
-                  # daemon_reload: yes
+                  enabled: yes
+                  daemon_reload: yes
 
             - name: Wait for elasticsearch node to come back up
               wait_for:
@@ -135,8 +135,8 @@
             - name: Wait for cluster health to return to yellow or green
               uri:
                   url: "{{ es_host_protocol }}://localhost:{{ es_http_port }}/_cluster/health"
-                  url_es_username: "{{ es_username }}"
-                  url_es_password: "{{ es_password }}"
+                  url_username: "{{ es_username }}"
+                  url_password: "{{ es_password }}"
                   method: GET
                   validate_certs: false
               register: response
@@ -147,8 +147,8 @@
             - name: Enable shard allocation for the cluster
               uri:
                   url: "{{ es_host_protocol }}://localhost:{{ es_http_port }}/_cluster/settings"
-                  url_es_username: "{{ es_username }}"
-                  url_es_password: "{{ es_password }}"
+                  url_username: "{{ es_username }}"
+                  url_password: "{{ es_password }}"
                   validate_certs: false
                   method: PUT
                   body_format: json
@@ -161,8 +161,8 @@
             - name: Wait for the node to recover
               uri:
                   url: "{{ es_host_protocol }}://localhost:{{ es_http_port }}/_cat/health"
-                  url_es_username: "{{ es_username }}"
-                  url_es_password: "{{ es_password }}"
+                  url_username: "{{ es_username }}"
+                  url_password: "{{ es_password }}"
                   validate_certs: false
                   method: GET
                   return_content: yes

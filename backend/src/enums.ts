@@ -15,10 +15,10 @@ export enum AnsibleTaskStatus {
 }
 
 export enum NodeStatus {
-	UPGRADING = "UPGRADING",
-	AVAILABLE = "AVAILABLE",
-	UPGRADED = "UPGRADED",
-	FAILED = "FAILED",
+	UPGRADING = "upgrading",
+	AVAILABLE = "available",
+	UPGRADED = "upgraded",
+	FAILED = "failed",
 }
 
 export enum clusterStatus {

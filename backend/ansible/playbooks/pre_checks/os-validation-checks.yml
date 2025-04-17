@@ -2,124 +2,123 @@
 - name: Pre-check Elasticsearch Nodes before upgrade
   hosts: all
   tasks:
+      #Disk space check
+      - name: Get disk space usage
+        shell: df -h / | tail -n 1 | awk '{ print $5 }' | tr -d \%
+        register: disk_usage
+        changed_when: false
 
-  #Disk space check
-  - name: Get disk space usage
-    shell: df -h / | tail -n 1 | awk '{ print $5 }' | tr -d \%
-    register: disk_usage
-    changed_when: false
+      - name: Show disk usage
+        debug:
+            msg: "Disk Usage: {{ disk_usage.stdout }}%"
 
-  - name: Show disk usage
-    debug:
-      msg: "Disk Usage: {{ disk_usage.stdout }}%"
+      #CPU Utilization Check
+      - name: Monitor CPU usage
+        shell: "top -b -d 300 -n 1 | grep 'Cpu' | awk '{print $2}' | cut -d'%' -f1"
+        register: cpu_utilization
+        changed_when: false
 
-  #CPU Utilization Check
-  - name: Monitor CPU usage
-    shell: "top -b -d 300 -n 1 | grep 'Cpu' | awk '{print $2}' | cut -d'%' -f1"
-    register: cpu_utilization
-    changed_when: false
+      - name: Calculate average CPU usage over 5 minutes
+        set_fact:
+            avg_cpu: "{{ cpu_utilization.stdout_lines | map('float') | list | sum / cpu_utilization.stdout_lines | length }}"
 
-  - name: Calculate average CPU usage over 5 minutes
-    set_fact:
-      avg_cpu: "{{ cpu_utilization.stdout_lines | map('float') | list | sum / cpu_utilization.stdout_lines | length }}"
+      - name: Show CPU utilization
+        debug:
+            msg: "Average CPU utilization over 5 minutes: {{ avg_cpu }}%"
 
-  - name: Show CPU utilization
-    debug:
-      msg: "Average CPU utilization over 5 minutes: {{ avg_cpu }}%"
-  
-  # Memory Utilization Check
-  - name: Get memory usage
-    shell: "free | grep '^Mem:' | awk '{mem_usage=($3*100)/$2} END {print mem_usage }'"
-    register: memory_utilization
-  
-  - name: Show memory usage
-    debug:
-      msg: "Memory Usage: {{ memory_utilization.stdout }}%"
+      # Memory Utilization Check
+      - name: Get memory usage
+        shell: "free | grep '^Mem:' | awk '{mem_usage=($3*100)/$2} END {print mem_usage }'"
+        register: memory_utilization
 
-  - name: Validating Node Disk utilization
-    assert:
-      that:
-        - ( disk_usage.stdout | int ) < ( DISK_SPACE_LIMIT | int ) 
-      fail_msg: "Disk Space Utilization is more than {{ DISK_SPACE_LIMIT }}"
-      success_msg: "Disk Space is less than {{ DISK_SPACE_LIMIT }}"
-    register: DISK_SPACE_CHECK_RESULT
-    ignore_errors: yes
+      - name: Show memory usage
+        debug:
+            msg: "Memory Usage: {{ memory_utilization.stdout }}%"
 
-  - name: Validating Node CPU utilization
-    assert:
-      that:
-        - ( avg_cpu | float ) < CPU_LIMIT
-      fail_msg: "CPU Utilization is more than {{ CPU_LIMIT }}"
-      success_msg: "CPU Utilization is less than {{ CPU_LIMIT }}"
-    register: CPU_CHECK_RESULT
-    ignore_errors: yes
+      - name: Validating Node Disk utilization
+        assert:
+            that:
+                - ( disk_usage.stdout | int ) < ( DISK_SPACE_LIMIT | int )
+            fail_msg: "Disk Space Utilization is more than {{ DISK_SPACE_LIMIT }}"
+            success_msg: "Disk Space is less than {{ DISK_SPACE_LIMIT }}"
+        register: DISK_SPACE_CHECK_RESULT
+        ignore_errors: yes
 
-  - name: Validating Host Memory
-    assert:
-      that:
-        - ( memory_utilization.stdout | int )  < Memory_LIMIT
-      fail_msg: "Memory Utilization is more than  {{ Memory_LIMIT }}"
-      success_msg: "Memory Utilization is less than  {{ Memory_LIMIT }}"
-    register: MEMORY_CHECK_RESULT
-    ignore_errors: yes
-  
-  - block: 
-    - set_fact:
-        precheck_id: "{{ precheck_id | default([]) + 
-                          (['elasticsearch_cpu_precheck'] if CPU_CHECK_RESULT.failed else []) + 
-                          (['elasticsearch_disk_precheck'] if MEMORY_CHECK_RESULT.failed else []) + 
-                          (['elasticsearch_memory_precheck'] if DISK_SPACE_CHECK_RESULT.failed else []) }}"
-    - debug: 
-        var: precheck_id
-    - set_fact:
-        elastic_message: >-
-          {%- if CPU_CHECK_RESULT.failed == true -%} 
-          - CPU Utilization is more than {{ CPU_LIMIT }} for host: {{ansible_hostname}}
-          {% endif %}
-          {%- if MEMORY_CHECK_RESULT.failed == true  -%}
-          - Memory Utilization is more than  {{ Memory_LIMIT }} for host: {{ansible_hostname}}
-          {% endif %}
-          {%- if DISK_SPACE_CHECK_RESULT.failed == true -%}
-          - Disk usage is above {{ disk_usage.stdout }}% for host: {{ansible_hostname}}.
-          {% endif %}
-        exit_code_number: 1
-    when: CPU_CHECK_RESULT.failed == true or MEMORY_CHECK_RESULT.failed == true or DISK_SPACE_CHECK_RESULT.failed == true
+      - name: Validating Node CPU utilization
+        assert:
+            that:
+                - ( avg_cpu | float ) < CPU_LIMIT
+            fail_msg: "CPU Utilization is more than {{ CPU_LIMIT }}"
+            success_msg: "CPU Utilization is less than {{ CPU_LIMIT }}"
+        register: CPU_CHECK_RESULT
+        ignore_errors: yes
 
-  - name: Failing ansible playbook if Host CPU/Memory validation failed
-    fail:
-      msg: "HOST: {{ansible_hostname}} - {{elastic_message}}"
-    when: CPU_CHECK_RESULT.failed == true or MEMORY_CHECK_RESULT.failed == true or DISK_SPACE_CHECK_RESULT.failed == true
+      - name: Validating Host Memory
+        assert:
+            that:
+                - ( memory_utilization.stdout | int )  < Memory_LIMIT
+            fail_msg: "Memory Utilization is more than  {{ Memory_LIMIT }}"
+            success_msg: "Memory Utilization is less than  {{ Memory_LIMIT }}"
+        register: MEMORY_CHECK_RESULT
+        ignore_errors: yes
 
-  - block: 
-    - name: Check Elasticsearch service status
-      systemd:
-        name: elasticsearch
-        state: started
-      register: es_service
-      ignore_errors: yes
-    
-    - name: Display Elasticsearch service status
-      debug:
-        msg: "Elasticsearch service is {{ 'running' if es_service.status.ActiveState == 'active' else 'not running' }}"
-    when: inventory_hostname in groups["elasticsearch"]
-  
-  - name: Check Elasticsearch cluster health
-    uri:
-      url: "{{ elasticsearch_uri }}/_cluster/health?pretty"
-      url_username: "{{ es_username }}"
-      url_password: "{{ es_password }}"
-      validate_certs: false
-      method: GET
-    register: cluster_health
-    ignore_errors: yes
-    run_once: true
-  
-  - name: Display cluster health
-    debug:
-      msg: "Cluster is in {{ cluster_health.json.status }}"
-    run_once: true
-  
-  - name: Fail if cluster health is not green
-    fail:
-      msg: "Cluster is in {{ cluster_health.json.status }}, upgrade not recommended!"
-    when: cluster_health.json.status != "green"  and rerun == false
+      - block:
+            - set_fact:
+                  precheck_id: "{{ precheck_id | default([]) +
+                      (['elasticsearch_cpu_precheck'] if CPU_CHECK_RESULT.failed else []) +
+                      (['elasticsearch_disk_precheck'] if MEMORY_CHECK_RESULT.failed else []) +
+                      (['elasticsearch_memory_precheck'] if DISK_SPACE_CHECK_RESULT.failed else []) }}"
+            - debug:
+                  var: precheck_id
+            - set_fact:
+                  elastic_message: >-
+                      {%- if CPU_CHECK_RESULT.failed == true -%} 
+                      - CPU Utilization is more than {{ CPU_LIMIT }} for host: {{ansible_hostname}}
+                      {% endif %}
+                      {%- if MEMORY_CHECK_RESULT.failed == true  -%}
+                      - Memory Utilization is more than  {{ Memory_LIMIT }} for host: {{ansible_hostname}}
+                      {% endif %}
+                      {%- if DISK_SPACE_CHECK_RESULT.failed == true -%}
+                      - Disk usage is above {{ disk_usage.stdout }}% for host: {{ansible_hostname}}.
+                      {% endif %}
+                  exit_code_number: 1
+        when: CPU_CHECK_RESULT.failed == true or MEMORY_CHECK_RESULT.failed == true or DISK_SPACE_CHECK_RESULT.failed == true
+
+      - name: Failing ansible playbook if Host CPU/Memory validation failed
+        fail:
+            msg: "HOST: {{ansible_hostname}} - {{elastic_message}}"
+        when: CPU_CHECK_RESULT.failed == true or MEMORY_CHECK_RESULT.failed == true or DISK_SPACE_CHECK_RESULT.failed == true
+
+      - block:
+            - name: Check Elasticsearch service status
+              systemd:
+                  name: elasticsearch
+                  state: started
+              register: es_service
+              ignore_errors: yes
+
+            - name: Display Elasticsearch service status
+              debug:
+                  msg: "Elasticsearch service is {{ 'running' if es_service.status.ActiveState == 'active' else 'not running' }}"
+              when: "'elasticsearch' in groups and inventory_hostname in groups['elasticsearch']"
+
+      - name: Check Elasticsearch cluster health
+        uri:
+            url: "{{ elasticsearch_uri }}/_cluster/health?pretty"
+            url_username: "{{ es_username }}"
+            url_password: "{{ es_password }}"
+            validate_certs: false
+            method: GET
+        register: cluster_health
+        ignore_errors: yes
+        run_once: true
+
+      - name: Display cluster health
+        debug:
+            msg: "Cluster is in {{ cluster_health.json.status }}"
+        run_once: true
+
+      - name: Fail if cluster health is not green
+        fail:
+            msg: "Cluster is in {{ cluster_health.json.status }}, upgrade not recommended!"
+        when: cluster_health.json.status != "green"  and rerun == false

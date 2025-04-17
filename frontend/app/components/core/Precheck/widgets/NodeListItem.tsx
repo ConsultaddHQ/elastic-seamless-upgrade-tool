@@ -9,7 +9,7 @@ function NodeListItem({
 	status = "PENDING",
 	onClick = () => {},
 }: {
-	status?: "PENDING" | "COMPLETED" | "FAILED"
+	status?: "PENDING" | "COMPLETED" | "FAILED" | "RUNNING"
 	name: string
 	isSelected: boolean
 	onClick: () => void
@@ -28,7 +28,7 @@ function NodeListItem({
 					"hover:bg-[#1D1D1D]": !isSelected,
 				})}
 			>
-				{status === "PENDING" ? (
+				{status === "PENDING" || status === "RUNNING" ? (
 					<Spinner color="default" variant="simple" classNames={{ wrapper: "size-4 text-inherit" }} />
 				) : status === "COMPLETED" ? (
 					<TickCircle size="20px" color="#4CDB9D" variant="Bold" />

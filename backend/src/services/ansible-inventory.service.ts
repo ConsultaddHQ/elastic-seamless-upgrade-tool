@@ -85,7 +85,7 @@ class AnsibleInventoryService {
 			);
 			const inventoryContent = inventoryParts.join("\n\n");
 
-			await fs.promises.writeFile("ansible_inventory.ini", inventoryContent, "utf8");
+			await fs.promises.writeFile("ansible/ansible_inventory.ini", inventoryContent, "utf8");
 			return inventoryContent;
 		} catch (error) {
 			console.error("Error creating Ansible inventory:", error);

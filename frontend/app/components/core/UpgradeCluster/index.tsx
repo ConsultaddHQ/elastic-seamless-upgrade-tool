@@ -87,13 +87,15 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 
 	useEffect(() => {
 		if (!socket) return
-
-		socket.on("UPGRADE_PROGRESS_CHANGE", (message) => {
-			refetch()
-		})
-
+		const listner = (rawMessage: string) => {
+			const message = JSON.parse(rawMessage)
+			if (message.type === "UPGRADE_PROGRESS_CHANGE") {
+				refetch()
+			}
+		}
+		socket.on("message", listner)
 		return () => {
-			socket.off("UPGRADE_PROGRESS_CHANGE")
+			socket.off("message", listner)
 		}
 	}, [socket])
 
@@ -163,6 +165,46 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 		mutationKey: ["node-upgrade"],
 		mutationFn: performUpgrade,
 	})
+
+	const getAction = (row: TUpgradeRow) => {
+		if (row.disabled && row.status === "available") {
+			return (
+				<Box
+					className="flex gap-1 items-center"
+					color="#EFC93D"
+					fontSize="12px"
+					fontWeight="500"
+					lineHeight="normal"
+				>
+					<Box className="min-w-4 min-h-4">
+						<Warning2 size="16px" color="currentColor" variant="Bold" />
+					</Box>
+					Upgrade other nodes first.
+				</Box>
+			)
+		} else if (row.status === "available") {
+			return (
+				<Box className="flex justify-end">
+					<OutlinedBorderButton
+						onClick={() => {
+							PerformUpgrade(row.key)
+						}}
+						icon={Flash}
+						filledIcon={Flash}
+						disabled={row?.disabled || isPending}
+					>
+						Upgrade
+					</OutlinedBorderButton>
+				</Box>
+			)
+		} else if (row.status === "upgrading") {
+			return <ProgressBar progress={row.progress ? row.progress : 0} />
+		} else if (row.status === "upgraded") {
+			return UPGRADE_ENUM["completed"]
+		} else {
+			return UPGRADE_ENUM["failed"]
+		}
+	}
 	const renderCell = useCallback(
 		(row: TUpgradeRow, columnKey: Key) => {
 			const cellValue = row[columnKey as keyof TUpgradeRow]
@@ -179,43 +221,7 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 				case "version":
 					return <span className="text-[#ADADAD]">{row.version}</span>
 				case "action":
-					return (
-						<Box className="flex justify-end">
-							{row?.disabled ? (
-								<Box
-									className="flex gap-1 items-center"
-									color="#EFC93D"
-									fontSize="12px"
-									fontWeight="500"
-									lineHeight="normal"
-								>
-									<Box className="min-w-4 min-h-4">
-										<Warning2 size="16px" color="currentColor" variant="Bold" />
-									</Box>
-									Upgrade other nodes first.
-								</Box>
-							) : row.status === "available" ? (
-								<Box className="flex justify-end">
-									<OutlinedBorderButton
-										onClick={() => {
-											PerformUpgrade(row.key)
-										}}
-										icon={Flash}
-										filledIcon={Flash}
-										disabled={row?.disabled || isPending}
-									>
-										Upgrade
-									</OutlinedBorderButton>
-								</Box>
-							) : row.status === "upgrading" ? (
-								<ProgressBar progress={row.progress ? row.progress : 0} />
-							) : row.status === "upgraded" ? (
-								UPGRADE_ENUM["completed"]
-							) : (
-								UPGRADE_ENUM["failed"]
-							)}
-						</Box>
-					)
+					return <Box className="flex justify-end">{getAction(row)}</Box>
 				default:
 					return cellValue
 			}
@@ -235,9 +241,10 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 						icon={Flash}
 						filledIcon={Flash}
 						disabled={
-							isPending || isLoading ||
+							isPending ||
+							isLoading ||
 							(data &&
-								data.filter((item: any) => item.status !== "AVAILABLE" && item.status !== "UPGRADED")
+								data.filter((item: any) => item.status !== "available" && item.status !== "upgraded")
 									.length > 0)
 						}
 						padding="8px 16px"

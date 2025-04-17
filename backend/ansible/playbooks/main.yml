@@ -1,35 +1,36 @@
 ---
-- name: Load variables and facts for all hosts 
+- name: Load variables and facts for all hosts
   hosts: all
   gather_facts: no
   tasks:
-    - name: Load variables
-      include_vars: variables.yml
+  
+      - name: Load variables
+        include_vars: variables.yml
 
-    - name: Set fact for global use
-      set_fact:
-        ACTION: "{{ SET_ACTION }}"
+      - name: Set fact for global use
+        set_fact:
+            ACTION: "{{ SET_ACTION }}"
 
 - name: Pre Validation checks
   import_playbook: pre_checks/os-validation-checks.yml
-  when: (ACTION == "PRE_CHECK" or ACTION == "UPGRADE") 
+  when: (ACTION == "PRE_CHECK" or ACTION == "UPGRADE")
 
 - name: Elastic and Kibana package download
   import_playbook: pre_checks/pre-download-check.yml
   when: ACTION == "UPGRADE"
 
 - name: Elasticsearch data node UPGRADE
-  import_playbook: elastic/elasticsearch-UPGRADE.yml
+  import_playbook: elastic/elasticsearch-upgrade.yml
   vars:
       elasticsearch_node: elasticsearch_data
   when: ACTION == "UPGRADE"
 
 - name: Elasticsearch master node UPGRADE
-  import_playbook: elastic/elasticsearch-UPGRADE.yml
+  import_playbook: elastic/elasticsearch-upgrade.yml
   vars:
       elasticsearch_node: elasticsearch_master
   when: ACTION == "UPGRADE"
 
 - name: Kibana UPGRADE
-  import_playbook: kibana/kibana-UPGRADE.yml
+  import_playbook: kibana/kibana-upgrade.yml
   when: ACTION == "UPGRADE"

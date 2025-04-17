@@ -42,18 +42,23 @@ export const schedulePrecheckRun = async (): Promise<void> => {
 				logger.error(`Precheck with ID ${precheckId} not found.`);
 				continue;
 			}
-			await ansibleRunnerService.runPlaybook({
-				playbookPath: precheck.playbookPath,
-				inventoryPath: inventoryPath,
-				variables: {
-					elk_version: targetVersion,
-					es_username: elastic.username!!,
-					es_password: elastic.password!!,
-					cluster_type: "ELASTIC",
-					playbook_run_id: playbookRunId,
-					playbook_run_type: "PRECHECK",
-				},
-			});
+			await ansibleRunnerService
+				.runPlaybook({
+					playbookPath: precheck.playbookPath,
+					inventoryPath: inventoryPath,
+					variables: {
+						elk_version: targetVersion,
+						es_username: elastic.username!!,
+						es_password: elastic.password!!,
+						cluster_type: "ELASTIC",
+						playbook_run_id: playbookRunId,
+						playbook_run_type: "PRECHECK",
+					},
+				})
+				.then(() => {})
+				.catch(async () => {
+					//TODO handle completion here as well
+				});
 		} catch (error: any) {
 			logger.error(`Error processing job ${JSON.stringify(job)}: ${error.message}`);
 		}

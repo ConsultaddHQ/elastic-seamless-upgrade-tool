@@ -1,18 +1,16 @@
 import { Box, Typography } from "@mui/material"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { ExportCurve, Folder, Refresh } from "iconsax-react"
-import React, { useEffect, useMemo, useRef, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
+import { toast } from "sonner"
+import axiosJSON from "~/apis/http"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"
+import StringManager from "~/constants/StringManager"
+import { useLocalStore } from "~/store/common"
+import { useSocketStore } from "~/store/socket"
+import Loading from "./loading/Loading"
 import LogAccordion from "./widgets/LogAccordion"
 import NodeListItem from "./widgets/NodeListItem"
-import axiosJSON from "~/apis/http"
-import { useLocalStore } from "~/store/common"
-import { toast } from "sonner"
-import StringManager from "~/constants/StringManager"
-import { useMutation, useQuery } from "@tanstack/react-query"
-import { Skeleton } from "@heroui/react"
-import { useSocketStore } from "~/store/socket"
-import { io } from "socket.io-client"
-import Loading from "./loading/Loading"
 
 type TNodeData = {
 	nodeId: string
@@ -36,16 +34,45 @@ function Precheck() {
 	const [nodeSelected, setNodeSelected] = useState<TNodeData | null>(null)
 	const { socket, isConnected } = useSocketStore()
 	const [isExportPending, setIsExportPending] = useState(false)
+	const debounceRef = useRef(null)
+
+	function useDebounce<T>(value: T, delay: number): T {
+		const [debouncedValue, setDebouncedValue] = useState(value)
+
+		useEffect(() => {
+			const handler = setTimeout(() => {
+				setDebouncedValue(value)
+			}, delay)
+
+			// Cleanup timeout if value or delay changes
+			return () => {
+				clearTimeout(handler)
+			}
+		}, [value, delay])
+
+		return debouncedValue
+	}
+
+	const _debounceRefetch = () => {
+		if (debounceRef.current) {
+			clearTimeout(debounceRef.current)
+		}
+
+		// @ts-ignore
+		debounceRef.current = setTimeout(() => {
+			refetch()
+		}, 1000)
+	}
 
 	useEffect(() => {
 		if (!socket) return
-
-		socket.on("UPGRADE_STATUS_CHANGE", (message) => {
+		const listner = (message:string) => {
 			console.log(message)
-			refetch()
-		})
+			_debounceRefetch()
+		} 
+		socket.on("message", listner)
 		return () => {
-			socket.off("UPGRADE_STATUS_CHANGE")
+			socket.off("message", listner)
 		}
 	}, [socket])
 

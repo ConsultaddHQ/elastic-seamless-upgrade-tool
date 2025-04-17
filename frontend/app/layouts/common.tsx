@@ -28,51 +28,55 @@ function Common() {
 	useEffect(() => {
 		if (!socket) return
 
-		socket.on("NOTIFICATION", (message) => {
-			addToast({
-				title: message.title,
-				description: message.message,
-				classNames: {
-					base: cn(
-						[
-							"flex flex-col gap-[6px] items-start bg-[linear-gradient(88deg,_rgba(61,59,68,0.2)_1.02%,_rgba(71,67,81,0.2)_98.21%)] p-3 border border-solid",
-						],
-						{
-							"border-[#384F45]": message.notificationType === "success",
-							"border-[#623834]": message.notificationType === "error",
-							"border-[#4F422A]": message.notificationType === "warning",
-						}
-					),
-					content: "items-start",
-					closeButton: "size-6 opacity-100 absolute right-2 top-5 -translate-y-1/2",
-				},
-				closeIcon: <FiX size="24px" />,
-				icon:
-					message.notificationType === "success" ? (
-						<TickCircle variant="Bold" color="#4CDB9D" size="20px" />
-					) : message.notificationType === "error" ? (
-						<Warning2 variant="Bold" color="#E75547" size="20px" />
-					) : (
-						<Refresh2 variant="Bold" color="#F4B82C" size="20px" />
-					),
-				endContent: message?.link ? (
-					<Typography
-						component={Link}
-						to={message.link}
-						className="pl-10 flex items-center"
-						color="#A9AAB6"
-						lineHeight="16px"
-						fontSize="12px"
-						fontWeight="400"
-					>
-						Go to node <FiArrowUpRight size="16px" />
-					</Typography>
-				) : null,
-			})
-		})
+		const listner = (rawMessage: string) => {
+			const message = JSON.parse(rawMessage)
+			if(message.type ==='NOTIFICATION'){
+				addToast({
+					title: message.title,
+					description: message.message,
+					classNames: {
+						base: cn(
+							[
+								"flex flex-col gap-[6px] items-start bg-[linear-gradient(88deg,_rgba(61,59,68,0.2)_1.02%,_rgba(71,67,81,0.2)_98.21%)] p-3 border border-solid",
+							],
+							{
+								"border-[#384F45]": message.notificationType === "success",
+								"border-[#623834]": message.notificationType === "error",
+								"border-[#4F422A]": message.notificationType === "warning",
+							}
+						),
+						content: "items-start",
+						closeButton: "size-6 opacity-100 absolute right-2 top-5 -translate-y-1/2",
+					},
+					closeIcon: <FiX size="24px" />,
+					icon:
+						message.notificationType === "success" ? (
+							<TickCircle variant="Bold" color="#4CDB9D" size="20px" />
+						) : message.notificationType === "error" ? (
+							<Warning2 variant="Bold" color="#E75547" size="20px" />
+						) : (
+							<Refresh2 variant="Bold" color="#F4B82C" size="20px" />
+						),
+					endContent: message?.link ? (
+						<Typography
+							component={Link}
+							to={message.link}
+							className="pl-10 flex items-center"
+							color="#A9AAB6"
+							lineHeight="16px"
+							fontSize="12px"
+							fontWeight="400"
+						>
+							Go to node <FiArrowUpRight size="16px" />
+						</Typography>
+					) : null,
+				})
+		}
+		}
+		socket.on("message", listner )
 
 		return () => {
-			socket.off("NOTIFICATION")
+			socket.off("message", listner)
 		}
 	}, [socket])
 

@@ -80,7 +80,7 @@ function LogAccordion({
 	onChange,
 }: {
 	title: string
-	status?: "PENDING" | "COMPLETED" | "FAILED"
+	status?: "PENDING" | "COMPLETED" | "FAILED" | "RUNNING"
 	logs?: string[]
 	duration: string
 	expanded: boolean
@@ -97,7 +97,7 @@ function LogAccordion({
 						fontWeight="500"
 						lineHeight="20px"
 					>
-						{status === "PENDING" ? (
+						{status === "PENDING" || status === "RUNNING" ? (
 							<Spinner color="default" variant="simple" classNames={{ wrapper: "size-4 text-inherit" }} />
 						) : status === "COMPLETED" ? (
 							<TickCircle size="20px" color="currentColor" variant="Bold" />
