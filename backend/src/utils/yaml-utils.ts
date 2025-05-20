@@ -1,7 +1,7 @@
 import fs from "fs-extra";
 import yaml from "yaml";
 
-export const loadYaml = (file: string) => {
+export const loadYaml = <T>(file: string): T => {
 	try {
 		const content = fs.readFileSync(file, "utf8");
 		return yaml.parse(content);

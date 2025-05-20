@@ -124,7 +124,6 @@ export const addOrUpdateClusterDetail = async (req: Request, res: Response) => {
 export const getUpgradeDetails = async (req: Request, res: Response) => {
 	try {
 		const clusterId = req.params.clusterId;
-		console.timeLog();
 		const client = await ElasticClient.buildClient(clusterId);
 		const kibanaClient = await KibanaClient.buildClient(clusterId);
 		const clusterInfo = await getClusterInfoById(clusterId);
