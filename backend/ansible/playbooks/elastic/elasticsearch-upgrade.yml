@@ -97,10 +97,17 @@
                   state: stopped
                   force: yes
 
-            - name: Update elasticsearch
+            - name: Upgrade elasticsearch on Debian
               apt:
-                  name: elasticsearch={{ elk_version }}
-                  state: present
+                name: "elasticsearch={{ elk_version }}"
+                state: present
+              when: ansible_os_family == "Debian"
+
+            - name: Upgrade elasticsearch on RedHat
+              yum:
+                name: "elasticsearch-{{ elk_version }}"
+                state: present
+              when: ansible_os_family == "RedHat"
 
             - name: Wait for all shards to be reallocated
               uri:
@@ -170,4 +177,4 @@
               until: "'green' in response.content"
               retries: 500
               delay: 15
-              when: version_found.json.version.number is version_compare(elk_version, '<')
+        when: version_found.json.version.number is version_compare(elk_version, '<')

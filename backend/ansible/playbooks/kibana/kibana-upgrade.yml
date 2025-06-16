@@ -10,10 +10,17 @@
         when: elk_version is undefined or not elk_version is match("\d+\.\d+\.\d+")
 
       - block:
-            - name: Update kibana
+            - name: Upgrade kibana
               apt:
                   name: kibana={{ elk_version }}
                   state: present
+              when: ansible_os_family == "Debian"
+
+            - name: Upgrade Kibana (RedHat)
+              yum:
+                name: "kibana-{{ elk_version }}"
+                state: present
+              when: ansible_os_family == "RedHat"
 
             - name: Restart kibana
               systemd:

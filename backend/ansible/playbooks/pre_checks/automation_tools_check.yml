@@ -1,0 +1,47 @@
+- name: Check for common automation tools
+  hosts: all
+  become: true
+  gather_facts: no
+
+  tasks:
+    - name: Check if Chef is installed
+      package:
+        name: chef-client
+        state: present
+      register: chef_check
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Check if Puppet is installed
+      package:
+        name: puppet
+        state: present
+      register: puppet_check
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Check if Salt is installed
+      package:
+        name: salt-minion
+        state: present
+      register: salt_check
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Check if Ansible is installed
+      package:
+        name: ansible
+        state: present
+      register: ansible_check
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Print detected automation tools
+      debug:
+        msg: |
+          Detected tools:
+          {% if chef_check.rc == 0 %} - Chef (chef-client){% endif %}
+          {% if puppet_check.rc == 0 %} - Puppet{% endif %}
+          {% if salt_check.rc == 0 %} - SaltStack (salt-minion){% endif %}
+          {% if ansible_check.rc == 0 %} - Ansible{% endif %}
+          {% if chef_check.rc != 0 and puppet_check.rc != 0 and salt_check.rc != 0 and ansible_check.rc != 0 %}None detected.{% endif %}

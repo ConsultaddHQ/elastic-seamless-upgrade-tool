@@ -1,0 +1,20 @@
+---
+- name: Detect OS Family and distribution
+  hosts: all
+  gather_facts: yes
+  become: true
+
+  tasks:
+    - name: Debug OS Family and Distribution
+      debug:
+        msg: "OS Family: {{ ansible_os_family }}, Distribution: {{ ansible_distribution }}"
+
+    - name: Fail if OS is not supported
+      fail:
+        msg: "Unsupported OS: {{ ansible_distribution }}. Supported: Ubuntu, Debian, CentOS, RHEL, Amazon Linux"
+      when: ansible_distribution not in ["Ubuntu", "Debian", "CentOS", "RedHat", "Amazon"]
+
+    - name: Fail if OS is not supported
+      fail:
+        msg: "Unsupported OS: {{ ansible_distribution }}. Supported: Ubuntu, Debian, CentOS, RHEL, Amazon Linux"
+      when: ansible_os_family not in ["Debian", "RedHat"]

@@ -9,7 +9,7 @@ CPU_LIMIT: 80
 Memory_LIMIT: 80
 
 #Elastic Variable Vars
-elasticsearch_uri: https://44.220.150.255:9200
+elasticsearch_uri: https://localhost:9200
 es_host_protocol: https
 es_username: "elastic"
 es_password: "8PKLmtEgyXWHN*K2VQed"

@@ -4,33 +4,79 @@
   gather_facts: no
 
   tasks:
-  - name: Validate elasticsearch Version
-    fail: msg="Invalid ELK Version"
-    when: elk_version is undefined or not elk_version is match("\d+\.\d+\.\d+")
+  - block:
+      - name: Validate elasticsearch Version
+        fail: msg="Invalid ELK Version"
+        when: elk_version is undefined or not elk_version is match("\d+\.\d+\.\d+")
 
-  - name: Get elasticsearch current version
-    command: dpkg-query -W -f='${Version}' elasticsearch
-    changed_when: False
-    register: version_found
+      - name: Get elasticsearch current version (Debian)
+        command: dpkg-query -W -f='${Version}' elasticsearch
+        changed_when: False
+        register: version_found
 
-  - name: Pre-download elasticsearch install package
-    command: apt-get install --download-only elasticsearch
-    when: version_found.stdout is version_compare(elk_version, '<')
+      - name: Pre-download elasticsearch install package
+        command: apt-get install --download-only elasticsearch="{{elk_version}}"
+        when: version_found.stdout is version_compare(elk_version, '<')
+    when: ansible_os_family == "Debian"
+
+  - block:
+      - name: Validate elasticsearch Version
+        fail: msg="Invalid ELK Version"
+        when: elk_version is undefined or not elk_version is match("\d+\.\d+\.\d+")
+      
+      - name: Ensure yum-plugin-downloadonly is installed (RHEL 7)
+        yum:
+          name: yum-plugin-downloadonly
+          state: present
+        when: ansible_distribution_major_version | int < 8
+
+      - name: Get elasticsearch current version (RedHat)
+        shell: rpm -q --queryformat '%{VERSION}' elasticsearch
+        changed_when: false
+        register: version_found
+
+      - name: Pre-download elasticsearch install package 
+        command: yum install --downloadonly --downloaddir=/tmp elasticsearch="{{elk_version}}"
+        when: version_found.stdout is version_compare(elk_version, '<')
+    when: ansible_os_family == "RedHat"
 
 - hosts: kibana
   gather_facts: no
   become: true
 
   tasks:
-  - name: Validate kibana Version
-    fail: msg="Invalid ELK Version"
-    when: elk_version is undefined or not elk_version is match("\d+\.\d+\.\d+")
+  - block:
+    - name: Validate kibana Version
+      fail: msg="Invalid ELK Version"
+      when: elk_version is undefined or not elk_version is match("\d+\.\d+\.\d+")
 
-  - name: Get kibana current version
-    command: dpkg-query -W -f='${Version}' kibana
-    changed_when: False
-    register: version_found
+    - name: Get kibana current version (Debian)
+      command: dpkg-query -W -f='${Version}' kibana
+      changed_when: False
+      register: version_found
 
-  - name: Pre-download kibana install package
-    command: apt-get install --download-only kibana
-    when: version_found.stdout is version_compare(elk_version, '<')
+    - name: Pre-download kibana install package
+      command: apt-get install --download-only kibana="{{elk_version}}"
+      when: version_found.stdout is version_compare(elk_version, '<')
+    when: ansible_os_family == "Debian"
+  
+  - block:
+      - name: Validate elasticsearch Version
+        fail: msg="Invalid ELK Version"
+        when: elk_version is undefined or not elk_version is match("\d+\.\d+\.\d+")
+
+      - name: Ensure yum-plugin-downloadonly is installed (RHEL 7)
+        yum:
+          name: yum-plugin-downloadonly
+          state: present
+        when: ansible_distribution_major_version | int < 8
+
+      - name: Get elasticsearch current version (RedHat)
+        command: rpm -q --qf "%{VERSION}" kibana
+        register: version_found
+        changed_when: false
+
+      - name: Pre-download elasticsearch install package
+        command: yum install --downloadonly --downloaddir=/tmp kibana="{{elk_version}}"
+        when: version_found.stdout is version_compare(elk_version, '<')
+    when: ansible_os_family == "RedHat"

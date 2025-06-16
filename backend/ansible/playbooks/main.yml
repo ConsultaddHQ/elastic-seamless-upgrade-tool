@@ -11,6 +11,13 @@
         set_fact:
             ACTION: "{{ SET_ACTION }}"
 
+- name: Check OS Family and Distribution
+  import_playbook: os_check.yml
+
+- name: Pre Validation checks
+  import_playbook: pre_checks/automation_tools_check.yml
+  when: (ACTION == "PRE_CHECK" or ACTION == "UPGRADE")
+
 - name: Pre Validation checks
   import_playbook: pre_checks/os-validation-checks.yml
   when: (ACTION == "PRE_CHECK" or ACTION == "UPGRADE")
