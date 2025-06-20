@@ -4,13 +4,14 @@ import { Server, Socket } from "socket.io";
 import webhookRouter from "./routes/webhook.router";
 import elasticRouter from "./routes/elastic.router";
 import settingsRouter from "./routes/settings.router";
-import express, { NextFunction, Request, Response } from "express";
+import express, { Request, Response } from "express";
 import cors from "cors";
 
 import logger from "./logger/logger";
 import { connectDB } from "./databases/db";
 import { NotificationEvent, NotificationListner, notificationService } from "./services/notification.service";
-import { AppError } from "./errors";
+import { routeNotFoundMiddleware } from "./middlewares/route-not-found.middleware";
+import { errorMiddleware } from "./middlewares/error.middleware";
 
 const app = express();
 const server = http.createServer(app);
@@ -41,23 +42,9 @@ app.use("/api/elastic/clusters", elasticRouter);
 app.use("/api/settings", settingsRouter);
 app.use("/webhook", webhookRouter);
 
-app.use((req, res) => {
-	logger.info(`The requested route '${req.originalUrl}' was not found.`);
-	res.status(404).json({
-		error: "Not Found",
-		path: req.originalUrl,
-		message: `The requested route '${req.originalUrl}' was not found.`,
-	});
-});
-
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-	if (err instanceof AppError) {
-		res.status(err.statusCode).json({ error: err.message });
-	} else {
-		logger.error(err);
-		res.status(500).json({ error: "Internal Server Error" });
-	}
-});
+app.use(routeNotFoundMiddleware);
+// Centralised error handling
+app.use(errorMiddleware);
 
 const io = new Server(server, {
 	transports: ["polling", "websocket", "webtransport"],

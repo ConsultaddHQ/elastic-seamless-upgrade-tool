@@ -26,54 +26,82 @@ export const getPrecheckRunJob = (): PrecheckRunJob | undefined => {
 	return PRECHECK_RUN_JOB_QUEUE.shift();
 };
 
+const runningIPs = new Set<string>();
+
 export const schedulePrecheckRun = async (): Promise<void> => {
 	while (true) {
-		const job = getPrecheckRunJob();
-		if (!job) {
-			logger.debug("No jobs in the queue. Waiting for new jobs...");
-			await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait for 5 second before checking again
+		const availableJobs = PRECHECK_RUN_JOB_QUEUE.filter((job) => {
+			if (!runningIPs.has(job.ip)) {
+				runningIPs.add(job.ip);
+				return true;
+			}
+			return false;
+		});
+
+		if (availableJobs.length === 0) {
+			logger.debug("No available jobs to process. Waiting...");
+			await new Promise((resolve) => setTimeout(resolve, 3000)); // Wait before next check
 			continue;
 		}
 
-		try {
-			logger.info(`Processing precheck run job: ${JSON.stringify(job)}`);
-			const { precheckId, clusterId, playbookRunId, inventoryPath, ip } = job;
-			const { elastic, targetVersion } = await getClusterInfoById(clusterId);
-			const precheck = getPrecheckById(precheckId);
+		// Start one job per available IP
+		await Promise.allSettled(
+			availableJobs.map(async (job) => {
+				const { ip } = job;
 
-			if (!precheck) {
-				logger.error(`Precheck with ID ${precheckId} not found.`);
-				continue;
-			}
+				// Mark IP as running
+				runningIPs.add(ip);
+				PRECHECK_RUN_JOB_QUEUE.splice(PRECHECK_RUN_JOB_QUEUE.indexOf(job), 1); // Remove from queue
 
-			const identifier = {
-				precheckId: precheckId,
-				precheckRunId: playbookRunId,
-				ip: ip,
-			};
-			await updateNodePrecheckRuns(identifier, { startedAt: Date.now() });
-			await ansibleRunnerService
-				.runPlaybook({
-					playbookPath: precheck.playbookPath,
-					inventoryPath: inventoryPath,
-					variables: {
-						elk_version: targetVersion,
-						es_username: elastic.username!!,
-						es_password: elastic.password!!,
-						cluster_type: "ELASTIC",
-						playbook_run_id: playbookRunId,
-						playbook_run_type: "PRECHECK",
-					},
-				})
-				.then(() => {
-					updateRunStatus(identifier, PrecheckStatus.COMPLETED, []);
-				})
-				.catch(async () => {
-					updateRunStatus(identifier, PrecheckStatus.FAILED, []);
-				});
-		} catch (error: any) {
-			logger.error(`Error processing job ${JSON.stringify(job)}: ${error.message}`);
-		}
+				try {
+					logger.info(`Processing precheck run job for IP ${ip}`);
+					const { precheckId, clusterId, playbookRunId, inventoryPath } = job;
+					const { elastic, targetVersion } = await getClusterInfoById(clusterId);
+					const precheck = getPrecheckById(precheckId);
+
+					if (!precheck) {
+						logger.error(`Precheck with ID ${precheckId} not found.`);
+						return;
+					}
+
+					const identifier = {
+						precheckId,
+						precheckRunId: playbookRunId,
+						ip,
+					};
+
+					await updateNodePrecheckRuns(identifier, { startedAt: Date.now() });
+
+					await ansibleRunnerService.runPlaybook({
+						playbookPath: precheck.playbookPath,
+						inventoryPath,
+						variables: {
+							elk_version: targetVersion,
+							es_username: elastic.username!!,
+							es_password: elastic.password!!,
+							cluster_type: "ELASTIC",
+							playbook_run_id: playbookRunId,
+							playbook_run_type: "PRECHECK",
+						},
+					});
+
+					await updateRunStatus(identifier, PrecheckStatus.COMPLETED, []);
+				} catch (error: any) {
+					logger.error(`Error processing job for IP ${ip}: ${error.message}`);
+					await updateRunStatus(
+						{
+							precheckId: job.precheckId,
+							precheckRunId: job.playbookRunId,
+							ip: job.ip,
+						},
+						PrecheckStatus.FAILED,
+						[]
+					);
+				} finally {
+					runningIPs.delete(ip); // Allow future jobs for this IP
+				}
+			})
+		);
 	}
 };
 
