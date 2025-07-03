@@ -5,7 +5,6 @@ import {
 	getElasticDeprecationInfo,
 	getNodesInfo,
 	healthCheck,
-	getLogsStream,
 	getKibanaDeprecationsInfo,
 	getValidSnapshots,
 	uploadCertificates,
@@ -18,13 +17,13 @@ import {
 	getKibanaNodesInfo,
 	handleKibanaUpgrades,
 	handleUpgradeAll,
-} from "../controllers/elastic-controller";
+} from "../controllers/elastic.controller";
 import {
 	runAllPrecheksHandler,
 	runPrechekByNodeIdHandler,
 	getPrecheckRunByClusterIdHandler,
 	getPrecheckReportByClusterId,
-} from "../controllers/prechecks-controller";
+} from "../controllers/prechecks.controller";
 
 const router = Router();
 
@@ -55,8 +54,6 @@ router.post("/:clusterId/upgrade-all", handleUpgradeAll);
 router.post("/:clusterId/nodes/upgrade-kibana", handleKibanaUpgrades);
 
 router.get("/:clusterId/info", getClusterDetails);
-
-router.get("/:clusterId/nodes/:nodeId/logs/stream", getLogsStream);
 
 router.post("/certificates/upload", upload.array("files"), uploadCertificates);
 

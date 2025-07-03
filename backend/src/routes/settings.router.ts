@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { updateSettings, getSettings } from "../controllers/settings-controller";
+import { updateSettings, getSettings } from "../controllers/settings.controller";
 const router = Router();
 
 router.post("/", updateSettings);

@@ -13,7 +13,6 @@ import {
 	verifyElasticCredentials,
 	verifyKibanaCredentials,
 } from "../services/cluster-info.service";
-import { getLogs } from "../services/logs.service";
 import {
 	getAllElasticNodes,
 	getElasticNodeById,
@@ -265,30 +264,6 @@ export const handleUpgrades = async (req: Request, res: Response) => {
 		logger.error("Error performing upgrade:", err);
 		res.status(400).send({ err: err.message });
 	}
-};
-
-export const getLogsStream = async (req: Request, res: Response) => {
-	const { clusterId, nodeId } = req.params;
-	res.setHeader("Content-Type", "text/event-stream");
-	res.setHeader("Cache-Control", "no-cache");
-	res.setHeader("Connection", "keep-alive");
-
-	let lastTimestamp: Date | undefined = undefined;
-
-	const intervalId = setInterval(async () => {
-		const logs = await getLogs(clusterId, nodeId, lastTimestamp);
-		for (let log of logs) {
-			res.write(`${log.message}\n`);
-			lastTimestamp = log.timestamp;
-		}
-	}, 2000);
-
-	// Cleanup when the client disconnects
-	req.on("close", () => {
-		logger.debug("Client disconnected");
-		clearInterval(intervalId);
-		res.end();
-	});
 };
 
 export const getKibanaDeprecationsInfo = async (req: Request, res: Response) => {

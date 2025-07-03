@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { PRECHECK_CONFIG, getPrecheckById } from "../config/precheck-config";
+import { PRECHECK_CONFIG, getPrecheckById } from "../config/precheck.config";
 import { PrecheckStatus } from "../enums";
 import logger from "../logger/logger";
 import NodePrecheckRun, { INodePrecheckRun, INodePrecheckRunDocument } from "../models/node-precheck-runs.model";
