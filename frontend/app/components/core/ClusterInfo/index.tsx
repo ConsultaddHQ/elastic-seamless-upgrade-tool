@@ -92,7 +92,7 @@ function ClusterInfo() {
 
 	const handleVersionSelect = async (ver: string) => {
 		await axiosJSON
-			.post(`/api/elastic/clusters/${clusterId}/add-version`, { version: ver })
+			.post(`/api/elastic/clusters/${clusterId}/upgrade-job`, { version: ver })
 			.then((res) => {
 				setUpgradeAssistAllowed(res.data?.targetVersion ? true : false)
 				navigate("/upgrade-assistant")

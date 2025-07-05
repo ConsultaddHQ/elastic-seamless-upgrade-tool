@@ -19,4 +19,4 @@ const SettingsSchema: Schema<ISettingsDocument> = new Schema<ISettingsDocument>(
 	{ timestamps: true }
 );
 
-export const SettingsModel = mongoose.model<ISettingsDocument>("Settings", SettingsSchema);
+export const SettingsModel = mongoose.model<ISettingsDocument>("Settings", SettingsSchema, "settings");

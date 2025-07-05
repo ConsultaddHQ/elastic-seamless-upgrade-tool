@@ -1,23 +1,17 @@
 import { Request, Response } from "express";
 import logger from "../logger/logger";
-import { updateNode } from "../services/elastic-node.service.";
-import { updateKibanaNode } from "../services/kibana-node.service";
 import {
 	AnsibleRequestType,
 	AnsibleTaskStatus,
 	ClusterType,
 	mapAnsibleToPrecheckStatus,
 	mapAnsibleToUpgradeStatus,
-	NodeStatus,
 } from "../enums";
 import { updateRunStatus } from "../services/precheck-runs.service";
 import { NotificationEventType, notificationService } from "../services/notification.service";
+import { clusterNodeService } from "../services/cluster-node.service";
+import { ClusterNodeType } from "../models/cluster-node.model";
 
-interface HostInfoUpgrade {
-	ip: string;
-	name: string;
-	progress: number;
-}
 interface HostInfoPrecheck {
 	ip: string;
 	name: string;
@@ -60,26 +54,23 @@ export const handleAnsibleWebhook = async (req: Request, res: Response) => {
 			`Received Ansible webhook [playbookRunId: ${playbookRunId}] of [type: ${type}]  [Hook Body: ${JSON.stringify(req.body, null, 2)}]`
 		);
 		if (type === AnsibleRequestType.UPGRADE) {
-			const { clusterType, host } = body;
+			const { host, clusterType } = body;
 			// Handle upgrade request
 			const nodeStatus = mapAnsibleToUpgradeStatus(status);
-			if (clusterType === ClusterType.ELASTIC) {
-				updateNode(
-					{ ip: host.ip },
-					{
-						progress: host.progress,
-						status: nodeStatus || NodeStatus.UPGRADING,
-					}
-				);
-			} else {
-				updateKibanaNode(
-					{ ip: host.ip },
-					{
-						progress: host.progress,
-						status: nodeStatus || NodeStatus.UPGRADING,
-					}
-				);
-			}
+			await clusterNodeService.updateNodesPartially(
+				{
+					ip: host.ip,
+					type:
+						clusterType.toLowerCase() === ClusterNodeType.ELASTIC
+							? ClusterNodeType.ELASTIC
+							: ClusterNodeType.KIBANA,
+				},
+				{
+					progress: host.progress,
+					status: nodeStatus,
+				}
+			);
+
 			notificationService.sendNotification({
 				type: NotificationEventType.UPGRADE_PROGRESS_CHANGE,
 			});

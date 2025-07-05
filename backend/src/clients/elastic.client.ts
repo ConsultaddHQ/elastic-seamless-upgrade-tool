@@ -141,6 +141,16 @@ export class ElasticClient {
 		});
 	}
 
+	async getElasticsearchVersion() {
+		try {
+			const body = await this.getClient().info();
+			return body.version.number;
+		} catch (error) {
+			logger.error("Error fetching Elasticsearch version:", error);
+			throw error;
+		}
+	}
+
 	static async buildClient(clusterId: string) {
 		const cluterInfo = await getClusterInfoById(clusterId);
 		const body: ElasticClusterBaseRequest = {

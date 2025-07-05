@@ -1,6 +1,5 @@
 import fs from "fs";
-import { IElasticNode } from "../models/elastic-node.model";
-import { IKibanaNode } from "../models/kibana-node.model";
+import { IElasticNode, IKibanaNode } from "../models/cluster-node.model";
 const ENABLE_PASSWORD_AUTH_FOR_SSH = process.env.ENABLE_PASSWORD_AUTH_FOR_SSH === "true";
 
 class AnsibleInventoryService {

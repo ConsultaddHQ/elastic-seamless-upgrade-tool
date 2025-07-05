@@ -2,17 +2,18 @@ import { randomUUID } from "crypto";
 import { PRECHECK_CONFIG, getPrecheckById } from "../config/precheck.config";
 import { PrecheckStatus } from "../enums";
 import logger from "../logger/logger";
-import NodePrecheckRun, { INodePrecheckRun, INodePrecheckRunDocument } from "../models/node-precheck-runs.model";
+import { NodePrecheckRun, INodePrecheckRun, INodePrecheckRunDocument } from "../models/node-precheck-runs.model";
 import { ansibleInventoryService } from "./ansible-inventory.service";
 import { ansibleRunnerService } from "./ansible-runner.service";
 import { getClusterInfoById } from "./cluster-info.service";
-import { IElasticNode } from "../models/elastic-node.model";
 import { NotFoundError } from "../errors";
 import { UpdateQuery } from "mongoose";
+import { clusterUpgradeJobService } from "./cluster-upgrade-job.service";
+import { IElasticNode } from "../models/cluster-node.model";
 
 export interface PrecheckRunJob {
 	precheckId: string;
-	clusterId: string;
+	clusterUpgradeJobId: string;
 	playbookRunId: string;
 	inventoryPath: string;
 	ip: string;
@@ -55,8 +56,10 @@ export const schedulePrecheckRun = async (): Promise<void> => {
 
 				try {
 					logger.info(`Processing precheck run job for IP ${ip}`);
-					const { precheckId, clusterId, playbookRunId, inventoryPath } = job;
-					const { elastic, targetVersion } = await getClusterInfoById(clusterId);
+					const { precheckId, clusterUpgradeJobId, playbookRunId, inventoryPath } = job;
+					const clusterUpgradeJob =
+						await clusterUpgradeJobService.getClusterUpgradeJobByJobId(clusterUpgradeJobId);
+					const { elastic } = await getClusterInfoById(clusterUpgradeJob.clusterId);
 					const precheck = getPrecheckById(precheckId);
 
 					if (!precheck) {
@@ -76,13 +79,14 @@ export const schedulePrecheckRun = async (): Promise<void> => {
 						playbookPath: precheck.playbookPath,
 						inventoryPath,
 						variables: {
-							elk_version: targetVersion,
+							elk_version: clusterUpgradeJob.targetVersion,
 							elasticsearch_uri: elastic.url,
 							es_username: elastic.username!!,
 							es_password: elastic.password!!,
 							cluster_type: "ELASTIC",
 							playbook_run_id: playbookRunId,
 							playbook_run_type: "PRECHECK",
+							current_version: clusterUpgradeJob.currentVersion,
 						},
 					});
 
@@ -115,8 +119,12 @@ export const getRunByName = async (precheck: string, nodeName: string): Promise<
 };
 
 export const getLatestRunsByPrecheck = async (clusterId: string): Promise<INodePrecheckRunDocument[]> => {
+	const clusterUpgradeJob = await clusterUpgradeJobService.getLatestClusterUpgradeJobByClusterId(clusterId);
+	if (!clusterUpgradeJob) {
+		throw new NotFoundError(`No cluster upgrade job found for clusterId: ${clusterId}`);
+	}
 	return await NodePrecheckRun.aggregate([
-		{ $match: { clusterId } },
+		{ $match: { clusterUpgradeJobId: clusterUpgradeJob?.jobId } },
 		{
 			$sort: { startedAt: -1 },
 		},
@@ -176,8 +184,9 @@ export const runPrecheck = async (nodes: IElasticNode[], clusterId: string) => {
 	const runId = randomUUID();
 	const clusterInfo = await getClusterInfoById(clusterId);
 	if (!clusterInfo.pathToKey) {
-		throw new Error("Cluster info not found or path to key is missing");
+		throw new NotFoundError("Cluster info not found or path to key is missing");
 	}
+	const clusterUpgradeJob = await clusterUpgradeJobService.getActiveClusterUpgradeJobByClusterId(clusterId);
 
 	const startedAt = new Date();
 	const precheckRuns: INodePrecheckRun[] = nodes
@@ -189,7 +198,7 @@ export const runPrecheck = async (nodes: IElasticNode[], clusterId: string) => {
 			startedAt: startedAt,
 			status: PrecheckStatus.PENDING,
 			logs: [],
-			clusterId: clusterId,
+			clusterUpgradeJobId: clusterUpgradeJob.jobId,
 		}))
 		.map((precheck) => {
 			return PRECHECK_CONFIG.map(({ id: precheckId }) => ({
@@ -211,7 +220,7 @@ export const runPrecheck = async (nodes: IElasticNode[], clusterId: string) => {
 			});
 			const precheckRunJob: PrecheckRunJob = {
 				precheckId: precheckRun.precheckId,
-				clusterId: clusterId,
+				clusterUpgradeJobId: clusterUpgradeJob.jobId,
 				playbookRunId: precheckRun.precheckRunId,
 				inventoryPath: `ini/${inventoryFileName}`,
 				ip: precheckRun.ip,

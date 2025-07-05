@@ -1,5 +1,5 @@
 import { ElasticClient } from "../clients/elastic.client";
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import fs from "fs";
 import logger from "../logger/logger";
 import { IClusterInfo, IElasticInfo, IKibanaInfo } from "../models/cluster-info.model";
@@ -13,22 +13,18 @@ import {
 	verifyElasticCredentials,
 	verifyKibanaCredentials,
 } from "../services/cluster-info.service";
-import {
-	getAllElasticNodes,
-	getElasticNodeById,
-	syncNodeData,
-	triggerNodeUpgrade,
-	triggerUpgradeAll,
-	updateNode,
-} from "../services/elastic-node.service.";
 import { KibanaClient } from "../clients/kibana.client";
 import path from "path";
 import { normalizeNodeUrl } from "../utils/utlity.functions";
-import { createKibanaNodes, getKibanaNodes, triggerKibanaNodeUpgrade } from "../services/kibana-node.service";
 import { NodeStatus, PrecheckStatus } from "../enums";
 import { clusterMonitorService } from "../services/cluster-monitor.service";
 import { getLatestRunsByPrecheck, getMergedPrecheckStatus, runPrecheck } from "../services/precheck-runs.service";
 import { createSSHPrivateKeyFile } from "../utils/ssh-utils";
+import { clusterUpgradeJobService } from "../services/cluster-upgrade-job.service";
+import { clusterUpgradeService } from "../services/cluster-upgrade.service";
+import { clusterNodeService, createKibanaNodes, getAllElasticNodes } from "../services/cluster-node.service";
+import { ClusterNodeType } from "../models/cluster-node.model";
+import { syncElasticNodesData } from "../services/sync.service";
 
 export const healthCheck = async (req: Request, res: Response) => {
 	try {
@@ -76,7 +72,6 @@ export const addOrUpdateClusterDetail = async (req: Request, res: Response) => {
 			},
 			clusterId: clusterId,
 			certificateIds: req.body.certificateIds,
-			targetVersion: req.body.targetVersion,
 			infrastructureType: req.body.infrastructureType,
 			pathToKey: keyPath,
 			key: sshKey,
@@ -102,7 +97,7 @@ export const addOrUpdateClusterDetail = async (req: Request, res: Response) => {
 			message: result.isNew ? "Cluster info saved" : "Cluster info updated",
 			clusterId: result.clusterId,
 		}).status(201);
-		await syncNodeData(clusterId);
+		await syncElasticNodesData(clusterId);
 	} catch (err: any) {
 		logger.info(err);
 		res.status(400).send({ err: err.message });
@@ -115,6 +110,7 @@ export const getUpgradeDetails = async (req: Request, res: Response) => {
 		const client = await ElasticClient.buildClient(clusterId);
 		const kibanaClient = await KibanaClient.buildClient(clusterId);
 		const clusterInfo = await getClusterInfoById(clusterId);
+		const clusterUpgradeJob = await clusterUpgradeJobService.getLatestClusterUpgradeJobByClusterId(clusterId);
 
 		const kibanaUrl = clusterInfo.kibana?.url;
 
@@ -135,7 +131,7 @@ export const getUpgradeDetails = async (req: Request, res: Response) => {
 			logger.info(`Prechecks initiated successfully for cluster '${clusterId}' with Playbook Run ID '${runId}'.`);
 		}
 
-		const isKibanaUpgraded = kibanaVersion === clusterInfo.targetVersion ? true : false;
+		const isKibanaUpgraded = kibanaVersion === clusterUpgradeJob?.targetVersion ? true : false;
 		//verifying upgradability
 
 		const isESUpgraded = elasticNodes.filter((item) => item.status !== NodeStatus.UPGRADED).length === 0;
@@ -169,11 +165,6 @@ export const getElasticDeprecationInfo = async (req: Request, res: Response) => 
 	try {
 		const clusterId = req.params.clusterId;
 		const deprecations = (await getElasticsearchDeprecation(clusterId)).deprecations;
-
-		// const upgradeInfo = await client
-		//   .getClient()
-		//   .migration.getFeatureUpgradeStatus();
-		// logger.info('upgrade Info', upgradeInfo);    //need to discuss what if feature upgrades are present
 		res.status(200).send(deprecations);
 	} catch (err: any) {
 		logger.info(err);
@@ -252,7 +243,7 @@ export const handleUpgrades = async (req: Request, res: Response) => {
 			return;
 		}
 		nodes.forEach((nodeId: string) => {
-			const triggered = triggerNodeUpgrade(nodeId, clusterId);
+			const triggered = clusterUpgradeService.triggerElasticNodeUpgrade(nodeId, clusterId);
 			if (!triggered) {
 				res.status(400).send({ err: "Upgrade failed node not available" });
 			} else {
@@ -303,7 +294,7 @@ export const uploadCertificates = async (req: Request, res: Response) => {
 export const getNodeInfo = async (req: Request, res: Response) => {
 	const { nodeId } = req.params;
 	try {
-		const data = await getElasticNodeById(nodeId);
+		const data = await clusterNodeService.getElasticNodeById(nodeId);
 		res.send(data);
 	} catch (error: any) {
 		logger.error("Error fetching node details:", error);
@@ -311,19 +302,23 @@ export const getNodeInfo = async (req: Request, res: Response) => {
 	}
 };
 
-export const addOrUpdateTargetVersion = async (req: Request, res: Response) => {
+export const createClusterUpgradeJob = async (req: Request, res: Response, next: NextFunction) => {
 	const { clusterId } = req.params;
 	const { version } = req.body;
 	try {
-		const clusterInfo = await getClusterInfoById(clusterId);
-		await createOrUpdateClusterInfo({ ...clusterInfo, targetVersion: version });
-		await updateNode({ clusterId: clusterId }, { status: NodeStatus.AVAILABLE });
+		const elasticClient = await ElasticClient.buildClient(clusterId);
+		const currentVersion = await elasticClient.getElasticsearchVersion();
+		await clusterUpgradeJobService.createClusterUpgradeJob({
+			clusterId: clusterId,
+			currentVersion: currentVersion,
+			targetVersion: version,
+		});
+		await clusterNodeService.updateNodesPartially({ clusterId: clusterId }, { status: NodeStatus.AVAILABLE });
 		res.status(201).send({
 			message: `Target version set succesfully`,
 		});
 	} catch (error: any) {
-		logger.error("Unable to add target version: ", error);
-		res.status(500).send({ err: error.message });
+		next(error);
 	}
 };
 
@@ -380,7 +375,6 @@ export const verfiyCluster = async (req: Request, res: Response) => {
 								: null,
 							clusterId: clusters[0].clusterId ?? null,
 							certificateIds: clusters[0].certificateIds ?? null,
-							targetVersion: clusters[0].targetVersion ?? null,
 							infrastructureType: clusters[0].infrastructureType ?? null,
 							pathToKey: clusters[0].key ?? null,
 							sshUser: clusters[0].sshUser,
@@ -404,7 +398,7 @@ export const verfiyCluster = async (req: Request, res: Response) => {
 export const getKibanaNodesInfo = async (req: Request, res: Response) => {
 	try {
 		const clusterId = req.params.clusterId;
-		const kibanaNodes = await getKibanaNodes(clusterId);
+		const kibanaNodes = await clusterNodeService.getNodes(clusterId, ClusterNodeType.KIBANA);
 		res.send(kibanaNodes);
 	} catch (error: any) {
 		logger.error("Error fetching kibana node details:", error);
@@ -417,7 +411,7 @@ export const handleKibanaUpgrades = async (req: Request, res: Response) => {
 	const { nodes } = req.body;
 	try {
 		nodes.forEach((nodeId: string) => {
-			triggerKibanaNodeUpgrade(nodeId, clusterId);
+			clusterUpgradeService.triggerKibanaNodeUpgrade(nodeId, clusterId);
 		});
 		res.status(200).send({ message: "Upgradation triggered" });
 	} catch (err: any) {
@@ -452,7 +446,7 @@ export const handleUpgradeAll = async (req: Request, res: Response) => {
 		res.status(400).send({ err: "Cannot trigger upgrade all as there is failed node" });
 	}
 	try {
-		await triggerUpgradeAll(nodesToBeUpgraded, clusterId);
+		await clusterUpgradeService.triggerElasticNodesUpgrade(nodesToBeUpgraded, clusterId);
 		res.status(200).send({ message: "Upgradation triggered" });
 	} catch (err: any) {
 		logger.error("Error performing upgrade:", err);

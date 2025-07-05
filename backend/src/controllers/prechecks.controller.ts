@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from "express";
-import { getAllElasticNodes, getElasticNodeById } from "../services/elastic-node.service.";
 import { getPrechecksGroupedByNode, runPrecheck } from "../services/precheck-runs.service";
-import { generatePrecheckReportMdContent } from "../services/precheck-report.service";
+import { precheckReportService } from "../services/precheck-report.service";
 import { NotFoundError } from "../errors";
+import { clusterNodeService, getAllElasticNodes } from "../services/cluster-node.service";
 
 export const runAllPrecheksHandler = async (req: Request, res: Response) => {
 	const { clusterId } = req.params;
@@ -14,7 +14,7 @@ export const runAllPrecheksHandler = async (req: Request, res: Response) => {
 export const runPrechekByNodeIdHandler = async (req: Request, res: Response, next: NextFunction) => {
 	try {
 		const { clusterId, nodeId } = req.params;
-		const node = await getElasticNodeById(nodeId);
+		const node = await clusterNodeService.getElasticNodeById(nodeId);
 		if (!node) {
 			throw new NotFoundError("Node not found");
 		}
@@ -42,7 +42,7 @@ export const getPrecheckReportByClusterId = async (
 ) => {
 	const { clusterId } = req.params;
 	try {
-		const content = await generatePrecheckReportMdContent(clusterId);
+		const content = await precheckReportService.generatePrecheckReportMdContent(clusterId);
 		res.setHeader("Content-Disposition", `attachment; filename="precheck-report.md"`);
 		res.setHeader("Content-Type", "text/markdown");
 		res.send(content);

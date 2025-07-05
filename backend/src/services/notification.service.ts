@@ -1,5 +1,6 @@
 import axios from "axios";
 import { settingService } from "./settings.service";
+import { syncClusterUpgradeJobStatus, syncKibanaNodes } from "./sync.service";
 
 export enum NotificationEventType {
 	UPGRADE_PROGRESS_CHANGE = "UPGRADE_PROGRESS_CHANGE",
@@ -29,6 +30,7 @@ export interface GeneralNotificationEvent {
 	notificationType: NotificationType;
 	message: string;
 	title: string;
+	clusterId?: string | undefined;
 }
 
 export type NotificationEvent =
@@ -72,5 +74,16 @@ notificationService.addNotificationListner(async (event) => {
 					console.error("Failed to send notification:", error.message);
 				});
 		}
+	}
+});
+
+notificationService.addNotificationListner(async (event) => {
+	if (
+		event.type === NotificationEventType.NOTIFICATION &&
+		event.notificationType === NotificationType.SUCCESS &&
+		event.clusterId
+	) {
+		await syncKibanaNodes(event.clusterId);
+		await syncClusterUpgradeJobStatus(event.clusterId);
 	}
 });

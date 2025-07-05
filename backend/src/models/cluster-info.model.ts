@@ -21,7 +21,6 @@ export interface IClusterInfo {
 	elastic: IElasticInfo;
 	kibana: IKibanaInfo;
 	certificateIds?: string[];
-	targetVersion?: string;
 	infrastructureType?: string;
 	sshUser: string;
 	pathToKey?: string;
@@ -54,7 +53,6 @@ const ClusterInfoSchema: Schema<IClusterInfoDocument> = new Schema<IClusterInfoD
 		kibana: { type: KibanaInfoSchema, required: false },
 		certificateIds: { type: Array<String>, required: false },
 		infrastructureType: { type: String, required: true },
-		targetVersion: { type: String },
 		pathToKey: { type: String },
 		key: { type: String },
 		sshUser: { type: String, required: true, default: "root" },
@@ -63,7 +61,4 @@ const ClusterInfoSchema: Schema<IClusterInfoDocument> = new Schema<IClusterInfoD
 	{ timestamps: true }
 );
 
-// Create the model
-const ClusterInfo = mongoose.model<IClusterInfoDocument>("ClusterInfo", ClusterInfoSchema);
-
-export default ClusterInfo;
+export const ClusterInfo = mongoose.model<IClusterInfoDocument>("ClusterInfo", ClusterInfoSchema, "cluster-infos");

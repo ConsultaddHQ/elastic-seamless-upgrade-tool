@@ -1,6 +1,7 @@
 import { ElasticClient } from "../clients/elastic.client";
 import { DeprecationCounts, DeprecationSetting } from "../interfaces";
-import ClusterInfo, {
+import {
+	ClusterInfo,
 	IClusterInfo,
 	IClusterInfoDocument,
 	IElasticInfo,
@@ -9,26 +10,19 @@ import ClusterInfo, {
 import { MigrationDeprecationsDeprecation } from "@elastic/elasticsearch/lib/api/types";
 import { DeprecationDetail, KibanaClient } from "../clients/kibana.client";
 import { ElasticClusterBaseRequest } from "..";
-import { getElasticSearchInfo, syncElasticSearchInfo } from "./elastic-search-info.service";
+import { getElasticSearchInfo } from "./elastic-search-info.service";
 import { getPossibleUpgrades } from "../utils/upgrade.versions";
 import { createSSHPrivateKeyFile, sshFilefileExists } from "../utils/ssh-utils";
+import { clusterUpgradeJobService } from "./cluster-upgrade-job.service";
+import { ClusterUpgradeJobStatus } from "../models/cluster-upgrade-job.model";
+import { syncElasticSearchInfo } from "./sync.service";
 
 const cache: Record<string, IClusterInfo | null> = {};
 
 export const createOrUpdateClusterInfo = async (clusterInfo: IClusterInfo): Promise<IClusterInfoDocument> => {
 	// TODO These needs to be updated when we want to support multiple clusters
 	const clusterId = "cluster-id"; //clusterInfo.clusterId
-	const {
-		elastic,
-		kibana,
-		certificateIds,
-		targetVersion,
-		infrastructureType,
-		pathToKey,
-		key,
-		kibanaConfigs,
-		sshUser,
-	} = clusterInfo;
+	const { elastic, kibana, certificateIds, infrastructureType, pathToKey, key, kibanaConfigs, sshUser } = clusterInfo;
 	const data = await ClusterInfo.findOneAndUpdate(
 		{ clusterId: clusterId },
 		{
@@ -36,7 +30,6 @@ export const createOrUpdateClusterInfo = async (clusterInfo: IClusterInfo): Prom
 			kibana: kibana,
 			certificateIds: certificateIds,
 			clusterId: clusterId,
-			targetVersion: targetVersion,
 			infrastructureType: infrastructureType,
 			pathToKey: pathToKey,
 			key: key,
@@ -56,7 +49,6 @@ export const getAllClusters = async (): Promise<IClusterInfo[]> => {
 			clusterId: cluster.clusterId,
 			elastic: cluster.elastic,
 			kibana: cluster.kibana,
-			targetVersion: cluster.targetVersion,
 			infrastructureType: cluster.infrastructureType,
 			certificateIds: cluster.certificateIds,
 			pathToKey: cluster.pathToKey,
@@ -87,7 +79,6 @@ export const getClusterInfoById = async (clusterId: string): Promise<IClusterInf
 		clusterId,
 		elastic: clusterInfo?.elastic!!,
 		kibana: clusterInfo?.kibana!!,
-		targetVersion: clusterInfo?.targetVersion,
 		infrastructureType: clusterInfo?.infrastructureType,
 		certificateIds: clusterInfo?.certificateIds,
 		pathToKey: clusterInfo?.pathToKey,
@@ -218,8 +209,7 @@ export const verifyElasticCredentials = async (elastic: IElasticInfo): Promise<b
 export const verifyKibanaCredentials = async (kibana: IKibanaInfo): Promise<boolean> => {
 	try {
 		const client = new KibanaClient(kibana);
-		const version = await client.getKibanaVersion();
-
+		await client.getKibanaVersion();
 		return true;
 	} catch (error) {
 		console.error("Kibana connection failed:", error);
@@ -231,6 +221,8 @@ export const getClusterInfo = async (clusterId: string) => {
 	await syncElasticSearchInfo(clusterId);
 	const elasticSearchInfo = await getElasticSearchInfo(clusterId);
 	const clusterInfo = await getClusterInfoById(clusterId);
+	const clusterUpgradeJob = await clusterUpgradeJobService.getLatestClusterUpgradeJobByClusterId(clusterId);
+
 	const currentVersion = elasticSearchInfo?.version;
 	const possibleUpgradeVersions = currentVersion ? getPossibleUpgrades(currentVersion) : [];
 	return {
@@ -251,8 +243,10 @@ export const getClusterInfo = async (clusterId: string) => {
 		initializingShards: elasticSearchInfo?.initializingShards ?? null,
 		relocatingShards: elasticSearchInfo?.relocatingShards ?? null,
 		infrastructureType: clusterInfo?.infrastructureType ?? null,
-		targetVersion: clusterInfo?.targetVersion ?? null,
+		targetVersion: clusterUpgradeJob ? clusterUpgradeJob.targetVersion : null,
 		possibleUpgradeVersions: possibleUpgradeVersions ?? null,
-		underUpgradation: elasticSearchInfo?.underUpgradation ?? null,
+		underUpgradation:
+			clusterUpgradeJob &&
+			[ClusterUpgradeJobStatus.IN_PROGRESS, ClusterUpgradeJobStatus.PENDING].includes(clusterUpgradeJob.status),
 	};
 };

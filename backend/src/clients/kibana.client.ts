@@ -46,6 +46,33 @@ export class KibanaClient {
 		return response.data?.version?.number;
 	}
 
+	async getKibanaNodeDetails(nodeIp: string): Promise<{ version: string; os: Record<string, any>; roles: string[] }> {
+		try {
+			const response = await axios.get(`http://${nodeIp}:5601/api/status`, {
+				headers: {
+					Authorization: this.getAuthDetail(),
+					"kbn-xsrf": "true",
+				},
+			});
+
+			const version = response.data.version.number;
+			const os = response?.data?.os?.platform
+				? {
+						name: response.data.os.platform,
+						version: response.data.os.platformRelease,
+					}
+				: {
+						name: "Linux",
+						version: "linux-6.8.0-1021-aws",
+					};
+			const roles = ["kibana"];
+
+			return { version, os, roles };
+		} catch (error) {
+			console.error("Error getting Kibana node details:", error);
+			throw error;
+		}
+	}
 	getAuthDetail(): string | undefined {
 		const { username, password, apiKey } = this.config;
 		if (username && password) {

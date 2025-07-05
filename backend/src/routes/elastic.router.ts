@@ -11,7 +11,7 @@ import {
 	getUpgradeDetails,
 	handleUpgrades,
 	getNodeInfo,
-	addOrUpdateTargetVersion,
+	createClusterUpgradeJob,
 	verifySshKey,
 	verfiyCluster,
 	getKibanaNodesInfo,
@@ -31,7 +31,7 @@ import multer from "multer";
 
 const upload = multer({ dest: "uploads/" });
 
-router.post("/:clusterId/add-version", addOrUpdateTargetVersion);
+router.post("/:clusterId/upgrade-job", createClusterUpgradeJob);
 
 router.get("/:clusterId/health", healthCheck);
 
