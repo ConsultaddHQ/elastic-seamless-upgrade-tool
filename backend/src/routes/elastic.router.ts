@@ -2,22 +2,24 @@ import { Router } from "express";
 import {
 	addOrUpdateClusterDetail,
 	getClusterDetails,
-	getElasticDeprecationInfo,
 	getNodesInfo,
 	healthCheck,
-	getKibanaDeprecationsInfo,
-	getValidSnapshots,
 	uploadCertificates,
-	getUpgradeDetails,
-	handleUpgrades,
 	getNodeInfo,
-	createClusterUpgradeJob,
 	verifySshKey,
 	verfiyCluster,
 	getKibanaNodesInfo,
+} from "../controllers/elastic.controller";
+import {
+	getElasticDeprecationInfo,
+	getKibanaDeprecationsInfo,
+	getValidSnapshots,
+	getUpgradeDetails,
+	handleUpgrades,
+	createClusterUpgradeJob,
 	handleKibanaUpgrades,
 	handleUpgradeAll,
-} from "../controllers/elastic.controller";
+} from "../controllers/cluster-upgrade.controller";
 import {
 	runAllPrecheksHandler,
 	runPrechekByNodeIdHandler,
