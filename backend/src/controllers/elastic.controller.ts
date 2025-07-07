@@ -1,5 +1,5 @@
 import { ElasticClient } from "../clients/elastic.client";
-import { NextFunction, Request, Response } from "express";
+import e, { NextFunction, Request, Response } from "express";
 import fs from "fs";
 import logger from "../logger/logger";
 import { IClusterInfo, IElasticInfo, IKibanaInfo } from "../models/cluster-info.model";
@@ -54,7 +54,17 @@ export const getClusterDetails = async (req: Request, res: Response) => {
 export const addOrUpdateClusterDetail = async (req: Request, res: Response) => {
 	try {
 		const body = req.body;
-		const clusterId = body.clusterId ? body.clusterId : randomUUID();
+		const getClusterId = async (clusterId: string | undefined) => {
+			if (clusterId) {
+				const existingCluster = await getClusterInfoById(clusterId);
+				if (existingCluster && existingCluster.elastic.url !== body.elastic.url) {
+					return randomUUID();
+				}
+				return clusterId;
+			}
+			return randomUUID();
+		};
+		const clusterId = await getClusterId(body.clusterId);
 		const elastic: IElasticInfo = body.elastic;
 		const kibana: IKibanaInfo = body.kibana;
 		const kibanaConfigs = body.kibanaConfigs;
