@@ -85,7 +85,7 @@ const columns: TUpgradeColumn = [
 
 function UpgradeKibana({ clusterType }: TUpgradeKibana) {
 	const clusterId = useLocalStore((state: any) => state.clusterId)
-	const { socket, isConnected } = useSocketStore()
+	const { socket } = useSocketStore()
 
 	useEffect(() => {
 		if (!socket) return
@@ -97,19 +97,6 @@ function UpgradeKibana({ clusterType }: TUpgradeKibana) {
 			socket.off("UPGRADE_PROGRESS_CHANGE", listner)
 		}
 	}, [socket])
-
-	const getNodeStatus = async (nodeId: string) => {
-		try {
-			const response = await axiosJSON.get(`/api/elastic/clusters/nodes/${nodeId}`)
-
-			// Assuming the API returns a status or progress field
-			const { status, progress } = response.data
-			return { status, progress }
-		} catch (error) {
-			console.error("Status check error:", error)
-			throw error
-		}
-	}
 
 	const getNodesInfo = async () => {
 		let response: any = []
@@ -144,11 +131,11 @@ function UpgradeKibana({ clusterType }: TUpgradeKibana) {
 			.post(`/api/elastic/clusters/${clusterId}/nodes/upgrade-kibana`, {
 				nodes: [nodeId],
 			})
-			.then((res) => {
+			.then(() => {
 				refetch()
 				toast.success("Upgrade started")
 			})
-			.catch((error) => {
+			.catch(() => {
 				toast.error("Failed to start upgrade")
 			})
 	}

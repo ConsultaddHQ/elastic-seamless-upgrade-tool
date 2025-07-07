@@ -4,11 +4,8 @@ import logger from "../logger/logger";
 export const createOrUpdateElasticSearchInfo = async (
 	elasticSearchInfo: IElasticSearchInfo
 ): Promise<IElasticSearchInfoDocument> => {
-	// TODO These needs to be updated when we want to support multiple clusters
-	const clusterId = "cluster-id"; //clusterInfo.clusterId
-	elasticSearchInfo.clusterId = clusterId;
 	const data = await ElasticSearchInfo.findOneAndUpdate(
-		{ clusterId: clusterId },
+		{ clusterId: elasticSearchInfo.clusterId },
 		{
 			...elasticSearchInfo,
 			lastSyncedAt: new Date(),
