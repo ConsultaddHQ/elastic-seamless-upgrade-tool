@@ -18,13 +18,14 @@ import path from "path";
 import { normalizeNodeUrl } from "../utils/utlity.functions";
 import { NodeStatus, PrecheckStatus } from "../enums";
 import { clusterMonitorService } from "../services/cluster-monitor.service";
-import { getLatestRunsByPrecheck, getMergedPrecheckStatus, runPrecheck } from "../services/precheck-runs.service";
+import { getLatestRunsByPrecheck, getMergedPrecheckStatus } from "../services/precheck-runs.service";
 import { createSSHPrivateKeyFile } from "../utils/ssh-utils";
 import { clusterUpgradeJobService } from "../services/cluster-upgrade-job.service";
 import { clusterUpgradeService } from "../services/cluster-upgrade.service";
 import { clusterNodeService, createKibanaNodes, getAllElasticNodes } from "../services/cluster-node.service";
 import { ClusterNodeType } from "../models/cluster-node.model";
 import { syncElasticNodesData } from "../services/sync.service";
+import { precheckRunner } from "../prechecks/precheck-runner";
 
 export const healthCheck = async (req: Request, res: Response) => {
 	try {
@@ -126,9 +127,9 @@ export const getUpgradeDetails = async (req: Request, res: Response) => {
 		const esDeprecationCount = elasticsearchDeprecation.counts;
 		const kibanaDeprecationCount = kibanaDeprecation.counts;
 		const allPrechecks = prechecks.flat();
-		if (allPrechecks.length === 0 && snapshots.length > 0) {
-			const runId = await runPrecheck(elasticNodes, clusterId);
-			logger.info(`Prechecks initiated successfully for cluster '${clusterId}' with Playbook Run ID '${runId}'.`);
+		if (allPrechecks.length === 0 && snapshots.length > 0 && clusterUpgradeJob) {
+			precheckRunner.runAll(clusterUpgradeJob.jobId);
+			logger.info(`Prechecks initiated successfully for cluster '${clusterId}'.`);
 		}
 
 		const isKibanaUpgraded = kibanaVersion === clusterUpgradeJob?.targetVersion ? true : false;

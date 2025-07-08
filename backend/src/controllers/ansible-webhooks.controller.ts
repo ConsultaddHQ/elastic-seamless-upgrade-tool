@@ -7,10 +7,10 @@ import {
 	mapAnsibleToPrecheckStatus,
 	mapAnsibleToUpgradeStatus,
 } from "../enums";
-import { updateRunStatus } from "../services/precheck-runs.service";
 import { NotificationEventType, notificationService } from "../services/notification.service";
 import { clusterNodeService } from "../services/cluster-node.service";
 import { ClusterNodeType } from "../models/cluster-node.model";
+import { precheckService } from "../services/precheck.service";
 
 interface HostInfoPrecheck {
 	ip: string;
@@ -82,11 +82,16 @@ export const handleAnsibleWebhook = async (req: Request, res: Response) => {
 			const processedLogs = !logs
 				? [taskLog, error]
 				: [taskLog, ...logs.stdout.split("\n"), ...logs.stderr.split("\n"), error].filter((log) => log);
-			await updateRunStatus(
-				{ precheckRunId: playbookRunId, precheckId: precheckId, ip: ip },
-				mapAnsibleToPrecheckStatus(status),
+
+			await precheckService.addLog(
+				{
+					precechGroupId: playbookRunId,
+					precheckId: precheckId,
+					"node.ip": ip,
+				},
 				processedLogs
 			);
+
 			notificationService.sendNotification({
 				type: NotificationEventType.PRECHECK_PROGRESS_CHANGE,
 			});
