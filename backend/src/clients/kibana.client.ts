@@ -36,8 +36,9 @@ export class KibanaClient {
 			throw error;
 		}
 	}
-	async getKibanaVersion(): Promise<string | undefined> {
-		const response = await axios.get(`${this.config.url}/api/status`, {
+	async getKibanaVersion(ip?: string): Promise<string | undefined> {
+		const url = ip ? `http://${ip}:5601` : this.config.url;
+		const response = await axios.get(`${url}/api/status`, {
 			headers: {
 				Authorization: this.getAuthDetail(),
 				"kbn-xsrf": "true",

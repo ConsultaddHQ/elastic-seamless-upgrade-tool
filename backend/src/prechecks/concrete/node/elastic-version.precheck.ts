@@ -1,5 +1,5 @@
 import { ElasticClient } from "../../../clients/elastic.client";
-import { NotFoundError } from "../../../errors";
+import { ConflictError, NotFoundError } from "../../../errors";
 import { ClusterNodeType } from "../../../models/cluster-node.model";
 import { BaseNodePrecheck } from "../../base/base-node-precheck";
 import { ExecutionMode, PrecheckType } from "../../types/enums";
@@ -34,7 +34,7 @@ export class ElasticVersionPrecheck extends BaseNodePrecheck {
 			} else {
 				const message = `Node version mismatch: expected ${currentVersion}, but found ${node.version}.`;
 				this.addLog(request, message);
-				throw new NotFoundError(message);
+				throw new ConflictError(message);
 			}
 		} catch (err) {
 			const message = `Node with ID ${nodeId} not found`;
