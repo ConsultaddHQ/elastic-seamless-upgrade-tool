@@ -7,7 +7,6 @@ on:
             - main
             - hpf-32-necessary-changes-for-release
     pull_request:
-        types: [labeled]
         branches:
             - main
             - develop
