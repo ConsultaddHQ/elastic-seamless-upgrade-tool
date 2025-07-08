@@ -18,7 +18,6 @@ import path from "path";
 import { normalizeNodeUrl } from "../utils/utlity.functions";
 import { NodeStatus, PrecheckStatus } from "../enums";
 import { clusterMonitorService } from "../services/cluster-monitor.service";
-import { getLatestRunsByPrecheck, getMergedPrecheckStatus } from "../services/precheck-runs.service";
 import { createSSHPrivateKeyFile } from "../utils/ssh-utils";
 import { clusterUpgradeJobService } from "../services/cluster-upgrade-job.service";
 import { clusterUpgradeService } from "../services/cluster-upgrade.service";

@@ -48,7 +48,6 @@ COPY --from=builder /app/ansible/ ./ansible/
 RUN mkdir -p ansible/ini
 
 # Copy prechecks.yaml file
-COPY --from=builder /app/prechecks.yaml ./prechecks.yaml
 COPY --from=builder /app/breaking-changes.py ./breaking-changes.py
 
 RUN python3 breaking-changes.py

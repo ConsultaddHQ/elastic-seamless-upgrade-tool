@@ -4,6 +4,7 @@ import { clusterUpgradeJobService } from "./cluster-upgrade-job.service";
 import { INodePrecheck, IPrecheck, IPrecheckDocument, Precheck } from "../models/precheck.model";
 import { PrecheckType } from "../prechecks/types/enums";
 import { precheckGroupService } from "./precheck-group.service";
+import { precheckService } from "./precheck.service";
 
 export const getLatestRunsByPrecheck = async (clusterId: string): Promise<IPrecheckDocument[]> => {
 	const job = await clusterUpgradeJobService.getActiveClusterUpgradeJobByClusterId(clusterId);
@@ -31,23 +32,6 @@ export const getLatestRunsByPrecheck = async (clusterId: string): Promise<IPrech
 	]);
 };
 
-export const getMergedPrecheckStatus = (precheckRuns: PrecheckStatus[]) => {
-	let hasCompleted = false;
-	let hasPending = false;
-	let hasRunning = false;
-
-	for (const run of precheckRuns) {
-		if (run === PrecheckStatus.FAILED) return PrecheckStatus.FAILED;
-		if (run === PrecheckStatus.RUNNING) hasRunning = true;
-		if (run === PrecheckStatus.PENDING) hasPending = true;
-		if (run === PrecheckStatus.COMPLETED) hasCompleted = true;
-	}
-
-	if ((hasPending && hasCompleted) || hasRunning) return PrecheckStatus.RUNNING;
-	if (hasPending) return PrecheckStatus.PENDING;
-	return PrecheckStatus.COMPLETED;
-};
-
 export const getPrechecksGroupedByNode = async (groupId: string) => {
 	const precheckRuns = await getLatestRunsByPrecheck(groupId);
 	if (!precheckRuns || precheckRuns.length === 0) {
@@ -66,7 +50,7 @@ export const getPrechecksGroupedByNode = async (groupId: string) => {
 		}, {});
 
 	return Object.entries(groupedPrecheckRunsByNodeId).map(([nodeId, precheckRuns]) => {
-		const status = getMergedPrecheckStatus(precheckRuns.map((precheck) => precheck.status));
+		const status = precheckService.getMergedPrecheckStatus(precheckRuns.map((precheck) => precheck.status));
 		const precheck = precheckRuns[0];
 		const transformPrecheckRunForUI = (precheck: IPrecheck) => {
 			const duration =

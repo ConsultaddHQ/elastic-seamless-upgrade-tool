@@ -26,7 +26,7 @@ class PrecheckService {
 		const prechecks = await Precheck.find({ precechGroupId: precechGroupId });
 	}
 
-	private getMergedPrecheckStatus(precheckRuns: PrecheckStatus[]) {
+	getMergedPrecheckStatus(precheckRuns: PrecheckStatus[]) {
 		let hasCompleted = false;
 		let hasPending = false;
 		let hasRunning = false;
