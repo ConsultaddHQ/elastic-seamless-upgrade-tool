@@ -20,7 +20,7 @@ export interface NodeContext extends Context {
 }
 
 export interface IndexContext extends Context {
-	indexName: string;
+	name: string;
 }
 
 export interface ClusterContext extends Context {}

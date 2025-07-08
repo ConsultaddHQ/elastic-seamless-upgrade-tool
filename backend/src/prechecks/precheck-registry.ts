@@ -6,6 +6,7 @@ import { CheckMemoryUtilizationPrecheck } from "./concrete/os/check-memory-utili
 import { ClusterHealthPrecheck } from "./concrete/cluster/cluster-health.precheck";
 import { ElasticVersionPrecheck } from "./concrete/node/elastic-version.precheck";
 import { KibanaVersionPrecheck } from "./concrete/node/kibana-version.precheck";
+import { UnassignedShardsPrecheck } from "./concrete/index/unassigned-shards.precheck";
 
 class PrecheckRegistry {
 	private prechecks: BasePrecheck[] = [];
@@ -23,10 +24,10 @@ class PrecheckRegistry {
 }
 
 export const precheckRegistry = new PrecheckRegistry();
-
-precheckRegistry.register(new CheckDiskSpacePrecheck());
-precheckRegistry.register(new CheckCpuUtilizationPrecheck());
-precheckRegistry.register(new CheckMemoryUtilizationPrecheck());
 precheckRegistry.register(new ElasticVersionPrecheck());
 precheckRegistry.register(new KibanaVersionPrecheck());
 precheckRegistry.register(new ClusterHealthPrecheck());
+precheckRegistry.register(new UnassignedShardsPrecheck());
+precheckRegistry.register(new CheckDiskSpacePrecheck());
+precheckRegistry.register(new CheckCpuUtilizationPrecheck());
+precheckRegistry.register(new CheckMemoryUtilizationPrecheck());

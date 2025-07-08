@@ -44,6 +44,18 @@ export class ElasticClient {
 		}
 	}
 
+	async getAllIndexNames(): Promise<string[]> {
+		try {
+			const response = await this.getClient().cat.indices({
+				format: "json",
+			});
+			return response.map((index: any) => index.index);
+		} catch (error) {
+			logger.error("Failed to fetch indices", error);
+			return [];
+		}
+	}
+
 	getAuthDetail(): BasicAuth | ApiKeyAuth | BearerAuth | undefined {
 		if (this.config.apiKey) {
 			return {
