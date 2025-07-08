@@ -88,8 +88,8 @@ function Precheck() {
 		await axiosJSON
 			.get(`/api/elastic/clusters/${clusterId}/prechecks`)
 			.then((res) => {
-				setNodeSelected(res?.data[0])
-				response = res?.data
+				setNodeSelected(res?.data?.node[0])
+				response = res?.data?.node
 			})
 			.catch((err) => {
 				toast.error(err?.response?.data?.message ?? StringManager.GENERIC_ERROR)

@@ -19,7 +19,7 @@ export abstract class BaseNodePrecheck extends BasePrecheck<PrecheckConfig, Node
 
 	protected abstract runForContext(request: PrecheckExecutionRequest<NodeContext>): Promise<void>;
 
-	protected async run(request: PrecheckExecutionRequest<any>): Promise<void> {
+	protected async run(request: PrecheckExecutionRequest<NodeContext>): Promise<void> {
 		const nodes = await this.getNodes(request.cluster.clusterId);
 		const config = this.getPrecheckConfig();
 

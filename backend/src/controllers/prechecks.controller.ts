@@ -1,10 +1,9 @@
 import { NextFunction, Request, Response } from "express";
-import { getPrechecksGroupedByNode } from "../services/precheck-runs.service";
 import { precheckReportService } from "../services/precheck-report.service";
-import { NotFoundError } from "../errors";
 import { clusterNodeService } from "../services/cluster-node.service";
 import { precheckRunner } from "../prechecks/precheck-runner";
 import { clusterUpgradeJobService } from "../services/cluster-upgrade-job.service";
+import { precheckService } from "../services/precheck.service";
 
 export const runAllPrecheksHandler = async (req: Request, res: Response) => {
 	const { clusterId } = req.params;
@@ -17,7 +16,7 @@ export const runAllPrecheksHandler = async (req: Request, res: Response) => {
 export const getPrecheckRunByClusterIdHandler = async (req: Request, res: Response, next: NextFunction) => {
 	const { clusterId } = req.params;
 	try {
-		const response = await getPrechecksGroupedByNode(clusterId);
+		const response = await precheckService.getGroupedPrecheckByClusterId(clusterId);
 		res.send(response);
 	} catch (err: any) {
 		next(err);

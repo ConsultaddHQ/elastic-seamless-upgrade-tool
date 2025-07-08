@@ -5,6 +5,8 @@ import { randomUUID } from "crypto";
 import { getClusterInfoById } from "../services/cluster-info.service";
 import { PrecheckGroup } from "../models/precheck-group.model";
 import { PrecheckStatus } from "../enums";
+import { BasePrecheck } from "./base/base-precheck";
+import logger from "../logger/logger";
 
 class PrecheckRunner {
 	async runAll(clusterUpgradeJobId: string): Promise<void> {
@@ -22,15 +24,24 @@ class PrecheckRunner {
 			precheckGroupId: groupId,
 		};
 
-		console.log(`Running ${precheckRegistry.getPrechecks().length} prechecks on cluster ${job.clusterId}`);
+		logger.info(`Running ${precheckRegistry.getPrechecks().length} prechecks on cluster ${job.clusterId}`);
+
+		const prechecks: BasePrecheck[] = [];
 
 		for (const precheck of precheckRegistry.getPrechecks()) {
+			const isValid = await precheck.shouldRunFor({ ...defaultRequest, context: {} });
+			if (isValid) {
+				prechecks.push(precheck);
+			}
+		}
+
+		for (const precheck of prechecks) {
 			try {
 				await precheck.preExecute({ ...defaultRequest, context: {} });
 			} catch (err) {}
 		}
 
-		for (const precheck of precheckRegistry.getPrechecks()) {
+		for (const precheck of prechecks) {
 			try {
 				await precheck.execute({ ...defaultRequest, context: {} });
 			} catch (err) {}
@@ -44,7 +55,7 @@ class PrecheckRunner {
 				status: PrecheckStatus.COMPLETED,
 			}
 		);
-		console.log("✅ All prechecks completed.");
+		logger.debug(`All prechecks completed. [PrecheckGroupId: ${groupId}]`);
 	}
 }
 

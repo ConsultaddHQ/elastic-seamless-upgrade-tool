@@ -26,7 +26,7 @@ export const precheckRegistry = new PrecheckRegistry();
 
 precheckRegistry.register(new CheckDiskSpacePrecheck());
 precheckRegistry.register(new CheckCpuUtilizationPrecheck());
+precheckRegistry.register(new CheckMemoryUtilizationPrecheck());
 precheckRegistry.register(new ElasticVersionPrecheck());
 precheckRegistry.register(new KibanaVersionPrecheck());
 precheckRegistry.register(new ClusterHealthPrecheck());
-precheckRegistry.register(new CheckMemoryUtilizationPrecheck());

@@ -1,9 +1,11 @@
+import { ElasticClient } from "../../../clients/elastic.client";
+import { NotFoundError } from "../../../errors";
 import { ClusterNodeType } from "../../../models/cluster-node.model";
-import { BaseAnsibleNodePrecheck } from "../../base/base-ansible-node-precheck";
+import { BaseNodePrecheck } from "../../base/base-node-precheck";
 import { ExecutionMode, PrecheckType } from "../../types/enums";
 import { NodeContext, PrecheckExecutionRequest } from "../../types/interfaces";
 
-export class ElasticVersionPrecheck extends BaseAnsibleNodePrecheck {
+export class ElasticVersionPrecheck extends BaseNodePrecheck {
 	private readonly playbookPath: string = "playbooks/pre_checks/elasticsearch-version-check.ansible.yml";
 	constructor() {
 		super(
@@ -11,15 +13,33 @@ export class ElasticVersionPrecheck extends BaseAnsibleNodePrecheck {
 				id: "elasticsearch_version_check",
 				name: "Elasticsearch Version Check",
 				type: PrecheckType.NODE,
-				mode: ExecutionMode.ANSIBLE,
+				mode: ExecutionMode.CODE,
 			},
 			ClusterNodeType.ELASTIC
 		);
 	}
 
 	protected async runForContext(request: PrecheckExecutionRequest<NodeContext>): Promise<void> {
-		await this.runPlaybook(request, {
-			playbookPath: this.playbookPath,
-		});
+		const currentVersion = request.upgradeJob.currentVersion;
+		const client = await ElasticClient.buildClient(request.cluster.clusterId);
+		const elasticsearchClient = client.getClient();
+		const nodeId = request.context.node.nodeId;
+		try {
+			const nodes = await elasticsearchClient.nodes.info({
+				node_id: nodeId,
+			});
+			const node = nodes.nodes[nodeId];
+			if (node.version === currentVersion) {
+				this.addLog(request, `Node is running on the expected version: ${currentVersion}.`);
+			} else {
+				const message = `Node version mismatch: expected ${currentVersion}, but found ${node.version}.`;
+				this.addLog(request, message);
+				throw new NotFoundError(message);
+			}
+		} catch (err) {
+			const message = `Node with ID ${nodeId} not found`;
+			this.addLog(request, message);
+			throw new NotFoundError(message);
+		}
 	}
 }

@@ -12,7 +12,7 @@ export abstract class BaseClusterPrecheck extends BasePrecheck<PrecheckConfig, C
 
 	protected abstract runForContext(request: PrecheckExecutionRequest<ClusterContext>): Promise<void>;
 
-	protected async run(request: PrecheckExecutionRequest<any>): Promise<void> {
+	protected async run(request: PrecheckExecutionRequest<ClusterContext>): Promise<void> {
 		const config = this.getPrecheckConfig();
 		const clusterContext: ClusterContext = {};
 		const uniquePrecheckIdentifier = {
