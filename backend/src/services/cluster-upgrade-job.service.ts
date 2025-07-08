@@ -4,6 +4,7 @@ import { ClusterUpgradeJob, ClusterUpgradeJobStatus, IClusterUpgradeJob } from "
 import { NodeStatus } from "../enums";
 import logger from "../logger/logger";
 import { clusterNodeService } from "./cluster-node.service";
+
 class ClusterUpgradeJobService {
 	async getActiveClusterUpgradeJobByClusterId(clusterId: string): Promise<IClusterUpgradeJob> {
 		const job = await ClusterUpgradeJob.findOne({ clusterId, status: { $ne: "completed" } });

@@ -36,10 +36,14 @@ class PrecheckRunner {
 			} catch (err) {}
 		}
 
-		await PrecheckGroup.findOneAndUpdate({
-			precheckGroupId: groupId,
-			status: PrecheckStatus.COMPLETED,
-		});
+		await PrecheckGroup.findOneAndUpdate(
+			{
+				precheckGroupId: groupId,
+			},
+			{
+				status: PrecheckStatus.COMPLETED,
+			}
+		);
 		console.log("✅ All prechecks completed.");
 	}
 }
