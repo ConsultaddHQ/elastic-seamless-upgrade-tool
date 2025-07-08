@@ -1,11 +1,11 @@
 import { ConflictError } from "../errors";
 import { BasePrecheck } from "./base/base-precheck";
-import { CheckCpuUtilizationPrecheck } from "./concrete/check-cpu-utilization.precheck";
-import { CheckDiskSpacePrecheck } from "./concrete/check-disk-space.precheck";
-import { CheckMemoryUtilizationPrecheck } from "./concrete/check-memory-utilization.precheck";
-import { ClusterHealthPrecheck } from "./concrete/cluster-health.precheck";
-import { ElasticVersionPrecheck } from "./concrete/elastic-version.precheck";
-import { KibanaVersionPrecheck } from "./concrete/kibana-version.precheck";
+import { CheckCpuUtilizationPrecheck } from "./concrete/os/check-cpu-utilization.precheck";
+import { CheckDiskSpacePrecheck } from "./concrete/os/check-disk-space.precheck";
+import { CheckMemoryUtilizationPrecheck } from "./concrete/os/check-memory-utilization.precheck";
+import { ClusterHealthPrecheck } from "./concrete/cluster/cluster-health.precheck";
+import { ElasticVersionPrecheck } from "./concrete/node/elastic-version.precheck";
+import { KibanaVersionPrecheck } from "./concrete/node/kibana-version.precheck";
 
 class PrecheckRegistry {
 	private prechecks: BasePrecheck[] = [];

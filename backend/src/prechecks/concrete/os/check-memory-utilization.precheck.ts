@@ -1,6 +1,6 @@
-import { BaseAnsibleNodePrecheck } from "../base/base-ansible-node-precheck";
-import { ExecutionMode, PrecheckType } from "../types/enums";
-import { NodeContext, PrecheckExecutionRequest } from "../types/interfaces";
+import { BaseAnsibleNodePrecheck } from "../../base/base-ansible-node-precheck";
+import { ExecutionMode, PrecheckType } from "../../types/enums";
+import { NodeContext, PrecheckExecutionRequest } from "../../types/interfaces";
 
 export class CheckMemoryUtilizationPrecheck extends BaseAnsibleNodePrecheck {
 	private readonly playbookPath: string = "playbooks/pre_checks/memory.ansible.yml";

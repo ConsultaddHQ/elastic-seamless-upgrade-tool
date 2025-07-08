@@ -1,7 +1,7 @@
-import { ElasticClient } from "../../clients/elastic.client";
-import { BaseClusterPrecheck } from "../base/base-cluster-precheck";
-import { ExecutionMode, PrecheckType } from "../types/enums";
-import { PrecheckExecutionRequest, ClusterContext } from "../types/interfaces";
+import { ElasticClient } from "../../../clients/elastic.client";
+import { BaseClusterPrecheck } from "../../base/base-cluster-precheck";
+import { ExecutionMode, PrecheckType } from "../../types/enums";
+import { PrecheckExecutionRequest, ClusterContext } from "../../types/interfaces";
 
 export class ClusterHealthPrecheck extends BaseClusterPrecheck {
 	constructor() {
