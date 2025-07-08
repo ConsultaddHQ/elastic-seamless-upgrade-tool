@@ -18,13 +18,13 @@ export const getLatestRunsByPrecheck = async (clusterId: string): Promise<IPrech
 		throw new NotFoundError(`No cluster upgrade job found for clusterId: ${clusterId}`);
 	}
 	return await Precheck.aggregate([
-		{ $match: { clusterUpgradeJobId: clusterUpgradeJob?.jobId } },
+		{ $match: { clusterUpgradeJobId: clusterUpgradeJob.jobId } },
 		{
 			$sort: { startedAt: -1 },
 		},
 		{
 			$group: {
-				_id: { ip: "$ip", precheckId: "$precheckId" },
+				_id: { ip: "$node.ip", precheckId: "$precheckId" },
 				precheckRun: { $first: "$$ROOT" },
 			},
 		},
