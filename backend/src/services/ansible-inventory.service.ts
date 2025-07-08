@@ -1,5 +1,6 @@
 import fs from "fs";
-import { IElasticNode, IKibanaNode } from "../models/cluster-node.model";
+import { IClusterNode, IElasticNode, IKibanaNode } from "../models/cluster-node.model";
+const ANSIBLE_PLAYBOOKS_PATH = process.env.ANSIBLE_PLAYBOOKS_PATH;
 const ENABLE_PASSWORD_AUTH_FOR_SSH = process.env.ENABLE_PASSWORD_AUTH_FOR_SSH === "true";
 
 class AnsibleInventoryService {
@@ -133,6 +134,47 @@ class AnsibleInventoryService {
 			await fs.promises.writeFile(`ansible/ini/${iniName}`, inventoryContent, "utf8");
 
 			return inventoryContent;
+		} catch (error) {
+			console.error("Error creating Ansible inventory:", error);
+			throw error;
+		}
+	};
+
+	public createInventoryForNode = ({
+		pathToKey,
+		node,
+		sshUser,
+	}: {
+		node: IClusterNode;
+		pathToKey: string;
+		sshUser: string;
+	}) => {
+		try {
+			const iniName = `${node.clusterId}-${node.nodeId}.ini`;
+			const iniPath = `${ANSIBLE_PLAYBOOKS_PATH}/ini/${iniName}`;
+			const roleGroups: Record<"elasticsearch", string[]> = {
+				elasticsearch: [],
+			};
+			roleGroups.elasticsearch.push(`${node.name} ansible_host=${node.ip}`);
+			const inventoryParts: string[] = [];
+			Object.entries(roleGroups).forEach(([group, hosts]) => {
+				if (hosts.length > 0) {
+				}
+				inventoryParts.push(`[${group}]\n${hosts.join("\n")}`);
+			});
+
+			if (ENABLE_PASSWORD_AUTH_FOR_SSH) {
+				inventoryParts.push(
+					`[elasticsearch:vars]\nansible_ssh_user=${sshUser}\nansible_ssh_pass=admin\nansible_ssh_common_args='-o StrictHostKeyChecking=no'\n`
+				);
+			} else {
+				inventoryParts.push(
+					`[elasticsearch:vars]\nansible_ssh_user=${sshUser}\nansible_ssh_private_key_file=${pathToKey}\nansible_ssh_common_args='-o StrictHostKeyChecking=no'\n`
+				);
+			}
+			const inventoryContent = inventoryParts.join("\n\n");
+			fs.writeFileSync(iniPath, inventoryContent, "utf8");
+			return iniPath;
 		} catch (error) {
 			console.error("Error creating Ansible inventory:", error);
 			throw error;

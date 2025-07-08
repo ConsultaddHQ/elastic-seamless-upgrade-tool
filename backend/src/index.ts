@@ -12,7 +12,6 @@ import { connectDB } from "./databases/db";
 import { NotificationEvent, NotificationListner, notificationService } from "./services/notification.service";
 import { routeNotFoundMiddleware } from "./middlewares/route-not-found.middleware";
 import { errorMiddleware } from "./middlewares/error.middleware";
-import { syncClusterUpgradeJobStatus } from "./services/sync.service";
 
 const app = express();
 const server = http.createServer(app);

@@ -3,11 +3,15 @@ import { getPrechecksGroupedByNode, runPrecheck } from "../services/precheck-run
 import { precheckReportService } from "../services/precheck-report.service";
 import { NotFoundError } from "../errors";
 import { clusterNodeService } from "../services/cluster-node.service";
+import { precheckRunner } from "../prechecks/precheck-runner";
+import { clusterUpgradeJobService } from "../services/cluster-upgrade-job.service";
 
 export const runAllPrecheksHandler = async (req: Request, res: Response) => {
 	const { clusterId } = req.params;
 	const nodes = await clusterNodeService.getNodes(clusterId);
 	const runId = await runPrecheck(nodes, clusterId);
+	const job = await clusterUpgradeJobService.getActiveClusterUpgradeJobByClusterId(clusterId);
+	precheckRunner.runAll(job.jobId);
 	res.send({ message: "Prechecks started", runId });
 };
 
