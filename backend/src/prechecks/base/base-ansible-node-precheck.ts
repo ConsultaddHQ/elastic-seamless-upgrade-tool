@@ -1,97 +1,12 @@
-import { PrecheckStatus } from "../../enums";
-import logger from "../../logger/logger";
-import { ClusterNodeType, IClusterNode } from "../../models/cluster-node.model";
-import { INodePrecheck, Precheck } from "../../models/precheck.model";
+import { ClusterNodeType } from "../../models/cluster-node.model";
 import { ansibleInventoryService } from "../../services/ansible-inventory.service";
 import { ansibleRunnerService } from "../../services/ansible-runner.service";
-import { clusterNodeService } from "../../services/cluster-node.service";
-import { PrecheckType } from "../types/enums";
 import { NodeContext, PrecheckConfig, PrecheckExecutionRequest } from "../types/interfaces";
-import { BasePrecheck } from "./base-precheck";
+import { BaseNodePrecheck } from "./base-node-precheck";
 
-export abstract class BaseAnsibleNodePrecheck extends BasePrecheck<PrecheckConfig, NodeContext> {
-	private nodeType?: ClusterNodeType;
+export abstract class BaseAnsibleNodePrecheck extends BaseNodePrecheck {
 	constructor(config: PrecheckConfig, nodeType?: ClusterNodeType) {
-		super(config);
-		this.nodeType = nodeType;
-	}
-	protected async getNodes(clusterId: string): Promise<IClusterNode[]> {
-		return clusterNodeService.getNodes(clusterId, this.nodeType);
-	}
-
-	protected abstract runForContext(request: PrecheckExecutionRequest<NodeContext>): Promise<void>;
-
-	protected async run(request: PrecheckExecutionRequest<NodeContext>): Promise<void> {
-		const nodes = await this.getNodes(request.cluster.clusterId);
-		const config = this.getPrecheckConfig();
-
-		await Promise.allSettled(
-			nodes.map(async (node) => {
-				const nodeContext: NodeContext = { node: node };
-				try {
-					await Precheck.updateOne(
-						{
-							precheckId: config.id,
-							precechGroupId: request.precheckGroupId,
-							"node.id": node.nodeId,
-						},
-						{
-							status: PrecheckStatus.RUNNING,
-							startedAt: Date.now(),
-						}
-					);
-
-					await this.runForContext({ ...request, context: nodeContext });
-					await Precheck.updateOne(
-						{
-							precheckId: config.id,
-							precechGroupId: request.precheckGroupId,
-							"node.id": node.nodeId,
-						},
-						{
-							status: PrecheckStatus.COMPLETED,
-							endAt: Date.now(),
-						}
-					);
-				} catch (err) {
-					await Precheck.updateOne(
-						{
-							precheckId: config.id,
-							precechGroupId: request.precheckGroupId,
-							"node.id": node.nodeId,
-						},
-						{
-							status: PrecheckStatus.FAILED,
-							endAt: Date.now(),
-						}
-					);
-				}
-			})
-		);
-	}
-
-	async preExecute(request: PrecheckExecutionRequest<NodeContext>): Promise<void> {
-		const nodes = await this.getNodes(request.cluster.clusterId);
-		const config = this.getPrecheckConfig();
-		await Precheck.insertMany(
-			nodes.map((node) => {
-				const nodePrecheck: INodePrecheck = {
-					type: PrecheckType.NODE,
-					precheckId: config.id,
-					name: config.name,
-					status: PrecheckStatus.PENDING,
-					precechGroupId: request.precheckGroupId,
-					clusterUpgradeJobId: request.upgradeJob.jobId,
-					node: {
-						id: node.nodeId,
-						name: node.name,
-						ip: node.ip,
-					},
-					logs: [],
-				};
-				return nodePrecheck;
-			})
-		);
+		super(config, nodeType);
 	}
 
 	protected async runPlaybook(

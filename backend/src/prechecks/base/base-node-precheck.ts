@@ -2,6 +2,7 @@ import { PrecheckStatus } from "../../enums";
 import { ClusterNodeType, IClusterNode } from "../../models/cluster-node.model";
 import { INodePrecheck, Precheck } from "../../models/precheck.model";
 import { clusterNodeService } from "../../services/cluster-node.service";
+import { precheckService } from "../../services/precheck.service";
 import { PrecheckType } from "../types/enums";
 import { NodeContext, PrecheckConfig, PrecheckExecutionRequest } from "../types/interfaces";
 import { BasePrecheck } from "./base-precheck";
@@ -49,6 +50,17 @@ export abstract class BaseNodePrecheck extends BasePrecheck<PrecheckConfig, Node
 					});
 				}
 			})
+		);
+	}
+
+	protected async addLog(request: PrecheckExecutionRequest<NodeContext>, ...logs: string[]): Promise<void> {
+		await precheckService.addLog(
+			{
+				precechGroupId: request.precheckGroupId,
+				precheckId: this.getPrecheckConfig().id,
+				"node.id": request.context.node.nodeId,
+			},
+			logs
 		);
 	}
 

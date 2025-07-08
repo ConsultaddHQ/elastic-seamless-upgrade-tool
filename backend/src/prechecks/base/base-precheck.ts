@@ -16,6 +16,8 @@ export abstract class BasePrecheck<Config extends PrecheckConfig = PrecheckConfi
 
 	abstract preExecute(request: PrecheckExecutionRequest<Context>): Promise<void>;
 
+	protected abstract addLog(request: PrecheckExecutionRequest<Context>, ...logs: string[]): Promise<void>;
+
 	getPrecheckConfig(): Config {
 		return this.config;
 	}

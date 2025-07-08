@@ -16,8 +16,13 @@ export class ClusterHealthPrecheck extends BaseClusterPrecheck {
 		const client = await ElasticClient.buildClient(request.cluster.clusterId);
 		const elasticsearchClient = client.getClient();
 		const health = await elasticsearchClient.cluster.health();
-		if (health.status !== "green" && health.status !== "yellow") {
-			throw new Error(`Cluster health is ${health.status}`);
+		const isHealthy = health.status === "green";
+		const message = `Cluster health status: '${health.status}'. Expected: 'green'.`;
+
+		this.addLog(request, message);
+
+		if (!isHealthy) {
+			throw new Error(`Cluster health check failed. ${message}`);
 		}
 	}
 }
