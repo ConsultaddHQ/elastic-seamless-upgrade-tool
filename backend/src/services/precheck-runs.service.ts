@@ -1,4 +1,3 @@
-import { getPrecheckById } from "../config/precheck.config";
 import { PrecheckStatus } from "../enums";
 import { NotFoundError } from "../errors";
 import { clusterUpgradeJobService } from "./cluster-upgrade-job.service";
@@ -76,14 +75,13 @@ export const getPrechecksGroupedByNode = async (clusterId: string) => {
 		const status = getMergedPrecheckStatus(precheckRuns.map((precheck) => precheck.status));
 		const precheck = precheckRuns[0];
 		const transformPrecheckRunForUI = (precheck: IPrecheck) => {
-			const { name } = getPrecheckById(precheck.precheckId) || {};
 			const duration =
 				precheck.endAt && precheck.startedAt
 					? parseFloat(((precheck.endAt.getTime() - precheck.startedAt.getTime()) / 1000).toFixed(2))
 					: null;
 			return {
 				id: precheck.precheckId,
-				name: name,
+				name: precheck.name,
 				status: precheck.status,
 				logs: precheck.logs,
 				startTime: precheck.startedAt,
