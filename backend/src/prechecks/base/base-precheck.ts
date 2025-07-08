@@ -9,16 +9,12 @@ export abstract class BasePrecheck<Config extends PrecheckConfig = PrecheckConfi
 	}
 
 	async execute(request: PrecheckExecutionRequest<Context>): Promise<void> {
-		await this.preExecute(request);
 		await this.run(request);
-		await this.postExecute(request);
 	}
 
 	protected abstract run(request: PrecheckExecutionRequest<Context>): Promise<void>;
 
-	protected abstract preExecute(request: PrecheckExecutionRequest<Context>): Promise<void>;
-
-	protected abstract postExecute(request: PrecheckExecutionRequest<Context>): Promise<void>;
+	abstract preExecute(request: PrecheckExecutionRequest<Context>): Promise<void>;
 
 	getPrecheckConfig(): Config {
 		return this.config;

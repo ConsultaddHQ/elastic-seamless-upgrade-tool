@@ -26,6 +26,7 @@ import { clusterNodeService, createKibanaNodes, getAllElasticNodes } from "../se
 import { ClusterNodeType } from "../models/cluster-node.model";
 import { syncElasticNodesData } from "../services/sync.service";
 import { precheckRunner } from "../prechecks/precheck-runner";
+import { precheckGroupService } from "../services/precheck-group.service";
 
 export const healthCheck = async (req: Request, res: Response) => {
 	try {
@@ -111,23 +112,28 @@ export const getUpgradeDetails = async (req: Request, res: Response) => {
 		const client = await ElasticClient.buildClient(clusterId);
 		const kibanaClient = await KibanaClient.buildClient(clusterId);
 		const clusterInfo = await getClusterInfoById(clusterId);
-		const clusterUpgradeJob = await clusterUpgradeJobService.getLatestClusterUpgradeJobByClusterId(clusterId);
+		const clusterUpgradeJob = await clusterUpgradeJobService.getActiveClusterUpgradeJobByClusterId(clusterId);
 
 		const kibanaUrl = clusterInfo.kibana?.url;
 
-		const [elasticsearchDeprecation, kibanaDeprecation, kibanaVersion, elasticNodes, snapshots, prechecks] =
-			await Promise.all([
-				getElasticsearchDeprecation(clusterId),
-				getKibanaDeprecation(clusterId),
-				kibanaClient.getKibanaVersion(),
-				getAllElasticNodes(clusterId),
-				client.getValidSnapshots(),
-				getLatestRunsByPrecheck(clusterId),
-			]);
+		const [
+			elasticsearchDeprecation,
+			kibanaDeprecation,
+			kibanaVersion,
+			elasticNodes,
+			snapshots,
+			latestPrecheckGroup,
+		] = await Promise.all([
+			getElasticsearchDeprecation(clusterId),
+			getKibanaDeprecation(clusterId),
+			kibanaClient.getKibanaVersion(),
+			getAllElasticNodes(clusterId),
+			client.getValidSnapshots(),
+			precheckGroupService.getLatestGroupByJobId(clusterUpgradeJob?.jobId),
+		]);
 		const esDeprecationCount = elasticsearchDeprecation.counts;
 		const kibanaDeprecationCount = kibanaDeprecation.counts;
-		const allPrechecks = prechecks.flat();
-		if (allPrechecks.length === 0 && snapshots.length > 0 && clusterUpgradeJob) {
+		if (!latestPrecheckGroup && snapshots.length > 0 && clusterUpgradeJob) {
 			precheckRunner.runAll(clusterUpgradeJob.jobId);
 			logger.info(`Prechecks initiated successfully for cluster '${clusterId}'.`);
 		}
@@ -151,10 +157,7 @@ export const getUpgradeDetails = async (req: Request, res: Response) => {
 				deprecations: { ...kibanaDeprecationCount },
 			},
 			precheck: {
-				status:
-					allPrechecks.length == 0
-						? PrecheckStatus.RUNNING
-						: getMergedPrecheckStatus(allPrechecks.map((precheck) => precheck.status)),
+				status: !latestPrecheckGroup ? PrecheckStatus.RUNNING : latestPrecheckGroup.status,
 			},
 		});
 	} catch (error: any) {

@@ -52,7 +52,7 @@ export abstract class BaseNodePrecheck extends BasePrecheck<PrecheckConfig, Node
 		);
 	}
 
-	protected async preExecute(request: PrecheckExecutionRequest): Promise<void> {
+	async preExecute(request: PrecheckExecutionRequest): Promise<void> {
 		const nodes = await this.getNodes(request.cluster.clusterId);
 		const config = this.getPrecheckConfig();
 		await Precheck.insertMany(
@@ -75,6 +75,4 @@ export abstract class BaseNodePrecheck extends BasePrecheck<PrecheckConfig, Node
 			})
 		);
 	}
-
-	protected async postExecute(request: PrecheckExecutionRequest): Promise<void> {}
 }

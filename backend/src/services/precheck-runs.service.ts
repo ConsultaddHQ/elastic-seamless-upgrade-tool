@@ -3,6 +3,7 @@ import { NotFoundError } from "../errors";
 import { clusterUpgradeJobService } from "./cluster-upgrade-job.service";
 import { INodePrecheck, IPrecheck, IPrecheckDocument, Precheck } from "../models/precheck.model";
 import { PrecheckType } from "../prechecks/types/enums";
+import { precheckGroupService } from "./precheck-group.service";
 
 export interface PrecheckRunJob {
 	precheckId: string;
@@ -13,12 +14,13 @@ export interface PrecheckRunJob {
 }
 
 export const getLatestRunsByPrecheck = async (clusterId: string): Promise<IPrecheckDocument[]> => {
-	const clusterUpgradeJob = await clusterUpgradeJobService.getLatestClusterUpgradeJobByClusterId(clusterId);
-	if (!clusterUpgradeJob) {
-		throw new NotFoundError(`No cluster upgrade job found for clusterId: ${clusterId}`);
+	const job = await clusterUpgradeJobService.getActiveClusterUpgradeJobByClusterId(clusterId);
+	const group = await precheckGroupService.getLatestGroupByJobId(job.jobId);
+	if (!group) {
+		throw new NotFoundError("No precheck found");
 	}
 	return await Precheck.aggregate([
-		{ $match: { clusterUpgradeJobId: clusterUpgradeJob.jobId } },
+		{ $match: { precechGroupId: group.precheckGroupId } },
 		{
 			$sort: { startedAt: -1 },
 		},
@@ -54,8 +56,8 @@ export const getMergedPrecheckStatus = (precheckRuns: PrecheckStatus[]) => {
 	return PrecheckStatus.COMPLETED;
 };
 
-export const getPrechecksGroupedByNode = async (clusterId: string) => {
-	const precheckRuns = await getLatestRunsByPrecheck(clusterId);
+export const getPrechecksGroupedByNode = async (groupId: string) => {
+	const precheckRuns = await getLatestRunsByPrecheck(groupId);
 	if (!precheckRuns || precheckRuns.length === 0) {
 		throw new NotFoundError("No precheck runs found");
 	}

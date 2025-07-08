@@ -70,7 +70,7 @@ export abstract class BaseAnsibleNodePrecheck extends BasePrecheck<PrecheckConfi
 		);
 	}
 
-	protected async preExecute(request: PrecheckExecutionRequest<NodeContext>): Promise<void> {
+	async preExecute(request: PrecheckExecutionRequest<NodeContext>): Promise<void> {
 		const nodes = await this.getNodes(request.cluster.clusterId);
 		const config = this.getPrecheckConfig();
 		await Precheck.insertMany(
@@ -93,8 +93,6 @@ export abstract class BaseAnsibleNodePrecheck extends BasePrecheck<PrecheckConfi
 			})
 		);
 	}
-
-	protected async postExecute(request: PrecheckExecutionRequest<NodeContext>): Promise<void> {}
 
 	protected async runPlaybook(
 		request: PrecheckExecutionRequest<NodeContext>,
