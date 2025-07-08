@@ -5,14 +5,6 @@ import { INodePrecheck, IPrecheck, IPrecheckDocument, Precheck } from "../models
 import { PrecheckType } from "../prechecks/types/enums";
 import { precheckGroupService } from "./precheck-group.service";
 
-export interface PrecheckRunJob {
-	precheckId: string;
-	clusterUpgradeJobId: string;
-	playbookRunId: string;
-	inventoryPath: string;
-	ip: string;
-}
-
 export const getLatestRunsByPrecheck = async (clusterId: string): Promise<IPrecheckDocument[]> => {
 	const job = await clusterUpgradeJobService.getActiveClusterUpgradeJobByClusterId(clusterId);
 	const group = await precheckGroupService.getLatestGroupByJobId(job.jobId);

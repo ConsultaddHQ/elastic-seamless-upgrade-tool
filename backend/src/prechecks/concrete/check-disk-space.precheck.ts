@@ -6,8 +6,8 @@ export class CheckDiskSpacePrecheck extends BaseAnsibleNodePrecheck {
 	private readonly playbookPath: string = "playbooks/pre_checks/disk.ansible.yml";
 	constructor() {
 		super({
-			id: "check-disk-space",
-			name: "Check Disk Space Utilization",
+			id: "elasticsearch_disk_precheck",
+			name: "Disk Utilization Check",
 			type: PrecheckType.NODE,
 			mode: ExecutionMode.ANSIBLE,
 		});

@@ -6,7 +6,7 @@ import { PrecheckExecutionRequest, ClusterContext } from "../types/interfaces";
 export class ClusterHealthPrecheck extends BaseClusterPrecheck {
 	constructor() {
 		super({
-			id: "cluster-health-check",
+			id: "elasticsearch_cluster_health_check",
 			name: "Cluster health check",
 			type: PrecheckType.CLUSTER,
 			mode: ExecutionMode.CODE,
