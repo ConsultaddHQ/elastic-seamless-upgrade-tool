@@ -9,7 +9,7 @@
   tasks:
       - name: Get current Kibana version with Authorization header
         uri:
-            url: "http://{{ inventory_hostname }}:{{ kibana_port }}/api/status"
+            url: "{{ kibana_host_protocol }}://localhost:{{ kibana_port }}/api/status"
             method: GET
             headers:
                 Authorization: "Basic {{ kibana_auth }}"
