@@ -45,6 +45,36 @@ class PrecheckReportService {
 			md += `</details>\n`;
 		});
 
+		md = md + "\n\n";
+
+		md += `## ✅ Index Summary\n`;
+		md += `| Index Name | Status |\n`;
+		md += `|-----------|--------|\n`;
+		groupedPrechecks.index.forEach((precheck) => {
+			md += `| ${precheck.name} | | ${precheck.status} |\n`;
+		});
+
+		md += `\n## 🔍 Detailed Pre-checks\n`;
+
+		prechecksGroupedByNode.forEach((node) => {
+			md += `\n### 🖥️ ${node.name} (${node.ip})\n`;
+
+			md += `| Check | Status | Duration (s) |\n`;
+			md += `|-------|--------|---------------|\n`;
+
+			node.prechecks.forEach((check) => {
+				md += `| ${check.name} | ${check.status} | ${check.duration} |\n`;
+			});
+
+			md += `\n<details><summary>Show Logs</summary>\n\n`;
+			node.prechecks.forEach((check) => {
+				md += `#### ${check.name}\n`;
+				const logs = check.logs.length > 0 ? check.logs : ["N/A"];
+				md += "```\n" + logs.join("\n") + "\n```\n";
+			});
+			md += `</details>\n`;
+		});
+
 		const eSDeprecationsMdReport = await this.getESDeprecationsMdReport(clusterId);
 		md = md + "\n\n" + eSDeprecationsMdReport;
 
