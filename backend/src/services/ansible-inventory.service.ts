@@ -1,5 +1,6 @@
 import fs from "fs";
 import { IClusterNode, IElasticNode, IKibanaNode } from "../models/cluster-node.model";
+import { SSH_KEYS_DIR } from "../utils/ssh-utils";
 const ANSIBLE_PLAYBOOKS_PATH = process.env.ANSIBLE_PLAYBOOKS_PATH;
 const ENABLE_PASSWORD_AUTH_FOR_SSH = process.env.ENABLE_PASSWORD_AUTH_FOR_SSH === "true";
 
@@ -141,12 +142,12 @@ class AnsibleInventoryService {
 	};
 
 	public createInventoryForNode = ({
-		pathToKey,
+		keyFilename,
 		node,
 		sshUser,
 	}: {
 		node: IClusterNode;
-		pathToKey: string;
+		keyFilename: string;
 		sshUser: string;
 	}) => {
 		try {
@@ -155,6 +156,7 @@ class AnsibleInventoryService {
 			const roleGroups: Record<"elasticsearch", string[]> = {
 				elasticsearch: [],
 			};
+			const pathToKey = `${SSH_KEYS_DIR}/${keyFilename}`;
 			roleGroups.elasticsearch.push(`${node.name} ansible_host=${node.ip}`);
 			const inventoryParts: string[] = [];
 			Object.entries(roleGroups).forEach(([group, hosts]) => {

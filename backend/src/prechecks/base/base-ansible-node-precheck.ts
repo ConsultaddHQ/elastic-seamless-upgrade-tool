@@ -108,7 +108,7 @@ export abstract class BaseAnsibleNodePrecheck extends BasePrecheck<PrecheckConfi
 		const precheckConfig = this.getPrecheckConfig();
 		const inventoryPath = ansibleInventoryService.createInventoryForNode({
 			node: context.node,
-			pathToKey: `SSH_key.pem`,
+			keyFilename: `SSH_key.pem`,
 			sshUser: request.cluster.sshUser,
 		});
 		const { playbookPath, variables } = playbookOptions;
