@@ -164,13 +164,35 @@ export class ElasticClient {
 	}
 
 	static async buildClient(clusterId: string) {
-		const cluterInfo = await getClusterInfoById(clusterId);
-		const body: ElasticClusterBaseRequest = {
-			url: cluterInfo.elastic?.url!!,
-			ssl: {},
-			username: cluterInfo.elastic?.username!!,
-			password: cluterInfo.elastic?.password!!,
-		};
-		return new ElasticClient(body);
+		return await elasticClientManager.getClient(clusterId);
 	}
 }
+
+class ElasticClientManager {
+	private readonly clientCache: Record<string, ElasticClient> = {};
+
+	async getClient(clusterId: string): Promise<ElasticClient> {
+		let client = this.clientCache[clusterId];
+		if (!client) {
+			const clusterInfo = await getClusterInfoById(clusterId);
+			const config: ElasticClusterInfo = {
+				url: clusterInfo.elastic?.url!!,
+				username: clusterInfo.elastic?.username,
+				password: clusterInfo.elastic?.password,
+				apiKey: clusterInfo.elastic?.apiKey,
+				bearer: clusterInfo.elastic?.bearer,
+			};
+			client = new ElasticClient(config);
+			this.clientCache[clusterId] = client;
+		}
+		return client;
+	}
+
+	resetClient(clusterId: string): void {
+		if (this.clientCache.hasOwnProperty(clusterId)) {
+			delete this.clientCache[clusterId];
+		}
+	}
+}
+
+export const elasticClientManager = new ElasticClientManager();

@@ -1,4 +1,4 @@
-import { ElasticClient } from "../clients/elastic.client";
+import { ElasticClient, elasticClientManager } from "../clients/elastic.client";
 import { DeprecationCounts, DeprecationSetting } from "../interfaces";
 import {
 	ClusterInfo,
@@ -31,6 +31,7 @@ export const createOrUpdateClusterInfo = async (clusterInfo: IClusterInfo): Prom
 		{ new: true, upsert: true, runValidators: true }
 	);
 	cache[clusterId] = data;
+	elasticClientManager.resetClient(clusterId);
 	return data;
 };
 

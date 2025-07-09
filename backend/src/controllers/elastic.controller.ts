@@ -1,4 +1,4 @@
-import { ElasticClient } from "../clients/elastic.client";
+import { ElasticClient, elasticClientManager } from "../clients/elastic.client";
 import { NextFunction, Request, Response } from "express";
 import fs from "fs";
 import logger from "../logger/logger";
@@ -31,7 +31,7 @@ import { randomUUID } from "crypto";
 export const healthCheck = async (req: Request, res: Response) => {
 	try {
 		const clusterId = req.params.clusterId;
-		const client = await ElasticClient.buildClient(clusterId);
+		const client = await elasticClientManager.getClient(clusterId);
 		const health = await client.getClusterhealth();
 		res.send(health);
 	} catch (err: any) {
