@@ -7,6 +7,7 @@ import { PrecheckGroup } from "../models/precheck-group.model";
 import { PrecheckStatus } from "../enums";
 import { BasePrecheck } from "./base/base-precheck";
 import logger from "../logger/logger";
+import { NotificationEventType, notificationService } from "../services/notification.service";
 
 class PrecheckRunner {
 	async runAll(clusterUpgradeJobId: string): Promise<void> {
@@ -41,10 +42,13 @@ class PrecheckRunner {
 			} catch (err) {}
 		}
 
+		this.notify();
+
 		for (const precheck of prechecks) {
 			try {
 				await precheck.execute({ ...defaultRequest, context: {} });
 			} catch (err) {}
+			this.notify();
 		}
 
 		await PrecheckGroup.findOneAndUpdate(
@@ -56,6 +60,12 @@ class PrecheckRunner {
 			}
 		);
 		logger.debug(`All prechecks completed. [PrecheckGroupId: ${groupId}]`);
+	}
+
+	private notify() {
+		notificationService.sendNotification({
+			type: NotificationEventType.PRECHECK_PROGRESS_CHANGE,
+		});
 	}
 }
 
