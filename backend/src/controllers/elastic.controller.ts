@@ -26,6 +26,7 @@ import { ClusterNodeType } from "../models/cluster-node.model";
 import { syncElasticNodesData } from "../services/sync.service";
 import { precheckRunner } from "../prechecks/precheck-runner";
 import { precheckGroupService } from "../services/precheck-group.service";
+import { randomUUID } from "crypto";
 
 export const healthCheck = async (req: Request, res: Response) => {
 	try {
@@ -53,12 +54,22 @@ export const getClusterDetails = async (req: Request, res: Response) => {
 
 export const addOrUpdateClusterDetail = async (req: Request, res: Response) => {
 	try {
-		const clusterId = "cluster-id";
-		const elastic: IElasticInfo = req.body.elastic;
-		const kibana: IKibanaInfo = req.body.kibana;
-		const kibanaConfigs = req.body.kibanaConfigs;
-
-		const sshKey = req.body.key;
+		const body = req.body;
+		const getClusterId = async (clusterId: string | undefined) => {
+			if (clusterId) {
+				const existingCluster = await getClusterInfoById(clusterId);
+				if (existingCluster && existingCluster.elastic.url !== body.elastic.url) {
+					return randomUUID();
+				}
+				return clusterId;
+			}
+			return randomUUID();
+		};
+		const clusterId = await getClusterId(body.clusterId);
+		const elastic: IElasticInfo = body.elastic;
+		const kibana: IKibanaInfo = body.kibana;
+		const kibanaConfigs = body.kibanaConfigs;
+		const sshKey = body.key;
 
 		const keyPath = createSSHPrivateKeyFile(sshKey);
 

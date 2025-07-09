@@ -16,25 +16,17 @@ import { createSSHPrivateKeyFile, sshFilefileExists } from "../utils/ssh-utils";
 import { clusterUpgradeJobService } from "./cluster-upgrade-job.service";
 import { ClusterUpgradeJobStatus } from "../models/cluster-upgrade-job.model";
 import { syncElasticSearchInfo } from "./sync.service";
+import logger from "../logger/logger";
 
 const cache: Record<string, IClusterInfo | null> = {};
 
 export const createOrUpdateClusterInfo = async (clusterInfo: IClusterInfo): Promise<IClusterInfoDocument> => {
 	// TODO These needs to be updated when we want to support multiple clusters
-	const clusterId = "cluster-id"; //clusterInfo.clusterId
-	const { elastic, kibana, certificateIds, infrastructureType, pathToKey, key, kibanaConfigs, sshUser } = clusterInfo;
+	const { clusterId } = clusterInfo;
 	const data = await ClusterInfo.findOneAndUpdate(
 		{ clusterId: clusterId },
 		{
-			elastic: elastic,
-			kibana: kibana,
-			certificateIds: certificateIds,
-			clusterId: clusterId,
-			infrastructureType: infrastructureType,
-			pathToKey: pathToKey,
-			key: key,
-			kibanaConfigs: kibanaConfigs,
-			sshUser: sshUser,
+			...clusterInfo,
 		},
 		{ new: true, upsert: true, runValidators: true }
 	);
@@ -44,28 +36,14 @@ export const createOrUpdateClusterInfo = async (clusterInfo: IClusterInfo): Prom
 
 export const getAllClusters = async (): Promise<IClusterInfo[]> => {
 	try {
-		const clusters = await ClusterInfo.find({});
-		return clusters.map((cluster) => ({
-			clusterId: cluster.clusterId,
-			elastic: cluster.elastic,
-			kibana: cluster.kibana,
-			infrastructureType: cluster.infrastructureType,
-			certificateIds: cluster.certificateIds,
-			pathToKey: cluster.pathToKey,
-			key: cluster.key,
-			kibanaConfigs: cluster.kibanaConfigs,
-			sshUser: cluster.sshUser,
-		}));
+		return await ClusterInfo.find({}).sort({ createdAt: -1 });
 	} catch (error) {
-		console.error("Error fetching cluster list:", error);
+		logger.error("Error fetching cluster list:", error);
 		throw error;
 	}
 };
 
 export const getClusterInfoById = async (clusterId: string): Promise<IClusterInfo> => {
-	// TODO These needs to be updated when we want to support multiple clusters
-	clusterId = "cluster-id";
-
 	const clusterInfo = cache[clusterId]
 		? cache[clusterId]
 		: await ClusterInfo.findOne({

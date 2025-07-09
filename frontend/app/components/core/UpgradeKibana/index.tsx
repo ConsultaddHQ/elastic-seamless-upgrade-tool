@@ -98,19 +98,6 @@ function UpgradeKibana({ clusterType }: TUpgradeKibana) {
 		}
 	}, [socket])
 
-	const getNodeStatus = async (nodeId: string) => {
-		try {
-			const response = await axiosJSON.get(`/api/elastic/clusters/nodes/${nodeId}`)
-
-			// Assuming the API returns a status or progress field
-			const { status, progress } = response.data
-			return { status, progress }
-		} catch (error) {
-			console.error("Status check error:", error)
-			throw error
-		}
-	}
-
 	const getNodesInfo = async () => {
 		let response: any = []
 		await axiosJSON
@@ -138,7 +125,7 @@ function UpgradeKibana({ clusterType }: TUpgradeKibana) {
 	}
 
 	const performUpgrade = async (nodeId: string) => {
-		const clusterId = LocalStorageHandler.getItem(StorageManager.CLUSTER_ID) || "cluster-id"
+		const clusterId = LocalStorageHandler.getItem(StorageManager.CLUSTER_ID)
 		console.log("triggered")
 		await axiosJSON
 			.post(`/api/elastic/clusters/${clusterId}/nodes/upgrade-kibana`, {

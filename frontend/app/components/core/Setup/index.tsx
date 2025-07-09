@@ -15,13 +15,13 @@ import useSafeRouteStore from "~/store/safeRoutes"
 function Setup() {
 	const navigate = useNavigate()
 
-	const setClusterAdded  = useSafeRouteStore((state: any) => state.setClusterAdded)
+	const setClusterAdded = useSafeRouteStore((state: any) => state.setClusterAdded)
 
-	const infraType = useLocalStore((state:any) =>state.infraType)
-	const setInfraType = useLocalStore((state:any) =>state.setInfraType)
-	const setClusterId = useLocalStore((state:any) =>state.setClusterId)
-	const step = useSessionStore((state:any) =>state.setupStep)
-	const setStep = useSessionStore((state:any) =>state.setSetupStep)
+	const infraType = useLocalStore((state: any) => state.infraType)
+	const setInfraType = useLocalStore((state: any) => state.setInfraType)
+	const setClusterId = useLocalStore((state: any) => state.setClusterId)
+	const step = useSessionStore((state: any) => state.setupStep)
+	const setStep = useSessionStore((state: any) => state.setSetupStep)
 	// const [infraType, setClusterId, setInfraType] = useLocalStore((state: any) => {
 	// 	return [state.infraType, state.setClusterId, state.setInfraType]
 	// })
@@ -87,7 +87,7 @@ function Setup() {
 				.then((res) => {
 					setClusterAdded(true)
 					setStep(1)
-					setClusterId(res?.data?.clusterId || "cluster-id")
+					setClusterId(res?.data?.clusterId)
 					navigate("/cluster-overview")
 				})
 				.catch((err) => toast.error(err?.response?.data.err ?? StringManager.GENERIC_ERROR))

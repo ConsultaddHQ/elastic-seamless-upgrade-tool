@@ -2,16 +2,7 @@ import { Drawer, DrawerBody, DrawerContent } from "@heroui/react"
 import { Box, Breadcrumbs, IconButton, InputAdornment, Typography } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { useFormik } from "formik"
-import {
-	Add,
-	ArrowLeft,
-	ArrowRight2,
-	DocumentText1,
-	DocumentUpload,
-	Eye,
-	EyeSlash,
-	Trash
-} from "iconsax-react"
+import { Add, ArrowLeft, ArrowRight2, DocumentText1, DocumentUpload, Eye, EyeSlash, Trash } from "iconsax-react"
 import _ from "lodash"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
@@ -64,7 +55,7 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 	const resetForEditCluster = useSafeRouteStore((state: any) => state.resetForEditCluster)
 	const setInfraType = useLocalStore((state: any) => state.setInfraType)
 	const setClusterId = useLocalStore((state: any) => state.setClusterId)
-
+	const clusterId = useLocalStore((state: any) => state.clusterId)
 	const { pathname } = useLocation()
 	const [initialValues, setInitialValues] = useState<TClusterValues>(INITIAL_VALUES)
 	const [showPassword, setShowPassword] = useState<boolean>(false)
@@ -173,10 +164,11 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 					infrastructureType: "on-premise",
 					key: values.pathToSSH ?? "",
 					kibanaConfigs: values.kibanaConfigs,
+					clusterId: clusterId,
 				})
 				.then((res) => {
 					setInfraType("on-premise")
-					setClusterId(res?.data?.clusterId || "cluster-id")
+					setClusterId(res?.data?.clusterId)
 					refetch()
 					resetForEditCluster()
 					if (pathname === "/cluster-overview") {
