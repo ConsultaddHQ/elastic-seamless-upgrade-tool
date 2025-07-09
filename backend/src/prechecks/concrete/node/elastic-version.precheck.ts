@@ -30,15 +30,13 @@ export class ElasticVersionPrecheck extends BaseNodePrecheck {
 			});
 			const node = nodes.nodes[nodeId];
 			if (node.version === currentVersion) {
-				this.addLog(request, `Node is running on the expected version: ${currentVersion}.`);
+				await this.addLog(request, `Node is running on the expected version: ${currentVersion}.`);
 			} else {
 				const message = `Node version mismatch: expected ${currentVersion}, but found ${node.version}.`;
-				this.addLog(request, message);
 				throw new ConflictError(message);
 			}
 		} catch (err) {
 			const message = `Node with ID ${nodeId} not found`;
-			this.addLog(request, message);
 			throw new NotFoundError(message);
 		}
 	}

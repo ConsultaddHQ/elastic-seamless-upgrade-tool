@@ -1,4 +1,5 @@
 import { PrecheckStatus } from "../../enums";
+import logger from "../../logger/logger";
 import { ClusterNodeType, IClusterNode } from "../../models/cluster-node.model";
 import { INodePrecheck, Precheck } from "../../models/precheck.model";
 import { clusterNodeService } from "../../services/cluster-node.service";
@@ -43,7 +44,8 @@ export abstract class BaseNodePrecheck extends BasePrecheck<PrecheckConfig, Node
 						status: PrecheckStatus.COMPLETED,
 						endAt: Date.now(),
 					});
-				} catch (err) {
+				} catch (err: any) {
+					await this.addLog({ ...request, context: nodeContext }, err?.message);
 					await Precheck.updateOne(uniquePrecheckIdentifier, {
 						status: PrecheckStatus.FAILED,
 						endAt: Date.now(),

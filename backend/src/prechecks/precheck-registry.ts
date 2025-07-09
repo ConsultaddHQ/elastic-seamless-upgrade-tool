@@ -7,6 +7,10 @@ import { ClusterHealthPrecheck } from "./concrete/cluster/cluster-health.prechec
 import { ElasticVersionPrecheck } from "./concrete/node/elastic-version.precheck";
 import { KibanaVersionPrecheck } from "./concrete/node/kibana-version.precheck";
 import { UnassignedShardsPrecheck } from "./concrete/index/unassigned-shards.precheck";
+import { NoRelocatingShardsPrecheck } from "./concrete/cluster/no-relocating-shards.precheck";
+import { MasterEligibleNodesPrecheck } from "./concrete/cluster/master-eligible-nodes.precheck";
+import { EvenShardDistributionPrecheck } from "./concrete/cluster/even-shard-distribution.precheck";
+import { JvmHeapSettingsPrecheck } from "./concrete/node/jvm-heap-settings.precheck";
 
 class PrecheckRegistry {
 	private prechecks: BasePrecheck[] = [];
@@ -24,10 +28,19 @@ class PrecheckRegistry {
 }
 
 export const precheckRegistry = new PrecheckRegistry();
+
+// Cluster checks
+precheckRegistry.register(new ClusterHealthPrecheck());
+precheckRegistry.register(new NoRelocatingShardsPrecheck());
+precheckRegistry.register(new MasterEligibleNodesPrecheck());
+precheckRegistry.register(new UnassignedShardsPrecheck());
+precheckRegistry.register(new EvenShardDistributionPrecheck());
+
 precheckRegistry.register(new ElasticVersionPrecheck());
 precheckRegistry.register(new KibanaVersionPrecheck());
-precheckRegistry.register(new ClusterHealthPrecheck());
-precheckRegistry.register(new UnassignedShardsPrecheck());
+precheckRegistry.register(new JvmHeapSettingsPrecheck());
+
+// OS Level checks
 precheckRegistry.register(new CheckDiskSpacePrecheck());
 precheckRegistry.register(new CheckCpuUtilizationPrecheck());
 precheckRegistry.register(new CheckMemoryUtilizationPrecheck());

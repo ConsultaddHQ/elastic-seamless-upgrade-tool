@@ -30,11 +30,9 @@ export class UnassignedShardsPrecheck extends BaseIndexPrecheck {
 
 		if (unassignedOrInitializingShards.length > 0) {
 			const shardStates = unassignedOrInitializingShards.map((s) => `${s.shard} (${s.state})`).join(", ");
-			const message = `Index [${indexName}] has unassigned or initializing shards: ${shardStates}`;
-			this.addLog(request, message);
-			throw new AppError(message, 400);
+			throw new AppError(`Index [${indexName}] has unassigned or initializing shards: ${shardStates}`, 400);
 		} else {
-			this.addLog(request, `Index [${indexName}] has all shards in assigned and started state.`);
+			await this.addLog(request, `Index [${indexName}] has all shards in assigned and started state.`);
 		}
 	}
 }

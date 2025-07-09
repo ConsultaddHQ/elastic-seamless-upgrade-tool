@@ -1,12 +1,6 @@
 import { Request, Response } from "express";
 import logger from "../logger/logger";
-import {
-	AnsibleRequestType,
-	AnsibleTaskStatus,
-	ClusterType,
-	mapAnsibleToPrecheckStatus,
-	mapAnsibleToUpgradeStatus,
-} from "../enums";
+import { AnsibleRequestType, AnsibleTaskStatus, ClusterType, mapAnsibleToUpgradeStatus } from "../enums";
 import { NotificationEventType, notificationService } from "../services/notification.service";
 import { clusterNodeService } from "../services/cluster-node.service";
 import { ClusterNodeType } from "../models/cluster-node.model";

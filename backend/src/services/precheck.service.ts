@@ -21,8 +21,7 @@ class PrecheckService {
 				runValidators: true,
 			});
 		} catch (error: any) {
-			logger.error(`Error updating status for node ${identifier}: ${error.message}`);
-			throw error;
+			logger.error(`Error updating precheck ${identifier}: ${error.message}`);
 		}
 	}
 

@@ -43,7 +43,8 @@ export abstract class BaseIndexPrecheck extends BasePrecheck<PrecheckConfig, Ind
 						status: PrecheckStatus.COMPLETED,
 						endAt: Date.now(),
 					});
-				} catch (err) {
+				} catch (err: any) {
+					await this.addLog({ ...request, context: context }, err?.message);
 					await Precheck.updateOne(uniquePrecheckIdentifier, {
 						status: PrecheckStatus.FAILED,
 						endAt: Date.now(),

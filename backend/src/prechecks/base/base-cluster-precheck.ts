@@ -31,7 +31,8 @@ export abstract class BaseClusterPrecheck extends BasePrecheck<PrecheckConfig, C
 				status: PrecheckStatus.COMPLETED,
 				endAt: Date.now(),
 			});
-		} catch (err) {
+		} catch (err: any) {
+			await this.addLog({ ...request, context: clusterContext }, err?.message);
 			await Precheck.updateOne(uniquePrecheckIdentifier, {
 				status: PrecheckStatus.FAILED,
 				endAt: Date.now(),
