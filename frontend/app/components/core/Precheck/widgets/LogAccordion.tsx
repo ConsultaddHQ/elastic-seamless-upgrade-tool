@@ -8,6 +8,7 @@ import MuiAccordionSummary, {
 import MuiAccordionDetails from "@mui/material/AccordionDetails"
 import { ArrowForward, ArrowRight, ArrowRight2, ArrowRight3, TickCircle, Warning2 } from "iconsax-react"
 import React from "react"
+import type { PrecheckStatus } from ".."
 
 const Accordion = styled((props: AccordionProps) => <MuiAccordion disableGutters elevation={0} square {...props} />)(
 	({ theme }) => ({
@@ -80,7 +81,7 @@ function LogAccordion({
 	onChange,
 }: {
 	title: string
-	status?: "PENDING" | "COMPLETED" | "FAILED" | "RUNNING"
+	status?: PrecheckStatus
 	logs?: string[]
 	duration: string
 	expanded: boolean
