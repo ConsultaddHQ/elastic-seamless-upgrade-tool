@@ -178,7 +178,16 @@ const PrecheckGroup = ({ prechecks, label }: { prechecks?: TPrecheck[]; label: s
 	)
 }
 const IndexPrecheckGroup = ({ groups }: { groups: TIndexData[] }) => {
-	const [selectedGroup, setSelectedGroup] = useState<TIndexData>(groups[0])
+	const [selectedIndex, setSelectedIndex] = useState(0)
+
+	useEffect(() => {
+		if (groups.length === 0) return
+
+		// If the current selected index is out of bounds, reset to 0
+		if (selectedIndex >= groups.length) {
+			setSelectedIndex(0)
+		}
+	}, [groups])
 
 	return (
 		<>
@@ -202,14 +211,14 @@ const IndexPrecheckGroup = ({ groups }: { groups: TIndexData[] }) => {
 											key={index}
 											name={item.name}
 											status={item.status}
-											isSelected={item.name === selectedGroup.name}
-											onClick={() => setSelectedGroup(item)}
+											isSelected={item.name === groups[index].name}
+											onClick={() => setSelectedIndex(index)}
 										/>
 									)
 								})}
 							</Box>
 						</Box>
-						<PrecheckGroup prechecks={selectedGroup?.prechecks} label="Index Prechecks" />
+						<PrecheckGroup prechecks={groups[selectedIndex]?.prechecks} label="Index Prechecks" />
 					</>
 				)}
 			</Box>
@@ -231,7 +240,16 @@ const ClusterPrecheckGroup = ({ prechecks }: { prechecks: TPrecheck[] }) => {
 }
 
 const NodePrecheckGroup = ({ groups }: { groups: TNodeData[] }) => {
-	const [selectedGroup, setSelectedGroup] = useState<TNodeData>(groups[0])
+	const [selectedIndex, setSelectedIndex] = useState(0)
+
+	useEffect(() => {
+		if (groups.length === 0) return
+
+		// If the current selected index is out of bounds, reset to 0
+		if (selectedIndex >= groups.length) {
+			setSelectedIndex(0)
+		}
+	}, [groups])
 
 	return (
 		<>
@@ -255,14 +273,14 @@ const NodePrecheckGroup = ({ groups }: { groups: TNodeData[] }) => {
 											key={index}
 											name={item.name}
 											status={item.status}
-											isSelected={item.nodeId === selectedGroup.nodeId}
-											onClick={() => setSelectedGroup(item)}
+											isSelected={item.nodeId === groups[selectedIndex].nodeId}
+											onClick={() => setSelectedIndex(index)}
 										/>
 									)
 								})}
 							</Box>
 						</Box>
-						<PrecheckGroup prechecks={selectedGroup?.prechecks} label="Node Prechecks" />
+						<PrecheckGroup prechecks={groups[selectedIndex]?.prechecks} label="Node Prechecks" />
 					</>
 				)}
 			</Box>
