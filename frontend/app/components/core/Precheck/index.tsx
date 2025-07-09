@@ -269,6 +269,7 @@ const NodePrecheckGroup = ({ groups }: { groups: TNodeData[] }) => {
 		</>
 	)
 }
+
 function Precheck() {
 	const clusterId = useLocalStore((state: any) => state.clusterId)
 	const { socket } = useSocketStore()

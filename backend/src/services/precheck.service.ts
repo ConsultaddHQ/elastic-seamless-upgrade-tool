@@ -64,7 +64,7 @@ class PrecheckService {
 			};
 		});
 		return {
-			node: this.groupeByNode(nodePrechecks),
+			node: this.groupedByNode(nodePrechecks),
 			cluster: clusterPrechecksUi,
 			index: this.groupedByIndex(indexPrechecks),
 		};
@@ -87,7 +87,7 @@ class PrecheckService {
 		return PrecheckStatus.COMPLETED;
 	}
 
-	private groupeByNode(prechecks: INodePrecheck[]) {
+	private groupedByNode(prechecks: INodePrecheck[]) {
 		const groupedPrecheckRunsByNodeId = prechecks.reduce<Record<string, INodePrecheck[]>>((acc, run) => {
 			const groupedBy = run.node.id;
 			if (!acc[groupedBy]) {
