@@ -1,10 +1,9 @@
 import { ClusterNodeType, IElasticNode } from "../models/cluster-node.model";
 import { KibanaClient } from "../clients/kibana.client";
 import logger from "../logger/logger";
-import { IElasticSearchInfo } from "../models/elastic-search-info.model";
 import { clusterStatus, NodeStatus } from "../enums";
 import { ElasticClient } from "../clients/elastic.client";
-import { createOrUpdateElasticSearchInfo } from "./elastic-search-info.service";
+import { createOrUpdateElasticSearchInfo, IElasticSearchInfo } from "./elastic-search-info.service";
 import { clusterUpgradeJobService } from "./cluster-upgrade-job.service";
 import { ClusterUpgradeJobStatus } from "../models/cluster-upgrade-job.model";
 import { clusterNodeService } from "./cluster-node.service";

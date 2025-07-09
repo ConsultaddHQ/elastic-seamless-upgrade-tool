@@ -94,53 +94,6 @@ class AnsibleInventoryService {
 		}
 	};
 
-	public createInventoryForPrecheckPerNode = async ({
-		pathToKey,
-		node,
-		iniName,
-		sshUser,
-	}: {
-		node: { ip: string; name: string };
-		pathToKey: string;
-		sshUser: string;
-		iniName: string;
-	}) => {
-		try {
-			const roleGroups: Record<"elasticsearch", string[]> = {
-				elasticsearch: [],
-			};
-
-			roleGroups.elasticsearch.push(`${node.name} ansible_host=${node.ip}`);
-
-			const inventoryParts: string[] = [];
-
-			Object.entries(roleGroups).forEach(([group, hosts]) => {
-				if (hosts.length > 0) {
-				}
-				inventoryParts.push(`[${group}]\n${hosts.join("\n")}`);
-			});
-
-			if (ENABLE_PASSWORD_AUTH_FOR_SSH) {
-				inventoryParts.push(
-					`[elasticsearch:vars]\nansible_ssh_user=${sshUser}\nansible_ssh_pass=admin\nansible_ssh_common_args='-o StrictHostKeyChecking=no'\n`
-				);
-			} else {
-				inventoryParts.push(
-					`[elasticsearch:vars]\nansible_ssh_user=${sshUser}\nansible_ssh_private_key_file=${pathToKey}\nansible_ssh_common_args='-o StrictHostKeyChecking=no'\n`
-				);
-			}
-
-			const inventoryContent = inventoryParts.join("\n\n");
-
-			await fs.promises.writeFile(`ansible/ini/${iniName}`, inventoryContent, "utf8");
-
-			return inventoryContent;
-		} catch (error) {
-			console.error("Error creating Ansible inventory:", error);
-			throw error;
-		}
-	};
-
 	public createInventoryForNode = ({
 		keyFilename,
 		node,

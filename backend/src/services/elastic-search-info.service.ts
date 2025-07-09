@@ -1,29 +1,40 @@
-import ElasticSearchInfo, { IElasticSearchInfo, IElasticSearchInfoDocument } from "../models/elastic-search-info.model";
-import logger from "../logger/logger";
+import { clusterStatus } from "../enums";
+
+export interface IElasticSearchInfo {
+	clusterId: string;
+	clusterName: string;
+	clusterUUID: string;
+	status: clusterStatus;
+	version: string;
+	timedOut: Boolean;
+	numberOfDataNodes: number;
+	numberOfMasterNodes: number;
+	totalIndices: number;
+	numberOfNodes: number;
+	currentMasterNode: string;
+	activePrimaryShards: number;
+	activeShards: number;
+	unassignedShards: number;
+	initializingShards: number;
+	relocatingShards: number;
+	lastSyncedAt: Date;
+	adaptiveReplicationEnabled: boolean;
+}
+
+const cached: Record<string, IElasticSearchInfo> = {};
 
 export const createOrUpdateElasticSearchInfo = async (
 	elasticSearchInfo: IElasticSearchInfo
-): Promise<IElasticSearchInfoDocument> => {
-	// TODO These needs to be updated when we want to support multiple clusters
-	const clusterId = "cluster-id"; //clusterInfo.clusterId
+): Promise<IElasticSearchInfo> => {
+	const clusterId = elasticSearchInfo.clusterId;
 	elasticSearchInfo.clusterId = clusterId;
-	const data = await ElasticSearchInfo.findOneAndUpdate(
-		{ clusterId: clusterId },
-		{
-			...elasticSearchInfo,
-			lastSyncedAt: new Date(),
-		},
-		{ new: true, upsert: true, runValidators: true }
-	);
-	return data;
+	cached[clusterId] = {
+		...elasticSearchInfo,
+		lastSyncedAt: new Date(),
+	};
+	return cached[clusterId];
 };
 
-export const getElasticSearchInfo = async (clusterId: string): Promise<IElasticSearchInfoDocument | null> => {
-	try {
-		const elasticSearchInfo = await ElasticSearchInfo.findOne({ clusterId: clusterId });
-		return elasticSearchInfo;
-	} catch (err: any) {
-		logger.error("Unable to get Elastic search Data from database", err.message);
-		throw new Error("Unable to get Elastic search Data from database" + err.message);
-	}
+export const getElasticSearchInfo = async (clusterId: string): Promise<IElasticSearchInfo | null> => {
+	return cached[clusterId];
 };
