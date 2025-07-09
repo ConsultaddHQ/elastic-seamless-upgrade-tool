@@ -1,7 +1,7 @@
 import { Box, Typography } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { ExportCurve, Folder, Refresh } from "iconsax-react"
-import React, { useEffect, useRef, useState } from "react"
+import { Folder, Refresh } from "iconsax-react"
+import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 import axiosJSON from "~/apis/http"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"
@@ -273,7 +273,6 @@ const NodePrecheckGroup = ({ groups }: { groups: TNodeData[] }) => {
 function Precheck() {
 	const clusterId = useLocalStore((state: any) => state.clusterId)
 	const { socket } = useSocketStore()
-	const [isExportPending, setIsExportPending] = useState(false)
 	const debounceRef = useRef(null)
 
 	const getPrecheck = async () => {
@@ -314,40 +313,6 @@ function Precheck() {
 			socket.off("PRECHECK_PROGRESS_CHANGE", listner)
 		}
 	}, [socket])
-	const reReunPrecheck = async () => {
-		await axiosJSON
-			.post(`/api/elastic/clusters/${clusterId}/prechecks`)
-			.then(() => refetch())
-			.catch((err) => {
-				console.log("Err", err)
-				toast.error(err?.response?.data.err ?? StringManager.GENERIC_ERROR)
-			})
-	}
-
-	const { mutate: HandleRerun, isPending } = useMutation({
-		mutationKey: ["re-run-prechecks"],
-		mutationFn: reReunPrecheck,
-	})
-	const handleExport = async () => {
-		setIsExportPending(true)
-		try {
-			const response = await axiosJSON.get(`/api/elastic/clusters/${clusterId}/prechecks/report`, {
-				responseType: "blob",
-			})
-			const blob = new Blob([response.data], { type: "text/markdown" })
-			const url = URL.createObjectURL(blob)
-			const a = document.createElement("a")
-			a.href = url
-			a.download = "precheck-report.md"
-			a.click()
-
-			URL.revokeObjectURL(url)
-		} catch (err) {
-			toast.error("Something went wrong while exporting the file")
-		} finally {
-			setIsExportPending(false)
-		}
-	}
 
 	if (isLoading) return <Loading />
 
@@ -355,15 +320,6 @@ function Precheck() {
 		<>
 			{data ? (
 				<>
-					<Box className="flex flex-row gap-[6px]">
-						<OutlinedBorderButton onClick={HandleRerun} disabled={isPending}>
-							<Refresh color="currentColor" size="14px" /> {isPending ? "Running" : "Re-run"}
-						</OutlinedBorderButton>
-						<OutlinedBorderButton onClick={handleExport} disable={isExportPending}>
-							<ExportCurve color="currentColor" size="14px" /> {isExportPending ? "Exporting" : "Export"}
-						</OutlinedBorderButton>
-					</Box>
-
 					<ClusterPrecheckGroup prechecks={data?.cluster} />
 					<NodePrecheckGroup groups={data?.node} />
 					<IndexPrecheckGroup groups={data?.index} />
