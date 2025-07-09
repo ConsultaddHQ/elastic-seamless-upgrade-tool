@@ -1,5 +1,6 @@
 import { ElasticClient } from "../clients/elastic.client";
 import { KibanaClient } from "../clients/kibana.client";
+import { PrecheckStatus } from "../enums";
 import logger from "../logger/logger";
 import { getBreakingChanges } from "../utils/breaking-changes-utils";
 import { clusterUpgradeJobService } from "./cluster-upgrade-job.service";
@@ -51,23 +52,23 @@ class PrecheckReportService {
 		md += `| Index Name | Status |\n`;
 		md += `|-----------|--------|\n`;
 		groupedPrechecks.index.forEach((precheck) => {
-			md += `| ${precheck.name} | | ${precheck.status} |\n`;
+			md += `| ${precheck.name} | ${precheck.status} |\n`;
 		});
 
 		md += `\n## 🔍 Detailed Pre-checks\n`;
 
-		prechecksGroupedByNode.forEach((node) => {
-			md += `\n### 🖥️ ${node.name} (${node.ip})\n`;
+		groupedPrechecks.index.forEach((index) => {
+			md += `\n### 🖥️ ${index.name}\n`;
 
 			md += `| Check | Status | Duration (s) |\n`;
 			md += `|-------|--------|---------------|\n`;
 
-			node.prechecks.forEach((check) => {
+			index.prechecks.forEach((check) => {
 				md += `| ${check.name} | ${check.status} | ${check.duration} |\n`;
 			});
 
 			md += `\n<details><summary>Show Logs</summary>\n\n`;
-			node.prechecks.forEach((check) => {
+			index.prechecks.forEach((check) => {
 				md += `#### ${check.name}\n`;
 				const logs = check.logs.length > 0 ? check.logs : ["N/A"];
 				md += "```\n" + logs.join("\n") + "\n```\n";
