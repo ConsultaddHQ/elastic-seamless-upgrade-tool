@@ -133,7 +133,7 @@ const PrechecList = ({ prechecks }: { prechecks?: TPrecheck[] }) => {
 		}
 	}
 	return (
-		<Box className="flex flex-col gap-1 overflow-scroll scrollbar-hide" padding="0px 24px">
+		<Box className="flex flex-col gap-1 overflow-scroll scrollbar-hide">
 			{prechecks?.length ? (
 				prechecks.map((item: TPrecheck, idx: number) => {
 					return (
@@ -324,7 +324,9 @@ const ClusterPrecheckGroup = ({ prechecks }: { prechecks: TPrecheck[] }) => {
 								</Typography>
 							</Box>
 						</Box>
-						<PrechecList prechecks={prechecks} />
+						<Box padding="0px 24px">
+							<PrechecList prechecks={prechecks} />
+						</Box>
 					</Box>
 				</Box>
 			</Box>
