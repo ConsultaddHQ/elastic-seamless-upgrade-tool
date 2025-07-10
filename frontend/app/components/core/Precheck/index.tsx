@@ -123,6 +123,7 @@ const PrecheckNotTriggered = ({ refetch }: { refetch: () => void }) => {
 		</Box>
 	)
 }
+
 const PrechecList = ({ prechecks }: { prechecks?: TPrecheck[] }) => {
 	const [expanded, setExpanded] = useState<string[]>([])
 	const handleChange = (panel: string) => () => {
@@ -155,7 +156,7 @@ const PrechecList = ({ prechecks }: { prechecks?: TPrecheck[] }) => {
 	)
 }
 
-const IndexPrecheckGroup = ({ groups }: { groups: TIndexData[] }) => {
+const PrecheckGroup = ({ groups, label }: { groups: (TNodeData | TIndexData)[]; label: string }) => {
 	const [selectedIndex, setSelectedIndex] = useState(0)
 
 	useEffect(() => {
@@ -185,82 +186,7 @@ const IndexPrecheckGroup = ({ groups }: { groups: TIndexData[] }) => {
 										lineHeight="normal"
 										letterSpacing="0.16px"
 									>
-										Index Prechecks
-									</Typography>
-								</Box>
-							</Box>
-
-							<Box className="flex flex-row gap-1 overflow-scroll scrollbar-hide" padding="0px 24px">
-								{/* Left - 20% */}
-								<Box className="flex py-4 flex-col gap-[6px]">
-									<Typography
-										color="#A9AAB6"
-										fontSize="12px"
-										fontWeight="500"
-										lineHeight="normal"
-										letterSpacing="0.12px"
-									>
-										Indexes
-									</Typography>
-									<Box className="flex flex-col gap-[6px] overflow-scroll scrollbar-hide min-w-[282px]">
-										{groups.map((item, index) => {
-											return (
-												<NodeListItem
-													key={index}
-													name={item.name}
-													status={item.status}
-													isSelected={item.name === groups[selectedIndex].name}
-													onClick={() => setSelectedIndex(index)}
-												/>
-											)
-										})}
-									</Box>
-								</Box>
-
-								{/* Right - 80% */}
-								<div className="w-full">
-									<PrechecList prechecks={groups[selectedIndex].prechecks} />
-								</div>
-							</Box>
-						</Box>
-					</Box>
-				)}
-			</Box>
-		</>
-	)
-}
-
-const NodePrecheckGroup = ({ groups }: { groups: TNodeData[] }) => {
-	const [selectedIndex, setSelectedIndex] = useState(0)
-
-	useEffect(() => {
-		if (groups.length === 0) return
-
-		// If the current selected index is out of bounds, reset to 0
-		if (selectedIndex >= groups.length) {
-			setSelectedIndex(0)
-		}
-	}, [groups])
-
-	return (
-		<>
-			<Box className="flex gap-4 h-auto">
-				{groups.length !== 0 && (
-					<Box
-						className="flex w-full p-px rounded-2xl"
-						sx={{ background: "radial-gradient(#6E687C, #1D1D1D)" }}
-					>
-						<Box className="flex flex-col  gap-4 w-full rounded-2xl bg-[#0d0d0d]" padding="16px 0px">
-							<Box className="flex flex-row gap-2 justify-between items-center" padding="0px 24px">
-								<Box>
-									<Typography
-										color="#FFF"
-										fontSize="16px"
-										fontWeight="600"
-										lineHeight="normal"
-										letterSpacing="0.16px"
-									>
-										Node Prechecks
+										{label}
 									</Typography>
 								</Box>
 							</Box>
@@ -385,8 +311,8 @@ function Precheck() {
 			{data ? (
 				<>
 					<ClusterPrecheckGroup prechecks={data?.cluster} />
-					<NodePrecheckGroup groups={data?.node} />
-					<IndexPrecheckGroup groups={data?.index} />
+					<PrecheckGroup groups={data?.node} label="Node Prechecks" />
+					<PrecheckGroup groups={data?.index} label="Index Prechecks" />
 				</>
 			) : (
 				<PrecheckNotTriggered refetch={refetch} />
