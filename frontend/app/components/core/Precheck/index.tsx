@@ -155,28 +155,6 @@ const PrechecList = ({ prechecks }: { prechecks?: TPrecheck[] }) => {
 	)
 }
 
-const PrecheckGroup = ({ prechecks, label }: { prechecks?: TPrecheck[]; label: string }) => {
-	return (
-		<Box className="flex w-full p-px rounded-2xl" sx={{ background: "radial-gradient(#6E687C, #1D1D1D)" }}>
-			<Box className="flex flex-col  gap-4 w-full rounded-2xl bg-[#0d0d0d]" padding="16px 0px">
-				<Box className="flex flex-row gap-2 justify-between items-center" padding="0px 24px">
-					<Box>
-						<Typography
-							color="#FFF"
-							fontSize="16px"
-							fontWeight="600"
-							lineHeight="normal"
-							letterSpacing="0.16px"
-						>
-							{label}
-						</Typography>
-					</Box>
-				</Box>
-				<PrechecList prechecks={prechecks} />
-			</Box>
-		</Box>
-	)
-}
 const IndexPrecheckGroup = ({ groups }: { groups: TIndexData[] }) => {
 	const [selectedIndex, setSelectedIndex] = useState(0)
 
@@ -193,47 +171,60 @@ const IndexPrecheckGroup = ({ groups }: { groups: TIndexData[] }) => {
 		<>
 			<Box className="flex gap-4 h-auto">
 				{groups.length !== 0 && (
-					<>
-						<Box className="flex py-4 flex-col gap-[6px]">
-							<Typography
-								color="#A9AAB6"
-								fontSize="12px"
-								fontWeight="500"
-								lineHeight="normal"
-								letterSpacing="0.12px"
-							>
-								Indexes
-							</Typography>
-							<Box className="flex flex-col gap-[6px] overflow-scroll scrollbar-hide min-w-[282px]">
-								{groups.map((item, index) => {
-									return (
-										<NodeListItem
-											key={index}
-											name={item.name}
-											status={item.status}
-											isSelected={item.name === groups[index].name}
-											onClick={() => setSelectedIndex(index)}
-										/>
-									)
-								})}
+					<Box
+						className="flex w-full p-px rounded-2xl"
+						sx={{ background: "radial-gradient(#6E687C, #1D1D1D)" }}
+					>
+						<Box className="flex flex-col  gap-4 w-full rounded-2xl bg-[#0d0d0d]" padding="16px 0px">
+							<Box className="flex flex-row gap-2 justify-between items-center" padding="0px 24px">
+								<Box>
+									<Typography
+										color="#FFF"
+										fontSize="16px"
+										fontWeight="600"
+										lineHeight="normal"
+										letterSpacing="0.16px"
+									>
+										Index Prechecks
+									</Typography>
+								</Box>
+							</Box>
+
+							<Box className="flex flex-row gap-1 overflow-scroll scrollbar-hide" padding="0px 24px">
+								{/* Left - 20% */}
+								<Box className="flex py-4 flex-col gap-[6px]">
+									<Typography
+										color="#A9AAB6"
+										fontSize="12px"
+										fontWeight="500"
+										lineHeight="normal"
+										letterSpacing="0.12px"
+									>
+										Indexes
+									</Typography>
+									<Box className="flex flex-col gap-[6px] overflow-scroll scrollbar-hide min-w-[282px]">
+										{groups.map((item, index) => {
+											return (
+												<NodeListItem
+													key={index}
+													name={item.name}
+													status={item.status}
+													isSelected={item.name === groups[selectedIndex].name}
+													onClick={() => setSelectedIndex(index)}
+												/>
+											)
+										})}
+									</Box>
+								</Box>
+
+								{/* Right - 80% */}
+								<div className="w-full">
+									<PrechecList prechecks={groups[selectedIndex].prechecks} />
+								</div>
 							</Box>
 						</Box>
-						<PrecheckGroup prechecks={groups[selectedIndex]?.prechecks} label="Index Prechecks" />
-					</>
+					</Box>
 				)}
-			</Box>
-		</>
-	)
-}
-
-const ClusterPrecheckGroup = ({ prechecks }: { prechecks: TPrecheck[] }) => {
-	return (
-		<>
-			<Box className="flex gap-4 h-auto">
-				<Box className="flex py-4 flex-col gap-[6px]">
-					<Box className="flex flex-col gap-[6px] overflow-scroll scrollbar-hide min-w-[282px]"></Box>
-				</Box>
-				<PrecheckGroup prechecks={prechecks} label="Cluster Prechecks" />
 			</Box>
 		</>
 	)
@@ -255,34 +246,87 @@ const NodePrecheckGroup = ({ groups }: { groups: TNodeData[] }) => {
 		<>
 			<Box className="flex gap-4 h-auto">
 				{groups.length !== 0 && (
-					<>
-						<Box className="flex py-4 flex-col gap-[6px]">
-							<Typography
-								color="#A9AAB6"
-								fontSize="12px"
-								fontWeight="500"
-								lineHeight="normal"
-								letterSpacing="0.12px"
-							>
-								Nodes
-							</Typography>
-							<Box className="flex flex-col gap-[6px] overflow-scroll scrollbar-hide min-w-[282px]">
-								{groups.map((item, index) => {
-									return (
-										<NodeListItem
-											key={index}
-											name={item.name}
-											status={item.status}
-											isSelected={item.nodeId === groups[selectedIndex].nodeId}
-											onClick={() => setSelectedIndex(index)}
-										/>
-									)
-								})}
+					<Box
+						className="flex w-full p-px rounded-2xl"
+						sx={{ background: "radial-gradient(#6E687C, #1D1D1D)" }}
+					>
+						<Box className="flex flex-col  gap-4 w-full rounded-2xl bg-[#0d0d0d]" padding="16px 0px">
+							<Box className="flex flex-row gap-2 justify-between items-center" padding="0px 24px">
+								<Box>
+									<Typography
+										color="#FFF"
+										fontSize="16px"
+										fontWeight="600"
+										lineHeight="normal"
+										letterSpacing="0.16px"
+									>
+										Node Prechecks
+									</Typography>
+								</Box>
+							</Box>
+
+							<Box className="flex flex-row gap-1 overflow-scroll scrollbar-hide" padding="0px 24px">
+								{/* Left - 20% */}
+								<Box className="flex flex-col gap-[6px]">
+									<Typography
+										color="#A9AAB6"
+										fontSize="12px"
+										fontWeight="500"
+										lineHeight="normal"
+										letterSpacing="0.12px"
+									>
+										Nodes
+									</Typography>
+									<Box className="flex flex-col gap-[6px] overflow-scroll scrollbar-hide min-w-[282px]">
+										{groups.map((item, index) => {
+											return (
+												<NodeListItem
+													key={index}
+													name={item.name}
+													status={item.status}
+													isSelected={item.name === groups[selectedIndex].name}
+													onClick={() => setSelectedIndex(index)}
+												/>
+											)
+										})}
+									</Box>
+								</Box>
+
+								{/* Right - 80% */}
+								<div className="w-full">
+									<PrechecList prechecks={groups[selectedIndex].prechecks} />
+								</div>
 							</Box>
 						</Box>
-						<PrecheckGroup prechecks={groups[selectedIndex]?.prechecks} label="Node Prechecks" />
-					</>
+					</Box>
 				)}
+			</Box>
+		</>
+	)
+}
+
+const ClusterPrecheckGroup = ({ prechecks }: { prechecks: TPrecheck[] }) => {
+	return (
+		<>
+			<Box className="flex gap-4 h-auto">
+				<Box className="flex w-full p-px rounded-2xl" sx={{ background: "radial-gradient(#6E687C, #1D1D1D)" }}>
+					<Box className="flex flex-col  gap-4 w-full rounded-2xl bg-[#0d0d0d]" padding="16px 0px">
+						<Box className="flex flex-row gap-2 justify-between items-center" padding="0px 24px">
+							<Box>
+								<Typography
+									color="#FFF"
+									fontSize="16px"
+									fontWeight="600"
+									lineHeight="normal"
+									letterSpacing="0.16px"
+								>
+									Cluster Prechecks
+								</Typography>
+							</Box>
+						</Box>
+						<PrechecList prechecks={prechecks} />
+					</Box>
+				</Box>
 			</Box>
 		</>
 	)
