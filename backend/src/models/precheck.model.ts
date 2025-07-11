@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 import { PrecheckStatus } from "../enums";
 import { PrecheckType } from "../prechecks/types/enums";
+import { PrecheckSeverity } from "../prechecks/types/interfaces";
 
 export enum ClusterNodeType {
 	KIBANA = "kibana",
@@ -11,6 +12,7 @@ interface IBasePrecheck {
 	precheckId: string;
 	name: string;
 	type: PrecheckType;
+	severity: PrecheckSeverity;
 	precechGroupId: string;
 	clusterUpgradeJobId: string;
 	status: PrecheckStatus;
@@ -53,6 +55,12 @@ const PrecheckSchema: Schema<IPrecheckDocument> = new Schema<IPrecheckDocument>(
 	type: { type: String, enum: Object.values(PrecheckType), required: true },
 	precechGroupId: { type: String, required: true },
 	status: { type: String, enum: Object.values(PrecheckStatus), required: true, default: PrecheckStatus.PENDING },
+	severity: {
+		type: String,
+		enum: Object.values(PrecheckSeverity),
+		required: true,
+		default: PrecheckSeverity.WARNING,
+	},
 	startedAt: { type: Date },
 	endAt: { type: Date },
 	node: {

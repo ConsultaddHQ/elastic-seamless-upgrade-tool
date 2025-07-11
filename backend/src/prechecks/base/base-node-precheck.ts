@@ -5,7 +5,7 @@ import { INodePrecheck, Precheck } from "../../models/precheck.model";
 import { clusterNodeService } from "../../services/cluster-node.service";
 import { precheckService } from "../../services/precheck.service";
 import { PrecheckType } from "../types/enums";
-import { NodeContext, PrecheckConfig, PrecheckExecutionRequest } from "../types/interfaces";
+import { NodeContext, PrecheckConfig, PrecheckExecutionRequest, PrecheckSeverity } from "../types/interfaces";
 import { BasePrecheck } from "./base-precheck";
 
 export abstract class BaseNodePrecheck extends BasePrecheck<PrecheckConfig, NodeContext> {
@@ -75,6 +75,7 @@ export abstract class BaseNodePrecheck extends BasePrecheck<PrecheckConfig, Node
 					type: PrecheckType.NODE,
 					precheckId: config.id,
 					name: config.name,
+					severity: config.severity || PrecheckSeverity.ERROR,
 					status: PrecheckStatus.PENDING,
 					precechGroupId: request.precheckGroupId,
 					clusterUpgradeJobId: request.upgradeJob.jobId,

@@ -5,7 +5,7 @@ import { IIndexPrecheck, INodePrecheck, Precheck } from "../../models/precheck.m
 import { clusterNodeService } from "../../services/cluster-node.service";
 import { precheckService } from "../../services/precheck.service";
 import { PrecheckType } from "../types/enums";
-import { IndexContext, PrecheckConfig, PrecheckExecutionRequest } from "../types/interfaces";
+import { IndexContext, PrecheckConfig, PrecheckExecutionRequest, PrecheckSeverity } from "../types/interfaces";
 import { BasePrecheck } from "./base-precheck";
 
 export abstract class BaseIndexPrecheck extends BasePrecheck<PrecheckConfig, IndexContext> {
@@ -81,6 +81,7 @@ export abstract class BaseIndexPrecheck extends BasePrecheck<PrecheckConfig, Ind
 						name: index,
 					},
 					logs: [],
+					severity: config.severity || PrecheckSeverity.ERROR,
 				};
 				return indexPrecheck;
 			})

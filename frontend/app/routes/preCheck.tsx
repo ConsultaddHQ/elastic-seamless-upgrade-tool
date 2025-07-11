@@ -20,8 +20,7 @@ function PreCheckPage() {
 	const [isExportPending, setIsExportPending] = useState(false)
 	const reReunPrecheck = async () => {
 		await axiosJSON.post(`/api/elastic/clusters/${clusterId}/prechecks`).catch((err) => {
-			console.log("Err", err)
-			toast.error(err?.response?.data.err ?? StringManager.GENERIC_ERROR)
+			toast.error(err?.response?.data.error ?? StringManager.GENERIC_ERROR)
 		})
 	}
 

@@ -3,11 +3,18 @@ import { IClusterNode } from "../../models/cluster-node.model";
 import { IClusterUpgradeJob } from "../../models/cluster-upgrade-job.model";
 import { ExecutionMode, PrecheckType } from "./enums";
 
+export enum PrecheckSeverity {
+	INFO = "info",
+	WARNING = "warning",
+	ERROR = "error",
+}
+
 export interface PrecheckConfig {
 	id: string;
 	name: string;
 	type: PrecheckType;
 	mode: ExecutionMode;
+	severity?: PrecheckSeverity;
 }
 
 export interface AnsiblePrecheckConfig extends PrecheckConfig {

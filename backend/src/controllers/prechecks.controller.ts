@@ -1,16 +1,18 @@
 import { NextFunction, Request, Response } from "express";
 import { precheckReportService } from "../services/precheck-report.service";
-import { clusterNodeService } from "../services/cluster-node.service";
 import { precheckRunner } from "../prechecks/precheck-runner";
 import { clusterUpgradeJobService } from "../services/cluster-upgrade-job.service";
 import { precheckService } from "../services/precheck.service";
 
-export const runAllPrecheksHandler = async (req: Request, res: Response) => {
-	const { clusterId } = req.params;
-	const nodes = await clusterNodeService.getNodes(clusterId);
-	const job = await clusterUpgradeJobService.getActiveClusterUpgradeJobByClusterId(clusterId);
-	precheckRunner.runAll(job.jobId);
-	res.send({ message: "Prechecks started" });
+export const runAllPrecheksHandler = async (req: Request, res: Response, next: NextFunction) => {
+	try {
+		const { clusterId } = req.params;
+		const job = await clusterUpgradeJobService.getActiveClusterUpgradeJobByClusterId(clusterId);
+		precheckRunner.runAll(job);
+		res.send({ message: "Prechecks started" });
+	} catch (err) {
+		next(err);
+	}
 };
 
 export const getPrecheckRunByClusterIdHandler = async (req: Request, res: Response, next: NextFunction) => {

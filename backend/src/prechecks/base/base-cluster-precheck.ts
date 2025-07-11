@@ -2,7 +2,7 @@ import { PrecheckStatus } from "../../enums";
 import { IClusterPrecheck, Precheck } from "../../models/precheck.model";
 import { precheckService } from "../../services/precheck.service";
 import { PrecheckType } from "../types/enums";
-import { ClusterContext, PrecheckConfig, PrecheckExecutionRequest } from "../types/interfaces";
+import { ClusterContext, PrecheckConfig, PrecheckExecutionRequest, PrecheckSeverity } from "../types/interfaces";
 import { BasePrecheck } from "./base-precheck";
 
 export abstract class BaseClusterPrecheck extends BasePrecheck<PrecheckConfig, ClusterContext> {
@@ -50,6 +50,7 @@ export abstract class BaseClusterPrecheck extends BasePrecheck<PrecheckConfig, C
 			precechGroupId: request.precheckGroupId,
 			clusterUpgradeJobId: request.upgradeJob.jobId,
 			logs: [],
+			severity: config.severity || PrecheckSeverity.ERROR,
 		};
 		await Precheck.insertOne(nodePrecheck);
 	}

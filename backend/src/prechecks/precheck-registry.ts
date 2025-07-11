@@ -11,6 +11,11 @@ import { NoRelocatingShardsPrecheck } from "./concrete/cluster/no-relocating-sha
 import { MasterEligibleNodesPrecheck } from "./concrete/cluster/master-eligible-nodes.precheck";
 import { EvenShardDistributionPrecheck } from "./concrete/cluster/even-shard-distribution.precheck";
 import { JvmHeapSettingsPrecheck } from "./concrete/node/jvm-heap-settings.precheck";
+import { JvmHeapUsagePrecheck } from "./concrete/node/jvm-heap-usage-precheck";
+import { FileDescriptorLimitPrecheck } from "./concrete/node/file-descriptor-limit-precheck";
+import { MappedFieldCountPrecheck } from "./concrete/index/mapped-field-count-precheck";
+import { CustomPluginsListPrecheck } from "./concrete/node/custom-plugins-list-precheck";
+import { IngestLoadPrecheck } from "./concrete/node/ingest-load-precheck";
 
 class PrecheckRegistry {
 	private prechecks: BasePrecheck[] = [];
@@ -33,12 +38,20 @@ export const precheckRegistry = new PrecheckRegistry();
 precheckRegistry.register(new ClusterHealthPrecheck());
 precheckRegistry.register(new NoRelocatingShardsPrecheck());
 precheckRegistry.register(new MasterEligibleNodesPrecheck());
-precheckRegistry.register(new UnassignedShardsPrecheck());
 precheckRegistry.register(new EvenShardDistributionPrecheck());
 
+// Node Level
 precheckRegistry.register(new ElasticVersionPrecheck());
 precheckRegistry.register(new KibanaVersionPrecheck());
 precheckRegistry.register(new JvmHeapSettingsPrecheck());
+precheckRegistry.register(new JvmHeapUsagePrecheck());
+precheckRegistry.register(new FileDescriptorLimitPrecheck());
+precheckRegistry.register(new CustomPluginsListPrecheck());
+precheckRegistry.register(new IngestLoadPrecheck());
+
+//Index Level
+precheckRegistry.register(new UnassignedShardsPrecheck());
+precheckRegistry.register(new MappedFieldCountPrecheck());
 
 // OS Level checks
 precheckRegistry.register(new CheckDiskSpacePrecheck());

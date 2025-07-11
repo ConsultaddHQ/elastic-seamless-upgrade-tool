@@ -1,5 +1,4 @@
 import { PrecheckExecutionRequest } from "./types/interfaces";
-import { clusterUpgradeJobService } from "../services/cluster-upgrade-job.service";
 import { precheckRegistry } from "./precheck-registry";
 import { randomUUID } from "crypto";
 import { getClusterInfoById } from "../services/cluster-info.service";
@@ -8,16 +7,17 @@ import { PrecheckStatus } from "../enums";
 import { BasePrecheck } from "./base/base-precheck";
 import logger from "../logger/logger";
 import { NotificationEventType, notificationService } from "../services/notification.service";
+import { IClusterUpgradeJob } from "../models/cluster-upgrade-job.model";
 
 class PrecheckRunner {
-	async runAll(clusterUpgradeJobId: string): Promise<void> {
+	async runAll(job: IClusterUpgradeJob): Promise<void> {
 		const groupId = randomUUID();
 		await PrecheckGroup.create({
 			precheckGroupId: groupId,
-			clusterUpgradeJobId: clusterUpgradeJobId,
+			clusterUpgradeJobId: job.jobId,
 			status: PrecheckStatus.RUNNING,
 		});
-		const job = await clusterUpgradeJobService.getClusterUpgradeJobByJobId(clusterUpgradeJobId);
+
 		const cluster = await getClusterInfoById(job.clusterId);
 		const defaultRequest: Omit<PrecheckExecutionRequest, "context"> = {
 			cluster: cluster,
