@@ -144,7 +144,7 @@ export const getUpgradeDetails = async (req: Request, res: Response, next: NextF
 		const esDeprecationCount = elasticsearchDeprecation.counts;
 		const kibanaDeprecationCount = kibanaDeprecation.counts;
 		if (!latestPrecheckGroup && snapshots.length > 0 && clusterUpgradeJob) {
-			precheckRunner.runAll(clusterUpgradeJob.jobId);
+			precheckRunner.runAll(clusterUpgradeJob);
 			logger.info(`Prechecks initiated successfully for cluster '${clusterId}'.`);
 		}
 
