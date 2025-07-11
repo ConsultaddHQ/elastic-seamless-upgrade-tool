@@ -14,6 +14,7 @@ import { JvmHeapSettingsPrecheck } from "./concrete/node/jvm-heap-settings.prech
 import { JvmHeapUsagePrecheck } from "./concrete/node/jvm-heap-usage-precheck";
 import { FileDescriptorLimitPrecheck } from "./concrete/node/file-descriptor-limit-precheck";
 import { MappedFieldCountPrecheck } from "./concrete/index/mapped-field-count-precheck";
+import { CustomPluginsListPrecheck } from "./concrete/node/custom-plugins-list-precheck";
 
 class PrecheckRegistry {
 	private prechecks: BasePrecheck[] = [];
@@ -38,11 +39,13 @@ precheckRegistry.register(new NoRelocatingShardsPrecheck());
 precheckRegistry.register(new MasterEligibleNodesPrecheck());
 precheckRegistry.register(new EvenShardDistributionPrecheck());
 
+// Node Level
 precheckRegistry.register(new ElasticVersionPrecheck());
 precheckRegistry.register(new KibanaVersionPrecheck());
 precheckRegistry.register(new JvmHeapSettingsPrecheck());
 precheckRegistry.register(new JvmHeapUsagePrecheck());
 precheckRegistry.register(new FileDescriptorLimitPrecheck());
+precheckRegistry.register(new CustomPluginsListPrecheck());
 
 //Index Level
 precheckRegistry.register(new UnassignedShardsPrecheck());

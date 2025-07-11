@@ -4,6 +4,7 @@ import { IClusterUpgradeJob } from "../../models/cluster-upgrade-job.model";
 import { ExecutionMode, PrecheckType } from "./enums";
 
 export enum PrecheckSeverity {
+	INFO = "info",
 	WARNING = "warning",
 	ERROR = "error",
 }
