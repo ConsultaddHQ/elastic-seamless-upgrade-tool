@@ -1,5 +1,8 @@
 import mongoose, { Schema, Document } from "mongoose";
 
+export enum InfrastructureType {
+	ON_PREMISE = "on-premise",
+}
 export interface IElasticInfo {
 	url: string;
 	apiKey?: string;
@@ -21,7 +24,7 @@ export interface IClusterInfo {
 	elastic: IElasticInfo;
 	kibana: IKibanaInfo;
 	certificateIds?: string[];
-	infrastructureType?: string;
+	infrastructureType?: InfrastructureType;
 	sshUser: string;
 	pathToKey?: string;
 	key?: string;
@@ -52,7 +55,7 @@ const ClusterInfoSchema: Schema<IClusterInfoDocument> = new Schema<IClusterInfoD
 		elastic: { type: ElasticInfoSchema, required: true },
 		kibana: { type: KibanaInfoSchema, required: false },
 		certificateIds: { type: Array<String>, required: false },
-		infrastructureType: { type: String, required: true },
+		infrastructureType: { type: String, enum: Object.values(InfrastructureType), required: true },
 		pathToKey: { type: String },
 		key: { type: String },
 		sshUser: { type: String, required: true, default: "root" },

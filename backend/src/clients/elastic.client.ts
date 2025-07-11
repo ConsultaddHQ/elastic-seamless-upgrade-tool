@@ -1,6 +1,5 @@
 import { Client } from "@elastic/elasticsearch";
 import { BasicAuth, ApiKeyAuth, BearerAuth } from "@elastic/transport/lib/types";
-import { ElasticClusterBaseRequest } from "..";
 import { getClusterInfoById } from "../services/cluster-info.service";
 import logger from "../logger/logger";
 
