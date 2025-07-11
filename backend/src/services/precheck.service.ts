@@ -6,6 +6,7 @@ import { PrecheckType } from "../prechecks/types/enums";
 import { clusterUpgradeJobService } from "./cluster-upgrade-job.service";
 import { precheckGroupService } from "./precheck-group.service";
 import { NotFoundError } from "../errors";
+import { PrecheckSeverity } from "../prechecks/types/interfaces";
 
 class PrecheckService {
 	async addLog(identifier: RootFilterQuery<IPrecheck>, logs: string[]) {
@@ -69,16 +70,16 @@ class PrecheckService {
 		};
 	}
 
-	getMergedPrecheckStatus(precheckRuns: PrecheckStatus[]) {
+	private getMergedPrecheckStatus(precheckRuns: IPrecheck[]) {
 		let hasCompleted = false;
 		let hasPending = false;
 		let hasRunning = false;
 
-		for (const run of precheckRuns) {
-			if (run === PrecheckStatus.FAILED) return PrecheckStatus.FAILED;
-			if (run === PrecheckStatus.RUNNING) hasRunning = true;
-			if (run === PrecheckStatus.PENDING) hasPending = true;
-			if (run === PrecheckStatus.COMPLETED) hasCompleted = true;
+		for (const run of precheckRuns.filter((p) => p.severity === PrecheckSeverity.ERROR)) {
+			if (run.status === PrecheckStatus.FAILED) return PrecheckStatus.FAILED;
+			if (run.status === PrecheckStatus.RUNNING) hasRunning = true;
+			if (run.status === PrecheckStatus.PENDING) hasPending = true;
+			if (run.status === PrecheckStatus.COMPLETED) hasCompleted = true;
 		}
 
 		if ((hasPending && hasCompleted) || hasRunning) return PrecheckStatus.RUNNING;
@@ -97,7 +98,7 @@ class PrecheckService {
 		}, {});
 
 		return Object.entries(groupedPrecheckRunsByNodeId).map(([nodeId, precheckRuns]) => {
-			const status = precheckService.getMergedPrecheckStatus(precheckRuns.map((precheck) => precheck.status));
+			const status = precheckService.getMergedPrecheckStatus(precheckRuns);
 			const precheck = precheckRuns[0];
 			const transformPrecheckRunForUI = (precheck: IPrecheck) => {
 				const duration =
@@ -133,7 +134,7 @@ class PrecheckService {
 		}, {});
 
 		return Object.entries(groupedPrecheckRunsByIndex).map(([index, precheckRuns]) => {
-			const status = precheckService.getMergedPrecheckStatus(precheckRuns.map((precheck) => precheck.status));
+			const status = precheckService.getMergedPrecheckStatus(precheckRuns);
 			const precheck = precheckRuns[0];
 			const transformPrecheckRunForUI = (precheck: IPrecheck) => {
 				const duration =

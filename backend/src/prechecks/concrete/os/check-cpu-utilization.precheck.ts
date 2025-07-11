@@ -1,6 +1,6 @@
 import { BaseAnsibleNodePrecheck } from "../../base/base-ansible-node-precheck";
 import { ExecutionMode, PrecheckType } from "../../types/enums";
-import { NodeContext, PrecheckExecutionRequest } from "../../types/interfaces";
+import { NodeContext, PrecheckExecutionRequest, PrecheckSeverity } from "../../types/interfaces";
 
 export class CheckCpuUtilizationPrecheck extends BaseAnsibleNodePrecheck {
 	private readonly playbookPath: string = "playbooks/pre_checks/cpu.ansible.yml";
