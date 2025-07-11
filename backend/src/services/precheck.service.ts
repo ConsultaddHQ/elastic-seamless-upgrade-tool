@@ -26,7 +26,7 @@ class PrecheckService {
 	}
 
 	async getGroupedPrecheckByClusterId(clusterId: string) {
-		const upgradeJob = await clusterUpgradeJobService.getActiveClusterUpgradeJobByClusterId(clusterId);
+		const upgradeJob = await clusterUpgradeJobService.getLatestClusterUpgradeJobByClusterId(clusterId);
 		const precheckGroup = await precheckGroupService.getLatestGroupByJobId(upgradeJob.jobId);
 		if (!precheckGroup) {
 			throw new NotFoundError("Precheck group not found");

@@ -200,7 +200,13 @@ export const getClusterInfo = async (clusterId: string) => {
 	await syncElasticSearchInfo(clusterId);
 	const elasticSearchInfo = await getElasticSearchInfo(clusterId);
 	const clusterInfo = await getClusterInfoById(clusterId);
-	const clusterUpgradeJob = await clusterUpgradeJobService.getLatestClusterUpgradeJobByClusterId(clusterId);
+	const clusterUpgradeJob = await (async () => {
+		try {
+			return await clusterUpgradeJobService.getLatestClusterUpgradeJobByClusterId(clusterId);
+		} catch {
+			return null;
+		}
+	})();
 
 	const currentVersion = elasticSearchInfo?.version;
 	const possibleUpgradeVersions = currentVersion ? getPossibleUpgrades(currentVersion) : [];

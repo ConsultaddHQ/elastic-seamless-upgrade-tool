@@ -15,8 +15,13 @@ class ClusterUpgradeJobService {
 		return job;
 	}
 
-	async getLatestClusterUpgradeJobByClusterId(clusterId: string): Promise<IClusterUpgradeJob | null> {
-		return await ClusterUpgradeJob.findOne({ clusterId }).sort({ createdAt: -1 });
+	async getLatestClusterUpgradeJobByClusterId(clusterId: string): Promise<IClusterUpgradeJob> {
+		const job = await ClusterUpgradeJob.findOne({ clusterId }).sort({ createdAt: -1 });
+		if (!job) {
+			logger.error(`No upgrade job found for clusterId: ${clusterId}`);
+			throw new NotFoundError(`No upgrade job found for clusterId: ${clusterId}`);
+		}
+		return job;
 	}
 
 	async getClusterUpgradeJobByJobId(jobId: string): Promise<IClusterUpgradeJob> {

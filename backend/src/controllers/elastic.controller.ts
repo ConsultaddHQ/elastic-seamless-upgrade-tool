@@ -116,13 +116,13 @@ export const addOrUpdateClusterDetail = async (req: Request, res: Response) => {
 	}
 };
 
-export const getUpgradeDetails = async (req: Request, res: Response) => {
+export const getUpgradeDetails = async (req: Request, res: Response, next: NextFunction) => {
 	try {
 		const clusterId = req.params.clusterId;
 		const client = await ElasticClient.buildClient(clusterId);
 		const kibanaClient = await KibanaClient.buildClient(clusterId);
 		const clusterInfo = await getClusterInfoById(clusterId);
-		const clusterUpgradeJob = await clusterUpgradeJobService.getActiveClusterUpgradeJobByClusterId(clusterId);
+		const clusterUpgradeJob = await clusterUpgradeJobService.getLatestClusterUpgradeJobByClusterId(clusterId);
 
 		const kibanaUrl = clusterInfo.kibana?.url;
 
@@ -171,7 +171,7 @@ export const getUpgradeDetails = async (req: Request, res: Response) => {
 			},
 		});
 	} catch (error: any) {
-		res.status(501).json({ err: error.message });
+		next(error);
 	}
 };
 
