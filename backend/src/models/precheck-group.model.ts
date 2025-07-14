@@ -5,6 +5,7 @@ export interface IPrecheckGroup {
 	precheckGroupId: string;
 	clusterUpgradeJobId: string;
 	status: PrecheckStatus;
+	createdAt: Date;
 }
 
 export type IPrecheckGroupDocument = IPrecheckGroup & Document;

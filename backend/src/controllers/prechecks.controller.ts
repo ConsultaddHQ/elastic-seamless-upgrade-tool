@@ -8,7 +8,7 @@ export const runAllPrecheksHandler = async (req: Request, res: Response, next: N
 	try {
 		const { clusterId } = req.params;
 		const job = await clusterUpgradeJobService.getActiveClusterUpgradeJobByClusterId(clusterId);
-		precheckRunner.runAll(job);
+		await precheckRunner.schedule(job);
 		res.send({ message: "Prechecks started" });
 	} catch (err) {
 		next(err);

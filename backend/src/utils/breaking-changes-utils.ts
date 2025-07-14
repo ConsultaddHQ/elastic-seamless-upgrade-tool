@@ -1,4 +1,3 @@
-import { string } from "yaml/dist/schema/common/string";
 import { loadYaml } from "./yaml-utils";
 import semver from "semver";
 
