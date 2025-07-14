@@ -1,9 +1,9 @@
 import { Drawer, DrawerBody, DrawerContent } from "@heroui/react"
 import { Box, Breadcrumbs, Typography } from "@mui/material"
 import { useFormik } from "formik"
-import { ArrowLeft, ArrowRight2, Edit2, Setting2 } from "iconsax-react"
+import { ArrowLeft, ArrowRight2 } from "iconsax-react"
 import { useEffect, useState } from "react"
-import { ConatinedButton, OutlinedBorderButton, OutlinedButton } from "~/components/utilities/Buttons"
+import { OutlinedBorderButton } from "~/components/utilities/Buttons"
 import validationSchema from "./validation/validation"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { OneLineSkeleton } from "~/components/utilities/Skeletons"
@@ -11,7 +11,6 @@ import Input from "~/components/utilities/Input"
 import axiosJSON from "~/apis/http"
 import { toast } from "sonner"
 import StringManager from "~/constants/StringManager"
-import { Link } from "react-router"
 
 const STYLES = {
 	GO_BACK_BUTTON: {

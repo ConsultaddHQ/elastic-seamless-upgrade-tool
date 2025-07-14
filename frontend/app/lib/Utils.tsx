@@ -1,4 +1,3 @@
-import { Box } from "@mui/material"
 import { type ClassValue, clsx } from "clsx"
 import { Clock } from "iconsax-react"
 import { FiCheck } from "react-icons/fi"
@@ -105,7 +104,6 @@ export const getStepIndicatorData = (
 			}
 	}
 }
-
 
 export const localStorageConfig = {
 	getItem: (name: string) => {

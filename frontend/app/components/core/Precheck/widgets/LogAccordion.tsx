@@ -1,4 +1,4 @@
-import { Divider, Spinner } from "@heroui/react"
+import { Spinner } from "@heroui/react"
 import { Box, styled, Typography, type AccordionProps } from "@mui/material"
 import MuiAccordion from "@mui/material/Accordion"
 import MuiAccordionSummary, {
@@ -6,9 +6,9 @@ import MuiAccordionSummary, {
 	accordionSummaryClasses,
 } from "@mui/material/AccordionSummary"
 import MuiAccordionDetails from "@mui/material/AccordionDetails"
-import { ArrowForward, ArrowRight, ArrowRight2, ArrowRight3, TickCircle, Warning2 } from "iconsax-react"
+import { ArrowRight2, TickCircle, Warning2 } from "iconsax-react"
 import React from "react"
-import type { PrecheckStatus } from ".."
+import { PrecheckStatus } from ".."
 
 const Accordion = styled((props: AccordionProps) => <MuiAccordion disableGutters elevation={0} square {...props} />)(
 	({ theme }) => ({
@@ -74,7 +74,7 @@ const AccordionDetails = styled(MuiAccordionDetails)(({ theme }) => ({
 
 function LogAccordion({
 	title,
-	status = "PENDING",
+	status = PrecheckStatus.PENDING,
 	logs = [],
 	duration,
 	expanded,

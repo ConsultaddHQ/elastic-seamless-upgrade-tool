@@ -1,7 +1,6 @@
 import { Skeleton } from "@heroui/react"
 import { Box, Typography } from "@mui/material"
 import { ExportCurve, Refresh } from "iconsax-react"
-import React from "react"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"
 
 function Loading() {
