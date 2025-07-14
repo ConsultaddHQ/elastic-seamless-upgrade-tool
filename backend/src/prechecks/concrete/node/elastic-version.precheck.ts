@@ -24,20 +24,15 @@ export class ElasticVersionPrecheck extends BaseNodePrecheck {
 		const client = await ElasticClient.buildClient(request.cluster.clusterId);
 		const elasticsearchClient = client.getClient();
 		const nodeId = request.context.node.nodeId;
-		try {
-			const nodes = await elasticsearchClient.nodes.info({
-				node_id: nodeId,
-			});
-			const node = nodes.nodes[nodeId];
-			if (node.version === currentVersion) {
-				await this.addLog(request, `Node is running on the expected version: ${currentVersion}.`);
-			} else {
-				const message = `Node version mismatch: expected ${currentVersion}, but found ${node.version}.`;
-				throw new ConflictError(message);
-			}
-		} catch (err) {
-			const message = `Node with ID ${nodeId} not found`;
-			throw new NotFoundError(message);
+		const nodes = await elasticsearchClient.nodes.info({
+			node_id: nodeId,
+		});
+		const node = nodes.nodes[nodeId];
+		if (node.version === currentVersion) {
+			await this.addLog(request, `Node is running on the expected version: ${currentVersion}.`);
+		} else {
+			const message = `Node version mismatch: expected ${currentVersion}, but found ${node.version}.`;
+			throw new ConflictError(message);
 		}
 	}
 }
