@@ -1,174 +1,290 @@
-9.0.0: '## 9.0.0 [elasticsearch-900-breaking-changes]
-
-
-  Aggregations:
-
-  * Remove date histogram boolean support [#118484](https://github.com/elastic/elasticsearch/pull/118484)
-
-
-  Allocation:
-
-  * Increase minimum threshold in shard balancer [#115831](https://github.com/elastic/elasticsearch/pull/115831)
-
-  * Remove `cluster.routing.allocation.disk.watermark.enable_for_single_data_node`
-  setting [#114207](https://github.com/elastic/elasticsearch/pull/114207)
-
-  * Remove cluster state from `/_cluster/reroute` response [#114231](https://github.com/elastic/elasticsearch/pull/114231)
-  (issue: [#88978](https://github.com/elastic/elasticsearch/issues/88978))
-
-
-  Analysis:
-
-  * Snowball stemmers have been upgraded [#114146](https://github.com/elastic/elasticsearch/pull/114146)
-
-  * The ''german2'' stemmer is now an alias for the ''german'' snowball stemmer [#113614](https://github.com/elastic/elasticsearch/pull/113614)
-
-  * The ''persian'' analyzer has stemmer by default [#113482](https://github.com/elastic/elasticsearch/pull/113482)
-  (issue: [#113050](https://github.com/elastic/elasticsearch/issues/113050))
-
-  * The Korean dictionary for Nori has been updated [#114124](https://github.com/elastic/elasticsearch/pull/114124)
-
-
-  Authentication:
-
-  * Configuring a bind DN in an LDAP or Active Directory (AD) realm without a corresponding
-  bind password
-
-  will prevent node from starting [#118366](https://github.com/elastic/elasticsearch/pull/118366)
-
-
-  Cluster Coordination:
-
-  * Remove unsupported legacy value for `discovery.type` [#112903](https://github.com/elastic/elasticsearch/pull/112903)
-
-
-  ES|QL
-
-  * Limit the scope of the skip_unavailable setting for remote clusters [#120236](https://github.com/elastic/elasticsearch/pull/120236)
-
-
-  EQL:
-
-  * Set allow_partial_search_results=true by default [#120267](https://github.com/elastic/elasticsearch/pull/120267)
-
-
-  Extract&Transform:
-
-  * Restrict Connector APIs to manage/monitor_connector privileges [#119863](https://github.com/elastic/elasticsearch/pull/119863)
-
-
-  Highlighting:
-
-  * Remove support for deprecated `force_source` highlighting parameter [#116943](https://github.com/elastic/elasticsearch/pull/116943)
-
-
-  Indices APIs:
-
-  * Apply more strict parsing of actions in bulk API [#115923](https://github.com/elastic/elasticsearch/pull/115923)
-
-  * Remove deprecated local attribute from alias APIs [#115393](https://github.com/elastic/elasticsearch/pull/115393)
-
-  * Remove the ability to read frozen indices [#120108](https://github.com/elastic/elasticsearch/pull/120108)
-
-  * Remove unfreeze REST endpoint [#119227](https://github.com/elastic/elasticsearch/pull/119227)
-
-
-  Infra/Core:
-
-  * Change Elasticsearch timeouts to 429 response instead of 5xx [#116026](https://github.com/elastic/elasticsearch/pull/116026)
-
-  * Limit `ByteSizeUnit` to 2 decimals [#120142](https://github.com/elastic/elasticsearch/pull/120142)
-
-  * Remove `client.type` setting [#118192](https://github.com/elastic/elasticsearch/pull/118192)
-  (issue: [#104574](https://github.com/elastic/elasticsearch/issues/104574))
-
-  * Remove any references to org.elasticsearch.core.RestApiVersion#V_7 [#118103](https://github.com/elastic/elasticsearch/pull/118103)
-
-
-  Infra/Logging:
-
-  * Change `deprecation.elasticsearch` keyword to `elasticsearch.deprecation` [#117933](https://github.com/elastic/elasticsearch/pull/117933)
-  (issue: [#83251](https://github.com/elastic/elasticsearch/issues/83251))
-
-  * Rename deprecation index template [#125606](https://github.com/elastic/elasticsearch/pull/125606)
-  (issue: [#125445](https://github.com/elastic/elasticsearch/issues/125445))
-
-
-  Infra/Metrics:
-
-  * Deprecated tracing.apm.* settings got removed. [#119926](https://github.com/elastic/elasticsearch/pull/119926)
-
-
-  Infra/REST API:
-
-  * Output a consistent format when generating error json [#90529](https://github.com/elastic/elasticsearch/pull/90529)
-  (issue: [#89387](https://github.com/elastic/elasticsearch/issues/89387))
-
-
-  Ingest Node:
-
-  * Remove `ecs` option on `user_agent` processor [#116077](https://github.com/elastic/elasticsearch/pull/116077)
-
-  * Remove ignored fallback option on GeoIP processor [#116112](https://github.com/elastic/elasticsearch/pull/116112)
-
-
-  Logs:
-
-  * Conditionally enable logsdb by default for data streams matching with logs-*-*
-  pattern. [#121049](https://github.com/elastic/elasticsearch/pull/121049) (issue:
-  [#106489](https://github.com/elastic/elasticsearch/issues/106489))
-
-
-  Machine Learning:
-
-  * Disable machine learning on macOS x86_64 [#104125](https://github.com/elastic/elasticsearch/pull/104125)
-
-
-  Mapping:
-
-  * Remove support for type, fields, `copy_to` and boost in metadata field definition
-  [#118825](https://github.com/elastic/elasticsearch/pull/118825)
-
-  * Turn `_source` meta fieldmapper''s mode attribute into a no-op [#119072](https://github.com/elastic/elasticsearch/pull/119072)
-  (issue: [#118596](https://github.com/elastic/elasticsearch/issues/118596))
-
-
-  Search:
-
-  * Adjust `random_score` default field to `_seq_no` field [#118671](https://github.com/elastic/elasticsearch/pull/118671)
-
-  * Change Semantic Text To Act Like A Normal Text Field [#120813](https://github.com/elastic/elasticsearch/pull/120813)
-
-  * Remove legacy params from range query [#116970](https://github.com/elastic/elasticsearch/pull/116970)
-
-
-  Snapshot/Restore:
-
-  * Remove deprecated `xpack.searchable.snapshot.allocate_on_rolling_restart` setting
-  [#114202](https://github.com/elastic/elasticsearch/pull/114202)
-
-
-  TLS:
-
-  * Drop `TLS_RSA` cipher support for JDK 24 [#123600](https://github.com/elastic/elasticsearch/pull/123600)
-
-  * Remove TLSv1.1 from default protocols [#121731](https://github.com/elastic/elasticsearch/pull/121731)
-
-
-  Transform:
-
-  * Remove `data_frame_transforms` roles [#117519](https://github.com/elastic/elasticsearch/pull/117519)
-
-
-  Vector Search:
-
-  * Remove old `_knn_search` tech preview API in v9 [#118104](https://github.com/elastic/elasticsearch/pull/118104)
-
-
-  Watcher:
-
-  * Removing support for types field in watcher search [#120748](https://github.com/elastic/elasticsearch/pull/120748)'
-9.0.1: '## 9.0.1 [elasticsearch-9.0.1-breaking-changes]
-
-
-  No breaking changes in this version.'
+---
+- version: '8.0'
+  url: https://www.elastic.co/guide/en/elasticsearch/reference/8.18/migrating-8.0.html
+  breaking_changes:
+  - category: Cluster and node setting changes
+    changes:
+    - setting: action.destructive_requires_name
+      description: Defaults to `true` (was previously `false`), requiring explicit
+        index names for destructive operations.
+      impact: Wildcard patterns for delete/close operations now fail unless this setting
+        is overridden.
+    - setting: xpack.searchable.snapshot.shared_cache.size
+      description: Cannot be set on nodes without the `data_frozen` role.
+      impact: ".remove setting on non‑frozen nodes to avoid startup errors."
+    - setting: indices.query.bool.max_clause_count
+      description: Deprecated and ignored—Elasticsearch now dynamically determines
+        clause limits.
+      impact: Remove this setting; large clause queries may now require better memory/thread‑pool
+        tuning.
+    - setting: indices.lifecycle.poll_interval
+      description: Minimum value is now 1s. Any lower value causes startup error.
+      impact: Ensure poll interval ≥ 1s.
+    - setting: xpack.security.authc.realms.*.enabled
+      description: 'File and native realms are enabled by default now; explicitly
+        disabling them requires setting `enabled: false`.'
+      impact: Update realm configs accordingly.
+    - setting: xpack.security.authc.realms.*.order
+      description: The `order` setting is now required for each configured realm;
+        must be unique.
+      impact: Cluster fails to start without this value.
+    - setting: discovery.zen.*
+      description: All `discovery.zen` settings removed.
+      impact: Remove legacy discovery settings to avoid boot errors.
+    - setting: http.content_type.required
+      description: Removed in 8.0; configuration now invalid.
+      impact: Remove it from elasticsearch.yml.
+    - setting: http.tcp_no_delay
+      description: Removed in favor of `http.tcp.no_delay`.
+      impact: Replace setting accordingly.
+    - setting: network.tcp.connect_timeout
+      description: Removed; use `transport.connect_timeout` instead.
+      impact: Remove old setting.
+    - setting: node.max_local_storage_nodes
+      description: Removed; nodes must use separate data paths.
+      impact: Remove setting to avoid errors.
+    - setting: accept_default_password / search.remote.*
+      description: Removed remote cluster discovery settings.
+      impact: Use `node.remote_cluster_client` instead.
+    - setting: pidfile
+      description: Removed in favor of `node.pidfile`.
+      impact: Rename setting accordingly.
+    - setting: processors
+      description: Replaced by `node.processors`. Value may no longer exceed CPU count.
+      impact: Update config and ensure not oversized.
+    - setting: bootstrap.system_call_filter
+      description: Removed; filters now always required.
+      impact: Remove setting to avoid errors.
+    - setting: cluster.routing.allocation.*._tier
+      description: Tier-based allocation settings removed. Use `index.routing.allocation.include._tier_preference`.
+      impact: Disable obsolete tier settings.
+    - setting: shared data path / per index data path
+      description: Deprecated; only existing 7.x indices can use shared data paths.
+      impact: Avoid using deprecated data path config.
+    - setting: cluster.routing.allocation.disk.watermark.enable_for_single_data_node
+      description: Now only accepts `true`. `false` is illegal.
+      impact: Ensure setting is either removed or set to `true`.
+    - setting: gateway.auto_import_dangling_indices
+      description: Removed. Use dangling indices APIs instead.
+      impact: Remove setting.
+    - setting: listener thread pool
+      description: Removed (Transport client deprecated).
+      impact: Clean up thread pool config.
+    - setting: fixed_auto_queue_size thread pool type
+      description: Removed in 8.0.
+      impact: No direct action needed; defaults apply.
+    - setting: transport.tcp.* replaced
+      description: A batch of transport.tcp.* settings have been renamed (e.g. `transport.tcp.port`
+        → `transport.port`).
+      impact: Rename any legacy `transport.tcp` settings.
+    - setting: transport.compress defaults
+      description: Enabled by default as `indexing_data`, compression scheme changed
+        to LZ4.
+      impact: Monitor CPU/memory for compression impacts.
+  - category: Mapping changes
+    changes:
+    - issue: Old indices compatibility
+      description: Indices created in Elasticsearch 6.x or earlier are unsupported.
+      impact: Reindex old indices to 7.x before migrating.
+    - issue: Closed indices older than 7.0 unsupported
+      description: Cannot read closed pre‑7.x indices.
+      impact: Reindex if needed before upgrading.
+    - issue: Completion contexts limit
+      description: Max completion contexts per field limited to 10.
+      impact: Redesign any usage exceeding 10.
+  - category: System requirements / environment
+    changes:
+    - requirement: SysV init removed
+      description: Support for SysV init removed.
+      impact: Use systemd or other modern init system.
+    - requirement: Java 17 required
+      description: Java 17+ now mandatory.
+      impact: Upgrade JVM to Java 17 or later.
+    - requirement: FIPS mode unsupported
+      description: No FIPS-certified Java 17 available yet.
+      impact: Stay on 7.x or request exception until FIPS support.
+    - requirement: JAVA_HOME deprecated
+      description: JAVA_HOME no longer supported; use bundled JDK or `ES_JAVA_HOME`.
+      impact: Update deployment environment.
+- version: '8.1'
+  url: https://www.elastic.co/guide/en/elasticsearch/reference/8.18/migrating-8.1.html
+  breaking_changes:
+  - category: REST API changes
+    changes:
+    - field: search API fields parameter
+      description: The `fields` parameter now normalizes `geo_shape` objects that
+        cross the international dateline (e.g. splits a polygon into two).
+      impact: If your application requires original (unnormalized) geometries, retrieve
+        them from `_source` instead.
+  deprecations:
+  - category: Cluster and node setting deprecations
+    changes:
+    - setting: discovery.type
+      details: Legacy values other than `single-node` or `multi-node` are deprecated
+        and will be forbidden in a future version.
+      impact: Avoid using non-standard values; better to omit this setting to rely
+        on default discovery behavior.
+  - category: REST API deprecations
+    changes:
+    - feature: bulk API lenient parsing
+      details: Elasticsearch used to silently ignore invalid or malformed bulk action
+        lines. That leniency is deprecated and future versions will reject such bulk
+        requests.
+      impact: Ensure bulk actions are well‑formed JSON objects with a recognized action
+        key.
+    - feature: index_include_frozen parameter in SQL API
+      details: The `index_include_frozen` parameter and the `FROZEN` syntax are deprecated
+        following frozen index deprecation.
+      impact: Use data tiers instead—unfreeze indices using the unfreeze index API
+        and avoid frozen-specific SQL syntax.
+- version: '8.2'
+  url: https://www.elastic.co/guide/en/elasticsearch/reference/8.18/migrating-8.2.html
+  breaking_changes: []
+- version: '8.3'
+  url: https://www.elastic.co/guide/en/elasticsearch/reference/8.18/migrating-8.3.html
+  breaking_changes: []
+  deprecations:
+  - category: Cluster and node setting deprecations
+    changes:
+    - setting: xpack.security.authc.realms.ldap.*.bind_dn
+      details: Configuring a bind DN in an LDAP or Active Directory realm without
+        a corresponding bind password is deprecated.
+      impact: In a future major release, nodes will fail to start if a bind_dn is
+        specified without a bind_password.
+- version: '8.4'
+  url: https://www.elastic.co/guide/en/elasticsearch/reference/8.18/migrating-8.4.html
+  breaking_changes: []
+  deprecations:
+  - category: REST API deprecations
+    changes:
+    - feature: _knn_search endpoint
+      description: The `_knn_search` endpoint is deprecated; use the `knn` option
+        inside the standard search API.
+      impact: Applications should switch from `_knn_search` to uses the `knn` parameter
+        in the search API.
+- version: '8.5'
+  url: https://www.elastic.co/guide/en/elasticsearch/reference/8.18/migrating-8.5.html
+  breaking_changes:
+  - category: REST API changes
+    changes:
+    - change: Bulk API rejects unrecognized actions
+      description: Starting in 8.5, the bulk API rejects requests containing unrecognized
+        action types (e.g. not `create`, `update`, `index`, or `delete`). Prior versions
+        silently ignored them.
+      impact: Applications must only send valid action types; malformed bulk requests
+        now return 400 Bad Request.
+  deprecations:
+  - category: Plugin API deprecations
+    changes:
+    - feature: NetworkPlugin interface
+      details: Plugins extending the NetworkPlugin interface are deprecated and won't
+        install in the next major release.
+      impact: Remove or update any custom plugins relying on NetworkPlugin.
+    - feature: DiscoveryPlugin custom join/election strategies
+      details: Overriding join validators or election strategies via DiscoveryPlugin
+        is deprecated.
+      impact: Stop using custom discovery plugins that override these behaviors.
+- version: '8.6'
+  url: https://www.elastic.co/guide/en/elasticsearch/reference/8.18/migrating-8.6.html
+  breaking_changes: []
+  deprecations:
+  - category: CRUD deprecations
+    changes:
+    - feature: attachment processor `remove_binary` default change
+      details: The default `remove_binary` option for the ingest attachment processor
+        will change from `false` to `true` in a future release.
+      impact: Explicitly set `remove_binary` to either `true` or `false` to avoid
+        future behavior change.
+  - category: Cluster and node setting deprecations
+    changes:
+    - setting: cluster.routing.allocation.balance.threshold
+      details: Values less than `1` are now ignored and will be forbidden in a future
+        version.
+      impact: Ensure this setting is at least `1`.
+  - category: Mapping deprecations
+    changes:
+    - issue: metadata field definitions
+      details: Parameters like `type`, `fields`, `copy_to`, and `boost` in metadata
+        field mappings are silently ignored and will cause deprecation warnings.
+      impact: Remove these parameters from metadata field definitions in mappings.
+  - category: REST API deprecations
+    changes:
+    - feature: "`state` field in `/_cluster/reroute` response"
+      details: The `state` field is deprecated in the reroute API response.
+      impact: Use the `explain` parameter instead for result introspection.
+- version: '8.7'
+  url: https://www.elastic.co/guide/en/elasticsearch/reference/8.18/migrating-8.7.html
+  breaking_changes:
+  - category: Ingest changes
+    changes:
+    - name: JsonProcessor strict parsing
+      description: The ingest node’s `json` processor now rejects invalid JSON by
+        default instead of silently dropping trailing invalid content.
+      impact: 'Applications must send valid JSON or configure `strict_json_parsing:
+        false` on the `json` processor to preserve previous lenient behavior.'
+  deprecations: []
+- version: '8.8'
+  url: https://www.elastic.co/guide/en/elasticsearch/reference/8.18/migrating-8.8.html
+  breaking_changes: []
+  deprecations:
+  - category: Cluster and node setting deprecations
+    changes:
+    - setting: cluster.routing.allocation.type
+      details: The `cluster.routing.allocation.type` setting is deprecated and will
+        be removed in a future version.
+      impact: Discontinue use of this setting.
+- version: '8.9'
+  url: https://www.elastic.co/guide/en/elasticsearch/reference/8.18/migrating-8.9.html
+  breaking_changes:
+  - category: REST API changes
+    changes:
+    - name: TDigestState default changed
+      description: Percentile aggregations now use the `HybridDigest` implementation
+        by default for TDigest, offering faster performance but with a small accuracy
+        trade‑off.
+      impact: 'Percentile results may slightly differ. To retain previous exact behavior,
+        set `execution_hint: high_accuracy` per agg, or set `search.aggs.tdigest_execution_hint`
+        to `high_accuracy` cluster‑wide.'
+  deprecations: []
+- version: '8.10'
+  url: https://www.elastic.co/guide/en/elasticsearch/reference/8.18/migrating-8.10.html
+  breaking_changes:
+  - category: Cluster and node setting changes
+    changes:
+    - setting: thread_pool.vectortile
+      description: The `vectortile` thread pool has been removed; any configuration
+        such as `thread_pool.vectortile.size` will cause Elasticsearch to fail startup.
+      impact: Remove any `vectortile` thread pool settings from `elasticsearch.yml`.
+  - category: Java API changes
+    changes:
+    - change: Pre-configured analyzer components updated to use `IndexVersion` type
+      description: Analysis components now accept `IndexVersion` instead of `Version`,
+        as IndexVersion is decoupled from node version starting in 8.10.
+      impact: Upgrade or recompile custom Java plugins or client integrations referencing
+        analyzer APIs.
+  deprecations:
+  - category: Authorization deprecations
+    changes:
+    - role: apm_user role
+      details: The `apm_user` built-in role has been deprecated and will be removed
+        in a future major release.
+      impact: Users should migrate to the `editor` or `viewer` roles instead.
+- version: '8.11'
+  url: https://www.elastic.co/guide/en/elasticsearch/reference/8.18/migrating-8.11.html
+  breaking_changes:
+  - category: REST API changes
+    changes:
+    - change: Remove `transport_versions` from cluster state API
+      details: The `transport_versions` subobject of the response to `GET _cluster/state`
+        has been replaced by the `nodes_versions` subobject.
+      impact: If needed, retrieve the per-node transport versions from the `nodes_versions`
+        subobject.
+  deprecations:
+  - category: Rollup deprecations
+    id: rollup_functionality_deprecated
+    title: Rollup functionality is now deprecated
+    details: Rollup functionality has been deprecated and will be removed in a future
+      release. Previously, rollups were available in technical preview.
+    impact: Use downsampling to reduce storage costs for time series data by storing
+      it at reduced granularity.
+    link: https://www.elastic.co/guide/en/elasticsearch/reference/8.18/downsampling.html

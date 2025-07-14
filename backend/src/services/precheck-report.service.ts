@@ -83,7 +83,6 @@ class PrecheckReportService {
 		md = md + "\n\n" + kibanaDeprecationsMdReport;
 
 		if (targetVersion) {
-			md = md + "\n\n## Breaking Changes\n\n";
 			const breakingChanges = await getBreakingChanges(currentVersion, targetVersion);
 			md = md + breakingChanges;
 		}
