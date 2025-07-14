@@ -1,5 +1,4 @@
-import { createTheme, stepConnectorClasses } from "@mui/material"
-import zIndex from "@mui/material/styles/zIndex"
+import { createTheme } from "@mui/material"
 
 export default createTheme({
 	palette: {

@@ -11,4 +11,12 @@ export default defineConfig({
     },
   },
   plugins: [reactRouter(), tsconfigPaths()],
+  build: {
+    rollupOptions: {
+      // Disable tree-shaking temporarily to isolate the issue
+      treeshake: false,
+      // Or try preserving modules
+      // preserveModules: true
+    }
+  }
 });

@@ -12,38 +12,6 @@ import Loading from "./loading/Loading"
 import LogAccordion from "./widgets/LogAccordion"
 import NodeListItem from "./widgets/NodeListItem"
 
-export enum PrecheckStatus {
-	PENDING = "PENDING",
-	RUNNING = "RUNNING",
-	FAILED = "FAILED",
-	COMPLETED = "COMPLETED",
-}
-
-type TNodeData = {
-	nodeId: string
-	ip: string
-	name: string
-	status: PrecheckStatus
-	prechecks: TPrecheck[]
-}
-
-type TPrecheck = {
-	id: string
-	name: string
-	status: PrecheckStatus
-	duration: string
-	logs: string[]
-	startTime: string
-	endTime?: string
-}
-
-type TIndexData = {
-	index: string
-	name: string
-	status: PrecheckStatus
-	prechecks: TPrecheck[]
-}
-
 const NoPrechecks = () => {
 	return (
 		<Box className="flex flex-col items-center gap-4 p-6 pt-[127px]">
