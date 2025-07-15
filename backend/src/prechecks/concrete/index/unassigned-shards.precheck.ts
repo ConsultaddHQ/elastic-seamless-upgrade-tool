@@ -24,13 +24,30 @@ export class UnassignedShardsPrecheck extends BaseIndexPrecheck {
 			format: "json",
 		});
 
-		const unassignedOrInitializingShards = shardResponse.filter(
-			(shard: any) => shard.state === "UNASSIGNED" || shard.state === "INITIALIZING"
-		);
+		const unassignedShards = shardResponse.filter((shard: any) => shard.state === "UNASSIGNED");
 
-		if (unassignedOrInitializingShards.length > 0) {
-			const shardStates = unassignedOrInitializingShards.map((s) => `${s.shard} (${s.state})`).join(", ");
-			throw new AppError(`Index [${indexName}] has unassigned or initializing shards: ${shardStates}`, 400);
+		const initializingShards = shardResponse.filter((shard: any) => shard.state === "INITIALIZING");
+
+		if (unassignedShards.length > 0 || initializingShards.length > 0) {
+			await this.addLog(request, `Index [${indexName}] has unassigned or initializing shards`);
+			if (unassignedShards.length > 0) {
+				for (const shard of unassignedShards) {
+					if (typeof shard.shard === "string") {
+						const explainResponse = await elasticsearchClient.cluster.allocationExplain({
+							index: indexName,
+							shard: parseInt(shard.shard, 10),
+							primary: shard.prirep === "p",
+						});
+						await this.addLog(
+							request,
+							`Unassigned shard [${shard.shard}] (primary: ${shard.prirep === "p"}) explanation: ${explainResponse.allocate_explanation ?? "No details available"}`,
+							""
+						);
+					}
+				}
+			}
+
+			throw new Error();
 		} else {
 			await this.addLog(request, `Index [${indexName}] has all shards in assigned and started state.`);
 		}
