@@ -26,6 +26,11 @@ class PrecheckService {
 		}
 	}
 
+	async getPrecheckStatusByGroupId(precheckGroupId: string): Promise<PrecheckStatus> {
+		const prechecks = await Precheck.find({ precechGroupId: precheckGroupId }, { status: 1, severity: 1 });
+		return this.getMergedPrecheckStatus(prechecks);
+	}
+
 	async getGroupedPrecheckByClusterId(clusterId: string) {
 		const upgradeJob = await clusterUpgradeJobService.getLatestClusterUpgradeJobByClusterId(clusterId);
 		const precheckGroup = await precheckGroupService.getLatestGroupByJobId(upgradeJob.jobId);

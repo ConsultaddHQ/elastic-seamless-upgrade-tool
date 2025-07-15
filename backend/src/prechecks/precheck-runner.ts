@@ -10,6 +10,7 @@ import { NotificationEventType, notificationService } from "../services/notifica
 import { IClusterUpgradeJob } from "../models/cluster-upgrade-job.model";
 import { precheckGroupService } from "../services/precheck-group.service";
 import { ConflictError } from "../errors";
+import { precheckService } from "../services/precheck.service";
 
 class PrecheckRunner {
 	async schedule(job: IClusterUpgradeJob): Promise<void> {
@@ -68,13 +69,13 @@ class PrecheckRunner {
 			} catch (err) {}
 			this.notify();
 		}
-
+		const status = await precheckService.getPrecheckStatusByGroupId(groupId);
 		await PrecheckGroup.findOneAndUpdate(
 			{
 				precheckGroupId: groupId,
 			},
 			{
-				status: PrecheckStatus.COMPLETED,
+				status: status,
 			}
 		);
 		logger.debug(`All prechecks completed. [PrecheckGroupId: ${groupId}]`);
