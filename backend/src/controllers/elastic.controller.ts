@@ -147,27 +147,24 @@ export const getUpgradeDetails = async (req: Request, res: Response, next: NextF
 			await precheckRunner.schedule(clusterUpgradeJob);
 			logger.info(`Prechecks initiated successfully for cluster '${clusterId}'.`);
 		}
-
-		const isKibanaUpgraded = kibanaVersion === clusterUpgradeJob?.targetVersion ? true : false;
-		//verifying upgradability
-
-		const isESUpgraded = elasticNodes.filter((item) => item.status !== NodeStatus.UPGRADED).length === 0;
+		const isKibanaUpgraded = kibanaVersion === clusterUpgradeJob?.targetVersion;
+		const isESUpgraded = elasticNodes.every((node) => node.status === NodeStatus.UPGRADED);
 
 		res.send({
 			elastic: {
 				isUpgradable: !isESUpgraded,
 				deprecations: { ...esDeprecationCount },
 				snapshot: {
-					snapshot: snapshots.length > 0 ? snapshots[0] : null,
+					snapshot: snapshots[0] ?? null,
 					creationPage: kibanaUrl ? `${kibanaUrl}/app/management/data/snapshot_restore/snapshots` : null,
 				},
 			},
 			kibana: {
-				isUpgradable: !isKibanaUpgraded,
+				isUpgradable: !isKibanaUpgraded && isESUpgraded,
 				deprecations: { ...kibanaDeprecationCount },
 			},
 			precheck: {
-				status: !latestPrecheckGroup ? PrecheckStatus.RUNNING : latestPrecheckGroup.status,
+				status: latestPrecheckGroup?.status ?? PrecheckStatus.RUNNING,
 			},
 		});
 	} catch (error: any) {
