@@ -105,7 +105,7 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 					key: item.nodeId,
 					ip: item.ip,
 					node_name: item.name,
-					role: item.roles[0],
+					role: item.roles.join(","),
 					os: item.os.name,
 					version: item.version,
 					status: item.status,

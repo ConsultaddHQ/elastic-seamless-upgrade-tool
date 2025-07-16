@@ -20,6 +20,7 @@ export interface ICommonFields {
 	progress?: number;
 	status: NodeStatus;
 	type: ClusterNodeType;
+	rank: number;
 }
 
 /**
@@ -57,6 +58,7 @@ const ClusterNodeSchema: Schema<IClusterNodeDocument> = new Schema<IClusterNodeD
 		roles: { type: [String], required: true },
 		os: { type: Object, required: true },
 		progress: { type: Number },
+		rank: { type: Number, required: true },
 		status: {
 			type: String,
 			enum: Object.values(NodeStatus),

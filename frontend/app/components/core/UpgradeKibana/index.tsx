@@ -107,7 +107,7 @@ function UpgradeKibana({ clusterType }: TUpgradeKibana) {
 					key: item.nodeId,
 					node_name: item.name,
 					ip: item.ip,
-					role: item.roles[0],
+					role: item.roles.join(","),
 					os: item.os.name,
 					version: item.version,
 					status: item.status,

@@ -41,6 +41,7 @@ export const createKibanaNodes = async (kibanaConfigs: KibanaConfig[], clusterId
 				progress,
 				status,
 				type: ClusterNodeType.KIBANA,
+				rank: 0,
 			};
 
 			try {
@@ -77,18 +78,17 @@ export const getAllElasticNodes = async (clusterId: string): Promise<IElasticNod
 	} catch (error) {
 		logger.error("Unable to sync with Elastic search instance! Maybe the connection is breaked");
 	} finally {
-		const elasticNodes = await clusterNodeService.getNodes(clusterId, ClusterNodeType.ELASTIC);
-		return elasticNodes as IElasticNode[];
+		return (await clusterNodeService.getNodes(clusterId, ClusterNodeType.ELASTIC)) as IElasticNode[];
 	}
 };
 
 class ClusterNodeService {
-	async getNodes(clusterId: string, type?: ClusterNodeType): Promise<IClusterNodeDocument[]> {
+	async getNodes(clusterId: string, type?: ClusterNodeType): Promise<IClusterNode[]> {
 		const query: any = { clusterId: clusterId };
 		if (type != null) {
 			query.type = type;
 		}
-		return await ClusterNode.find(query);
+		return await ClusterNode.find(query).sort({ rank: 1 });
 	}
 
 	async getElasticNodeById(nodeId: string): Promise<IElasticNode | null> {

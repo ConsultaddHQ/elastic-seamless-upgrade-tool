@@ -20,7 +20,8 @@ class ClusterUpgradeService {
 			const clusterUpgradeJob = await clusterUpgradeJobService.getActiveClusterUpgradeJobByClusterId(clusterId);
 			const pathToKey = clusterInfo.pathToKey ? clusterInfo.pathToKey : "";
 
-			const inventoryPath = await ansibleInventoryService.createInventory([node], {
+			const inventoryPath = await ansibleInventoryService.createInventoryForNode({
+				node: node,
 				pathToKey,
 				sshUser: clusterInfo.sshUser,
 			});
@@ -75,9 +76,10 @@ class ClusterUpgradeService {
 			const clusterUpgradeJob = await clusterUpgradeJobService.getActiveClusterUpgradeJobByClusterId(clusterId);
 			const pathToKey = clusterInfo.pathToKey ? clusterInfo.pathToKey : "";
 
-			const inventoryPath = await ansibleInventoryService.createInventory(nodes, {
+			const inventoryPath = await ansibleInventoryService.createInventory({
 				pathToKey,
 				sshUser: clusterInfo.sshUser,
+				nodes: nodes,
 			});
 			if (!clusterUpgradeJob.targetVersion || !clusterInfo.elastic.username || !clusterInfo.elastic.password) {
 				return false;
@@ -132,9 +134,10 @@ class ClusterUpgradeService {
 			const clusterInfo = await getClusterInfoById(clusterId);
 			const clusterUpgradeJob = await clusterUpgradeJobService.getActiveClusterUpgradeJobByClusterId(clusterId);
 			const pathToKey = clusterInfo.pathToKey ? clusterInfo.pathToKey : ""; //Should be stored in clusterInfo
-			const inventoryPath = await ansibleInventoryService.createInventory([node], {
+			const inventoryPath = await ansibleInventoryService.createInventoryForNode({
 				pathToKey,
 				sshUser: clusterInfo.sshUser,
+				node: node,
 			});
 			if (!clusterInfo.elastic.username || !clusterInfo.elastic.password) {
 				return;

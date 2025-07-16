@@ -7,44 +7,53 @@ const ANSIBLE_PLAYBOOKS_PATH = process.env.ANSIBLE_PLAYBOOKS_PATH;
 class AnsibleInventoryService {
 	constructor() {}
 
-	public createInventory = async (
-		nodes: IClusterNode[],
-		{ pathToKey, sshUser }: { pathToKey: string; sshUser: string }
-	): Promise<string> => {
+	public createInventory = async ({
+		nodes,
+		pathToKey,
+		sshUser,
+	}: {
+		pathToKey: string;
+		sshUser: string;
+		nodes: IClusterNode[];
+	}): Promise<string> => {
 		try {
 			const roleGroups: Record<"elasticsearch_master" | "elasticsearch_data" | "kibana", string[]> = {
-				elasticsearch_data: [],
 				elasticsearch_master: [],
+				elasticsearch_data: [],
 				kibana: [],
 			};
+
 			const iniName = `${nodes[0].clusterId}-${randomUUID()}.ini`;
 			const iniPath = `${ANSIBLE_PLAYBOOKS_PATH}/ini/${iniName}`;
+
 			for (const node of nodes) {
-				if (node.type == ClusterNodeType.ELASTIC) {
-					if (node.isMaster === true) {
-						roleGroups.elasticsearch_master.push(`${node.name} ansible_host=${node.ip}`);
-						continue;
-					}
-					if (node.roles.includes("data")) {
-						roleGroups.elasticsearch_data.push(`${node.name} ansible_host=${node.ip}`);
+				const hostEntry = `${node.name} ansible_host=${node.ip}`;
+
+				if (node.type === ClusterNodeType.ELASTIC) {
+					if (node.isMaster) {
+						roleGroups.elasticsearch_master.push(hostEntry);
+					} else if (node.roles.includes("data")) {
+						roleGroups.elasticsearch_data.push(hostEntry);
 					}
 				} else {
-					roleGroups.kibana.push(`${node.name} ansible_host=${node.ip}`);
+					roleGroups.kibana.push(hostEntry);
 				}
 			}
 
-			const inventoryParts: string[] = [];
+			const inventorySections = Object.entries(roleGroups)
+				.filter(([, hosts]) => hosts.length > 0)
+				.map(([group, hosts]) => `[${group}]\n${hosts.join("\n")}`);
 
-			Object.entries(roleGroups).forEach(([group, hosts]) => {
-				if (hosts.length > 0) {
-					inventoryParts.push(`[${group}]\n${hosts.join("\n")}`);
-				}
-			});
-			inventoryParts.push(
-				`[all:vars]\nansible_ssh_user=${sshUser}\nansible_ssh_private_key_file=${pathToKey}\nansible_ssh_common_args='-o StrictHostKeyChecking=no'`
+			inventorySections.push(
+				`[all:vars]`,
+				`ansible_ssh_user=${sshUser}`,
+				`ansible_ssh_private_key_file=${pathToKey}`,
+				`ansible_ssh_common_args='-o StrictHostKeyChecking=no'`
 			);
-			const inventoryContent = inventoryParts.join("\n\n");
+
+			const inventoryContent = inventorySections.join("\n");
 			await fs.promises.writeFile(iniPath, inventoryContent, "utf8");
+
 			return iniPath;
 		} catch (error) {
 			logger.error("Error creating Ansible inventory:", error);
@@ -52,18 +61,10 @@ class AnsibleInventoryService {
 		}
 	};
 
-	public createInventoryForNode = async ({
-		pathToKey,
-		node,
-		sshUser,
-	}: {
-		node: IClusterNode;
-		pathToKey: string;
-		sshUser: string;
-	}) => {
-		return await this.createInventory([node], {
-			pathToKey: pathToKey,
-			sshUser: sshUser,
+	public createInventoryForNode = async (props: { node: IClusterNode; pathToKey: string; sshUser: string }) => {
+		return await this.createInventory({
+			...props,
+			nodes: [props.node],
 		});
 	};
 }

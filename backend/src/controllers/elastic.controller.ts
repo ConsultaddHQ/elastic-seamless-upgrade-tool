@@ -187,50 +187,32 @@ export const getNodesInfo = async (req: Request, res: Response) => {
 	try {
 		const clusterId = req.params.clusterId;
 		const elasticNodes = await getAllElasticNodes(clusterId);
-		const isDataNodeDisabled = elasticNodes.some((node) => node.status === NodeStatus.UPGRADING);
-		const isMasterDisabled =
-			elasticNodes.some(
-				(node) => node.roles.includes("data") && !node.isMaster && node.status !== NodeStatus.UPGRADED
-			) || isDataNodeDisabled;
-		let nodes = elasticNodes.map((node) => {
-			if (node.isMaster) {
-				return {
-					nodeId: node.nodeId,
-					clusterId: node.clusterId,
-					name: node.name,
-					version: node.version,
-					ip: node.ip,
-					roles: ["master"],
-					os: node.os,
-					isMaster: node.isMaster,
-					status: node.status,
-					progress: node.progress,
-					disabled: isMasterDisabled,
-				};
-			}
-			if (node.roles.includes("data")) {
-				return {
-					nodeId: node.nodeId,
-					clusterId: node.clusterId,
-					name: node.name,
-					version: node.version,
-					ip: node.ip,
-					roles: ["data"],
-					os: node.os,
-					isMaster: node.isMaster,
-					status: node.status,
-					progress: node.progress,
-					disabled: isDataNodeDisabled,
-				};
-			}
+
+		// Finding the minimum rank among AVAILABLE (non-upgraded) nodes
+		const minNonUpgradedNodeRank = elasticNodes
+			.filter((n) => n.status === NodeStatus.AVAILABLE)
+			.map((n) => n.rank)
+			.reduce((a, b) => Math.min(a, b), Infinity);
+
+		// Map over all nodes, marking them as disabled if they have higher priority than allowed
+		const nodes = elasticNodes.map((node) => {
+			const shouldDisable = node.status !== NodeStatus.UPGRADED && node.rank > minNonUpgradedNodeRank;
+
+			return {
+				nodeId: node.nodeId,
+				clusterId: node.clusterId,
+				name: node.name,
+				version: node.version,
+				ip: node.ip,
+				roles: node.roles,
+				os: node.os,
+				isMaster: node.isMaster,
+				status: node.status,
+				progress: node.progress,
+				disabled: shouldDisable,
+			};
 		});
-		const rolePriority = (roles: string[]) => {
-			if (roles.includes("data")) return 1;
-			if (roles.includes("master-eligible")) return 2;
-			if (roles.includes("master")) return 3;
-			return 4;
-		};
-		nodes.sort((a, b) => rolePriority(a?.roles ?? []) - rolePriority(b?.roles ?? []));
+
 		res.send(nodes);
 	} catch (error: any) {
 		logger.error("Error fetching node details:", error);
@@ -455,6 +437,7 @@ export const handleUpgradeAll = async (req: Request, res: Response) => {
 	}
 	if (upgradingNode) {
 		res.status(400).send({ err: "Cannot trigger upgrade all as there is failed node" });
+		return;
 	}
 	try {
 		await clusterUpgradeService.triggerElasticNodesUpgrade(nodesToBeUpgraded, clusterId);

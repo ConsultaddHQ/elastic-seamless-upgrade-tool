@@ -7,6 +7,7 @@ import { createOrUpdateElasticSearchInfo, IElasticSearchInfo } from "./elastic-s
 import { clusterUpgradeJobService } from "./cluster-upgrade-job.service";
 import { ClusterUpgradeJobStatus } from "../models/cluster-upgrade-job.model";
 import { clusterNodeService } from "./cluster-node.service";
+import { getNodeRank } from "../utils/role-utils";
 
 export const syncKibanaNodes = async (clusterId: string) => {
 	try {
@@ -86,8 +87,8 @@ export const syncElasticNodesData = async (clusterId: string) => {
 			filter_path: "nodes.*.name,nodes.*.roles,nodes.*.os.name,nodes.*.os.version,nodes.*.version,nodes.*.ip",
 		});
 		const masterNodes = await client.getMasterNodes();
-		const elasticNodes: IElasticNode[] | null = Object.entries(response.nodes).map(
-			([key, value]: [string, any]) => ({
+		const elasticNodes = Object.entries(response.nodes)
+			.map(([key, value]: [string, any]) => ({
 				nodeId: key,
 				clusterId: clusterId,
 				ip: value.ip,
@@ -99,8 +100,16 @@ export const syncElasticNodesData = async (clusterId: string) => {
 				isMaster: masterNodes.some((master) => master.id === key),
 				status: NodeStatus.AVAILABLE,
 				type: ClusterNodeType.ELASTIC,
-			})
-		);
+				rank: 0,
+			}))
+			.map(
+				(node) =>
+					({
+						...node,
+						rank: getNodeRank(node),
+					}) as IElasticNode
+			);
+
 		for (const node of elasticNodes) {
 			const existingNode = await clusterNodeService.getElasticNodeById(node.nodeId);
 			if (existingNode) {
