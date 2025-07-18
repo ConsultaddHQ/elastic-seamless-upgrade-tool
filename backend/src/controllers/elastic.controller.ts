@@ -1,6 +1,5 @@
 import { ElasticClient, elasticClientManager } from "../clients/elastic.client";
 import { NextFunction, Request, Response } from "express";
-import fs from "fs";
 import logger from "../logger/logger";
 import { IClusterInfo, IElasticInfo, IKibanaInfo } from "../models/cluster-info.model";
 import {
@@ -14,7 +13,6 @@ import {
 	verifyKibanaCredentials,
 } from "../services/cluster-info.service";
 import { KibanaClient } from "../clients/kibana.client";
-import path from "path";
 import { normalizeNodeUrl } from "../utils/utlity.functions";
 import { NodeStatus, PrecheckStatus } from "../enums";
 import { clusterMonitorService } from "../services/cluster-monitor.service";
@@ -315,63 +313,35 @@ export const createClusterUpgradeJob = async (req: Request, res: Response, next:
 	}
 };
 
-export const verifySshKey = async (req: Request, res: Response) => {
-	const { pathToKey } = req.body;
-	try {
-		if (!pathToKey) {
-			res.status(400).send({ success: false, err: "SSH key path is required." });
-		}
-
-		const resolvedPath = path.resolve(pathToKey);
-
-		if (!fs.existsSync(resolvedPath)) {
-			res.status(400).json({ success: false, err: "mentioned path to key, does not exist" });
-			return;
-		}
-
-		const fileContent = fs.readFileSync(resolvedPath, "utf8");
-
-		if (!fileContent.startsWith("-----BEGIN ") || !fileContent.includes("PRIVATE KEY-----")) {
-			res.status(400).send({ success: false, err: "Invalid SSH private key format." });
-			return;
-		}
-
-		res.send({ success: true, message: "SSH key is valid." });
-		return;
-	} catch (error) {
-		console.error("Error verifying SSH key:", error);
-		res.status(500).json({ success: false, err: "Error verifying ssh key please contact owner" });
-	}
-};
-
 export const verfiyCluster = async (req: Request, res: Response) => {
 	try {
 		const clusters = await getAllClusters();
 		if (clusters.length > 0) {
+			const cluster = clusters[0];
 			res.send({
 				clusterAvailable: true,
-				clusterData: clusters[0]
+				clusterData: cluster
 					? {
 							elastic: {
-								url: clusters[0].elastic.url ?? null,
-								username: clusters[0].elastic.username ?? null,
-								password: clusters[0].elastic.password ?? null,
-								apiKey: clusters[0].elastic.apiKey ?? null,
+								url: cluster.elastic.url ?? null,
+								username: cluster.elastic.username ?? null,
+								password: cluster.elastic.password ?? null,
+								apiKey: cluster.elastic.apiKey ?? null,
 							},
-							kibana: clusters[0].kibana
+							kibana: cluster.kibana
 								? {
-										url: clusters[0].kibana.url ?? null,
-										username: clusters[0].kibana.username ?? null,
-										password: clusters[0].kibana.password ?? null,
-										apiKey: clusters[0].kibana.apiKey ?? null,
+										url: cluster.kibana.url ?? null,
+										username: cluster.kibana.username ?? null,
+										password: cluster.kibana.password ?? null,
+										apiKey: cluster.kibana.apiKey ?? null,
 									}
 								: null,
-							clusterId: clusters[0].clusterId ?? null,
-							certificateIds: clusters[0].certificateIds ?? null,
-							infrastructureType: clusters[0].infrastructureType ?? null,
-							pathToKey: clusters[0].key ?? null,
-							sshUser: clusters[0].sshUser,
-							kibanaConfigs: clusters[0].kibanaConfigs ? clusters[0].kibanaConfigs : [],
+							clusterId: cluster.clusterId ?? null,
+							certificateIds: cluster.certificateIds ?? null,
+							infrastructureType: cluster.infrastructureType ?? null,
+							pathToKey: cluster.key ?? null,
+							sshUser: cluster.sshUser,
+							kibanaConfigs: cluster.kibanaConfigs ? cluster.kibanaConfigs : [],
 						}
 					: null,
 			});

@@ -112,8 +112,6 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 					progress: item.progress,
 					isMaster: item.isMaster,
 					disabled: item.disabled ? item.disabled : false,
-					// (item.isMaster && res.data.filter((i: any) => i.status !== "UPGRADED" && i.isMaster).length > 0) ||
-					// res.data.some((i: any) => i.status === "UPGRADING"),
 				}))
 			})
 			.catch((err) => toast.error(err?.response?.data.err ?? StringManager.GENERIC_ERROR))

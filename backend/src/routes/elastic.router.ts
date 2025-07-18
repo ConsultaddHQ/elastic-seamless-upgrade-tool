@@ -12,7 +12,6 @@ import {
 	handleUpgrades,
 	getNodeInfo,
 	createClusterUpgradeJob,
-	verifySshKey,
 	verfiyCluster,
 	getKibanaNodesInfo,
 	handleKibanaUpgrades,
@@ -59,8 +58,6 @@ router.post("/certificates/upload", upload.array("files"), uploadCertificates);
 router.get("/:clusterId/upgrade_info", getUpgradeDetails);
 
 router.get("/:clusterId/deprecations/kibana", getKibanaDeprecationsInfo);
-
-router.post("/:clusterId/verify-ssh", verifySshKey);
 
 router.post("/:clusterId/prechecks", runAllPrecheksHandler);
 

@@ -1,7 +1,7 @@
 import fs from "fs";
 import { ClusterNodeType, IClusterNode } from "../models/cluster-node.model";
 import logger from "../logger/logger";
-import { randomUUID } from "crypto";
+import { generateHash } from "../utils/hash-utils";
 const ANSIBLE_PLAYBOOKS_PATH = process.env.ANSIBLE_PLAYBOOKS_PATH;
 
 class AnsibleInventoryService {
@@ -23,7 +23,15 @@ class AnsibleInventoryService {
 				kibana: [],
 			};
 
-			const iniName = `${nodes[0].clusterId}-${randomUUID()}.ini`;
+			// These is to avoid creating duplicate inventory for same set of hosts
+			const hash = generateHash(
+				nodes
+					.map((n) => `${n.clusterId}-${n.nodeId}`)
+					.sort()
+					.join(":")
+			);
+
+			const iniName = `${hash}.ini`;
 			const iniPath = `${ANSIBLE_PLAYBOOKS_PATH}/ini/${iniName}`;
 
 			for (const node of nodes) {
