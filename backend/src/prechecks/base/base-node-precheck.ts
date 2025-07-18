@@ -1,5 +1,4 @@
 import { PrecheckStatus } from "../../enums";
-import logger from "../../logger/logger";
 import { ClusterNodeType, IClusterNode } from "../../models/cluster-node.model";
 import { INodePrecheck, Precheck } from "../../models/precheck.model";
 import { clusterNodeService } from "../../services/cluster-node.service";

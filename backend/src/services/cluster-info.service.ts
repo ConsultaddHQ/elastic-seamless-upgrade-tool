@@ -81,8 +81,8 @@ export const getElasticsearchDeprecation = async (
 		let warningCount = 0;
 		let deprecations: DeprecationSetting[] = [];
 
-		if (data.cluster_settings) {
-			data.cluster_settings.forEach((item: MigrationDeprecationsDeprecation) => {
+		const processMigrationDeprecations = (data: MigrationDeprecationsDeprecation[]) => {
+			data.forEach((item: MigrationDeprecationsDeprecation) => {
 				if (item.level === "critical") criticalCount++;
 				if (item.level === "warning") warningCount++;
 				deprecations.push({
@@ -92,34 +92,16 @@ export const getElasticsearchDeprecation = async (
 					type: item.level,
 				});
 			});
-		}
-		if (data.node_settings) {
-			data.node_settings.forEach((item: MigrationDeprecationsDeprecation) => {
-				if (item.level === "critical") criticalCount++;
-				if (item.level === "warning") warningCount++;
-				deprecations.push({
-					issue: item.message,
-					issueDetails: item.details,
-					resolution: item.url,
-					type: item.level,
-				});
+		};
+
+		data.cluster_settings && processMigrationDeprecations(data.cluster_settings);
+		data.node_settings && processMigrationDeprecations(data.node_settings);
+		if (data.index_settings) {
+			Object.values(data.index_settings).forEach((indexArray) => {
+				processMigrationDeprecations(indexArray);
 			});
 		}
 
-		if (data.index_settings) {
-			Object.values(data.index_settings).forEach((indexArray: any[]) => {
-				indexArray.forEach((item: MigrationDeprecationsDeprecation) => {
-					if (item.level === "critical") criticalCount++;
-					if (item.level === "warning") warningCount++;
-					deprecations.push({
-						issue: item.message,
-						issueDetails: item.details,
-						resolution: item.url,
-						type: item.level,
-					});
-				});
-			});
-		}
 		return {
 			counts: { critical: criticalCount, warning: warningCount },
 			deprecations: deprecations,

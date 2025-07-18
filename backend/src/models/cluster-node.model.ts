@@ -67,13 +67,13 @@ const ClusterNodeSchema: Schema<IClusterNodeDocument> = new Schema<IClusterNodeD
 		},
 		type: {
 			type: String,
-			enum: ["elastic", "kibana"],
+			enum: Object.values(ClusterNodeType),
 			required: true,
 		},
 		isMaster: {
 			type: Boolean,
 			required: function (this: IClusterNodeDocument) {
-				return this.type === "elastic";
+				return this.type === ClusterNodeType.ELASTIC;
 			},
 		},
 	},

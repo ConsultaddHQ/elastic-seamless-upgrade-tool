@@ -1,8 +1,6 @@
 import { ElasticClient } from "../../clients/elastic.client";
 import { PrecheckStatus } from "../../enums";
-import { ClusterNodeType, IClusterNode } from "../../models/cluster-node.model";
-import { IIndexPrecheck, INodePrecheck, Precheck } from "../../models/precheck.model";
-import { clusterNodeService } from "../../services/cluster-node.service";
+import { IIndexPrecheck, Precheck } from "../../models/precheck.model";
 import { precheckService } from "../../services/precheck.service";
 import { PrecheckType } from "../types/enums";
 import { IndexContext, PrecheckConfig, PrecheckExecutionRequest, PrecheckSeverity } from "../types/interfaces";
