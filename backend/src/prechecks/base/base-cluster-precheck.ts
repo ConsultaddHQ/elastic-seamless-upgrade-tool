@@ -40,7 +40,7 @@ export abstract class BaseClusterPrecheck extends BasePrecheck<PrecheckConfig, C
 		}
 	}
 
-	async preExecute(request: PrecheckExecutionRequest<ClusterContext>): Promise<void> {
+	async schedule(request: PrecheckExecutionRequest<ClusterContext>): Promise<void> {
 		const config = this.getPrecheckConfig();
 		const nodePrecheck: IClusterPrecheck = {
 			type: PrecheckType.CLUSTER,

@@ -63,7 +63,7 @@ export abstract class BaseIndexPrecheck extends BasePrecheck<PrecheckConfig, Ind
 		);
 	}
 
-	async preExecute(request: PrecheckExecutionRequest): Promise<void> {
+	async schedule(request: PrecheckExecutionRequest): Promise<void> {
 		const indexes = await this.getIndexes(request.cluster.clusterId);
 		const config = this.getPrecheckConfig();
 		await Precheck.insertMany(

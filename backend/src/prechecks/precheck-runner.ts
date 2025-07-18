@@ -42,7 +42,7 @@ class PrecheckRunner {
 
 		for (const precheck of prechecks) {
 			try {
-				await precheck.preExecute({ ...defaultRequest, context: {} });
+				await precheck.schedule({ ...defaultRequest, context: {} });
 			} catch (err) {}
 		}
 

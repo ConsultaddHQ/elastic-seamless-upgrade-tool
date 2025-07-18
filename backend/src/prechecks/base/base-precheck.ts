@@ -8,7 +8,7 @@ export abstract class BasePrecheck<Config extends PrecheckConfig = PrecheckConfi
 		this.config = config;
 	}
 
-	abstract preExecute(request: PrecheckExecutionRequest<Context>): Promise<void>;
+	abstract schedule(request: PrecheckExecutionRequest<Context>): Promise<void>;
 
 	async execute(request: PrecheckExecutionRequest<Context>): Promise<void> {
 		await this.run(request);
