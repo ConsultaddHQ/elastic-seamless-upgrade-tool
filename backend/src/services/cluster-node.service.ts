@@ -11,76 +11,13 @@ import {
 import { NodeStatus } from "../enums";
 import { clusterUpgradeJobService } from "./cluster-upgrade-job.service";
 import { KibanaClient } from "../clients/kibana.client";
-import { syncElasticNodesData } from "./sync.service";
+import { generateHash } from "../utils/hash-utils";
 
-export interface KibanaConfig {
+export interface AddKibanaNodeRequest {
 	name: string;
 	ip: string;
+	clusterId: string;
 }
-
-/**
- * @deprecated This function is deprecated and may be removed in future releases.
- */
-export const createKibanaNodes = async (kibanaConfigs: KibanaConfig[], clusterId: string): Promise<void> => {
-	const kibanaClient = await KibanaClient.buildClient(clusterId);
-	ClusterNode.collection.deleteMany({ clusterID: clusterId, type: ClusterNodeType.KIBANA });
-	for (const kibanaConfig of kibanaConfigs) {
-		try {
-			const { version, os, roles } = await kibanaClient.getKibanaNodeDetails(kibanaConfig.ip);
-			const nodeId = `node-${kibanaConfig.ip}`;
-			const progress = 0;
-			const status: NodeStatus = NodeStatus.AVAILABLE;
-			const kibanaNode: IKibanaNode = {
-				nodeId,
-				clusterId,
-				name: kibanaConfig.name,
-				version,
-				ip: kibanaConfig.ip,
-				roles,
-				os,
-				progress,
-				status,
-				type: ClusterNodeType.KIBANA,
-				rank: 0,
-			};
-
-			try {
-				const clusterUpgradeJob =
-					await clusterUpgradeJobService.getActiveClusterUpgradeJobByClusterId(clusterId);
-				if (clusterUpgradeJob.targetVersion === version) {
-					kibanaNode.status = NodeStatus.UPGRADED;
-					kibanaNode.progress = 100;
-				}
-			} catch (error) {
-				logger.debug(`No active upgrade job found:`, error);
-			}
-			await ClusterNode.findOneAndUpdate(
-				{ nodeId: kibanaNode.nodeId, type: ClusterNodeType.KIBANA },
-				kibanaNode,
-				{
-					new: true,
-					runValidators: true,
-					upsert: true,
-				}
-			);
-		} catch (error) {
-			console.error(`Error processing Kibana node ${kibanaConfig.ip}:`, error);
-		}
-	}
-};
-
-/**
- * @deprecated This function is deprecated and may be removed in future releases.
- */
-export const getAllElasticNodes = async (clusterId: string): Promise<IElasticNode[]> => {
-	try {
-		await syncElasticNodesData(clusterId);
-	} catch (error) {
-		logger.error("Unable to sync with Elastic search instance! Maybe the connection is breaked");
-	} finally {
-		return (await clusterNodeService.getNodes(clusterId, ClusterNodeType.ELASTIC)) as IElasticNode[];
-	}
-};
 
 class ClusterNodeService {
 	async getNodes(clusterId: string, type?: ClusterNodeType): Promise<IClusterNode[]> {
@@ -89,6 +26,14 @@ class ClusterNodeService {
 			query.type = type;
 		}
 		return await ClusterNode.find(query).sort({ rank: 1 });
+	}
+
+	async getElasticNodes(clusterId: string): Promise<IElasticNode[]> {
+		return (await this.getNodes(clusterId, ClusterNodeType.ELASTIC)) as IElasticNode[];
+	}
+
+	async getKibanaNodes(clusterId: string): Promise<IKibanaNode[]> {
+		return (await this.getNodes(clusterId, ClusterNodeType.KIBANA)) as IKibanaNode[];
 	}
 
 	async getElasticNodeById(nodeId: string): Promise<IElasticNode | null> {
@@ -117,6 +62,56 @@ class ClusterNodeService {
 		});
 	}
 
+	async createOrUpdateKibanaNodes(addKibanaNodeRequests: AddKibanaNodeRequest[]) {
+		await Promise.all(addKibanaNodeRequests.map(this.createOrUpdateKibanaNode));
+	}
+
+	async createOrUpdateKibanaNode(addKibanaNodeRequest: AddKibanaNodeRequest) {
+		const { ip, name, clusterId } = addKibanaNodeRequest;
+		const kibanaClient = await KibanaClient.buildClient(clusterId);
+		try {
+			const { version, os, roles } = await kibanaClient.getKibanaNodeDetails(ip);
+			const nodeId = generateHash(`${clusterId}-kb-${ip}`);
+			const progress = 0;
+			const status: NodeStatus = NodeStatus.AVAILABLE;
+			const kibanaNode: IKibanaNode = {
+				nodeId,
+				clusterId,
+				name: name,
+				version,
+				ip: ip,
+				roles,
+				os,
+				progress,
+				status,
+				type: ClusterNodeType.KIBANA,
+				rank: 0,
+			};
+
+			try {
+				const clusterUpgradeJob =
+					await clusterUpgradeJobService.getActiveClusterUpgradeJobByClusterId(clusterId);
+				if (clusterUpgradeJob.targetVersion === version) {
+					kibanaNode.status = NodeStatus.UPGRADED;
+					kibanaNode.progress = 100;
+				}
+			} catch (error) {
+				logger.debug(`No active upgrade job found:`, error);
+			}
+			await ClusterNode.findOneAndUpdate(
+				{ nodeId: kibanaNode.nodeId, type: ClusterNodeType.KIBANA },
+				kibanaNode,
+				{
+					new: true,
+					runValidators: true,
+					upsert: true,
+				}
+			);
+		} catch (error) {
+			logger.error(`Error processing Kibana node ${addKibanaNodeRequest.ip}:`, error);
+		}
+	}
+
 	async isClusterNodesUpgraded(clusterId: string, targetVersion: string): Promise<boolean> {
 		const nodes = await this.getNodes(clusterId);
 		const isUpgraded = nodes
@@ -126,7 +121,7 @@ class ClusterNodeService {
 	}
 
 	private async getNodeById(nodeId: string, type: ClusterNodeType): Promise<IClusterNode | null> {
-		return await ClusterNode.findOne({ nodeId: nodeId });
+		return await ClusterNode.findOne({ nodeId: nodeId, type: type });
 	}
 }
 

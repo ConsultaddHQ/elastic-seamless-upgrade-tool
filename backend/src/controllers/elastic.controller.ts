@@ -1,7 +1,7 @@
 import { ElasticClient, elasticClientManager } from "../clients/elastic.client";
 import { NextFunction, Request, Response } from "express";
 import logger from "../logger/logger";
-import { IClusterInfo, IElasticInfo, IKibanaInfo } from "../models/cluster-info.model";
+import { IClusterInfo, IElasticInfo, IKibanaInfo, InfrastructureType } from "../models/cluster-info.model";
 import {
 	createOrUpdateClusterInfo,
 	getAllClusters,
@@ -19,12 +19,13 @@ import { clusterMonitorService } from "../services/cluster-monitor.service";
 import { createSSHPrivateKeyFile } from "../utils/ssh-utils";
 import { clusterUpgradeJobService } from "../services/cluster-upgrade-job.service";
 import { clusterUpgradeService } from "../services/cluster-upgrade.service";
-import { clusterNodeService, createKibanaNodes, getAllElasticNodes } from "../services/cluster-node.service";
+import { clusterNodeService } from "../services/cluster-node.service";
 import { ClusterNodeType } from "../models/cluster-node.model";
 import { syncElasticNodesData } from "../services/sync.service";
 import { precheckRunner } from "../prechecks/precheck-runner";
 import { precheckGroupService } from "../services/precheck-group.service";
 import { randomUUID } from "crypto";
+import { ElasticNode } from "../interfaces";
 
 export const healthCheck = async (req: Request, res: Response) => {
 	try {
@@ -53,6 +54,8 @@ export const getClusterDetails = async (req: Request, res: Response) => {
 export const addOrUpdateClusterDetail = async (req: Request, res: Response) => {
 	try {
 		const body = req.body;
+		const infrastructureType = req.body.infrastructureType as InfrastructureType;
+
 		const getClusterId = async (clusterId: string | undefined) => {
 			if (clusterId) {
 				const existingCluster = await getClusterInfoById(clusterId);
@@ -82,7 +85,7 @@ export const addOrUpdateClusterDetail = async (req: Request, res: Response) => {
 			},
 			clusterId: clusterId,
 			certificateIds: req.body.certificateIds,
-			infrastructureType: req.body.infrastructureType,
+			infrastructureType: infrastructureType,
 			pathToKey: keyPath,
 			key: sshKey,
 			sshUser: req.body.sshUser,
@@ -101,7 +104,9 @@ export const addOrUpdateClusterDetail = async (req: Request, res: Response) => {
 		const result = await createOrUpdateClusterInfo(clusterInfo);
 
 		if (kibanaConfigs && kibanaConfigs.length && kibana.username && kibana.password) {
-			await createKibanaNodes(kibanaConfigs, clusterId);
+			await clusterNodeService.createOrUpdateKibanaNodes(
+				kibanaConfigs.map((node: { ip: string; name: string }) => ({ ...node, clusterId }))
+			);
 		}
 		res.send({
 			message: result.isNew ? "Cluster info saved" : "Cluster info updated",
@@ -135,7 +140,7 @@ export const getUpgradeDetails = async (req: Request, res: Response, next: NextF
 			getElasticsearchDeprecation(clusterId),
 			getKibanaDeprecation(clusterId),
 			kibanaClient.getKibanaVersion(),
-			getAllElasticNodes(clusterId),
+			clusterNodeService.getElasticNodes(clusterId),
 			client.getValidSnapshots(),
 			precheckGroupService.getLatestGroupByJobId(clusterUpgradeJob?.jobId),
 		]);
@@ -184,7 +189,7 @@ export const getElasticDeprecationInfo = async (req: Request, res: Response) => 
 export const getNodesInfo = async (req: Request, res: Response) => {
 	try {
 		const clusterId = req.params.clusterId;
-		const elasticNodes = await getAllElasticNodes(clusterId);
+		const elasticNodes = await clusterNodeService.getElasticNodes(clusterId);
 
 		// Finding the minimum rank among AVAILABLE (non-upgraded) nodes
 		const minNonUpgradedNodeRank = elasticNodes
@@ -223,7 +228,7 @@ export const handleUpgrades = async (req: Request, res: Response) => {
 	const { nodes } = req.body;
 	try {
 		let isUpgrading = false;
-		const allNodes = await getAllElasticNodes(clusterId);
+		const allNodes = await clusterNodeService.getElasticNodes(clusterId);
 		allNodes.forEach((node) => {
 			if (node.status === NodeStatus.UPGRADING) {
 				isUpgrading = true;
@@ -385,7 +390,7 @@ export const handleKibanaUpgrades = async (req: Request, res: Response) => {
 
 export const handleUpgradeAll = async (req: Request, res: Response) => {
 	const clusterId = req.params.clusterId;
-	const nodes = await getAllElasticNodes(clusterId);
+	const nodes = await clusterNodeService.getElasticNodes(clusterId);
 	let failedUpgrade = false;
 	let upgradingNode = false;
 	const nodesToBeUpgraded = nodes.filter((node) => {

@@ -2,6 +2,7 @@ import logger from "../logger/logger";
 import { generateHash } from "../utils/hash-utils";
 import { getClusterInfo } from "./cluster-info.service";
 import { NotificationEventType, notificationService } from "./notification.service";
+import { syncElasticNodesData } from "./sync.service";
 
 type ClusterId = string;
 
@@ -44,6 +45,12 @@ class ClusterMonitorService {
 				}
 			} catch (err) {
 				logger.error(`Failed to fetch data for ${clusterId}:`, err);
+			}
+
+			try {
+				await syncElasticNodesData(clusterId);
+			} catch (err) {
+				logger.error(`Failed to sync elastic nodes for cluster with [clusterId:${clusterId}]`);
 			}
 		}
 	}

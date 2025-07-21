@@ -2,6 +2,7 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export enum InfrastructureType {
 	ON_PREMISE = "on-premise",
+	ON_CLOUD = "on-cloud",
 }
 export interface IElasticInfo {
 	url: string;
