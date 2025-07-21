@@ -22,8 +22,15 @@
         uri:
             url: "{{ es_host_protocol }}://localhost:{{ es_http_port }}"
             method: GET
-            url_username: "{{ es_username }}"
-            url_password: "{{ es_password }}"
+            url_username: "{{ es_username | default(omit) }}"
+            url_password: "{{ es_password | default(omit) }}"
+            headers: >-
+                {{
+                  {
+                    'Authorization': 'ApiKey ' + es_api_key
+                  } if es_api_key is defined else omit
+                }}
+            force_basic_auth: true
             validate_certs: false
         register: version_found
         retries: 10
@@ -53,8 +60,15 @@
             - name: Enable shard allocation for the cluster
               uri:
                   url: "{{ es_host_protocol }}://localhost:{{ es_http_port }}/_cluster/settings"
-                  url_username: "{{ es_username }}"
-                  url_password: "{{ es_password }}"
+                  url_username: "{{ es_username | default(omit) }}"
+                  url_password: "{{ es_password | default(omit) }}"
+                  headers: >-
+                      {{
+                        {
+                          'Authorization': 'ApiKey ' + es_api_key
+                        } if es_api_key is defined else omit
+                      }}
+                  force_basic_auth: true
                   validate_certs: false
                   method: PUT
                   body_format: json
@@ -63,8 +77,15 @@
             - name: Wait for cluster health to return to green
               uri:
                   url: "{{ es_host_protocol }}://localhost:{{ es_http_port }}/_cluster/health"
-                  url_username: "{{ es_username }}"
-                  url_password: "{{ es_password }}"
+                  url_username: "{{ es_username | default(omit) }}"
+                  url_password: "{{ es_password | default(omit) }}"
+                  headers: >-
+                      {{
+                        {
+                          'Authorization': 'ApiKey ' + es_api_key
+                        } if es_api_key is defined else omit
+                      }}
+                  force_basic_auth: true
                   validate_certs: false
                   method: GET
               register: response
@@ -75,8 +96,15 @@
             - name: Disable shard allocation for the cluster
               uri:
                   url: "{{ es_host_protocol }}://localhost:{{ es_http_port }}/_cluster/settings"
-                  url_username: "{{ es_username }}"
-                  url_password: "{{ es_password }}"
+                  url_username: "{{ es_username | default(omit) }}"
+                  url_password: "{{ es_password | default(omit) }}"
+                  headers: >-
+                      {{
+                        {
+                          'Authorization': 'ApiKey ' + es_api_key
+                        } if es_api_key is defined else omit
+                      }}
+                  force_basic_auth: true
                   method: PUT
                   validate_certs: false
                   body_format: json
@@ -85,8 +113,15 @@
             - name: Perform a synced flush
               uri:
                   url: "{{ es_host_protocol }}://localhost:{{ es_http_port }}/_flush"
-                  url_username: "{{ es_username }}"
-                  url_password: "{{ es_password }}"
+                  url_username: "{{ es_username | default(omit) }}"
+                  url_password: "{{ es_password | default(omit) }}"
+                  headers: >-
+                      {{
+                        {
+                          'Authorization': 'ApiKey ' + es_api_key
+                        } if es_api_key is defined else omit
+                      }}
+                  force_basic_auth: true
                   validate_certs: false
                   method: POST
                   status_code: "200, 409"
@@ -105,8 +140,15 @@
             - name: Wait for all shards to be reallocated
               uri:
                   url: "{{ es_host_protocol }}://{{ es_host }}:{{ es_http_port }}/_cluster/health"
-                  url_username: "{{ es_username }}"
-                  url_password: "{{ es_password }}"
+                  url_username: "{{ es_username | default(omit) }}"
+                  url_password: "{{ es_password | default(omit) }}"
+                  headers: >-
+                      {{
+                        {
+                          'Authorization': 'ApiKey ' + es_api_key
+                        } if es_api_key is defined else omit
+                      }}
+                  force_basic_auth: true
                   method: GET
                   validate_certs: false
               register: response
@@ -135,8 +177,15 @@
             - name: Wait for cluster health to return to yellow or green
               uri:
                   url: "{{ es_host_protocol }}://localhost:{{ es_http_port }}/_cluster/health"
-                  url_username: "{{ es_username }}"
-                  url_password: "{{ es_password }}"
+                  url_username: "{{ es_username | default(omit) }}"
+                  url_password: "{{ es_password | default(omit) }}"
+                  headers: >-
+                      {{
+                        {
+                          'Authorization': 'ApiKey ' + es_api_key
+                        } if es_api_key is defined else omit
+                      }}
+                  force_basic_auth: true
                   method: GET
                   validate_certs: false
               register: response
@@ -147,8 +196,15 @@
             - name: Enable shard allocation for the cluster
               uri:
                   url: "{{ es_host_protocol }}://localhost:{{ es_http_port }}/_cluster/settings"
-                  url_username: "{{ es_username }}"
-                  url_password: "{{ es_password }}"
+                  url_username: "{{ es_username | default(omit) }}"
+                  url_password: "{{ es_password | default(omit) }}"
+                  headers: >-
+                      {{
+                        {
+                          'Authorization': 'ApiKey ' + es_api_key
+                        } if es_api_key is defined else omit
+                      }}
+                  force_basic_auth: true
                   validate_certs: false
                   method: PUT
                   body_format: json
@@ -161,9 +217,16 @@
             - name: Wait for the node to recover
               uri:
                   url: "{{ es_host_protocol }}://localhost:{{ es_http_port }}/_cat/health"
-                  url_username: "{{ es_username }}"
-                  url_password: "{{ es_password }}"
                   validate_certs: false
+                  url_username: "{{ es_username | default(omit) }}"
+                  url_password: "{{ es_password | default(omit) }}"
+                  headers: >-
+                      {{
+                        {
+                          'Authorization': 'ApiKey ' + es_api_key
+                        } if es_api_key is defined else omit
+                      }}
+                  force_basic_auth: true
                   method: GET
                   return_content: yes
               register: response

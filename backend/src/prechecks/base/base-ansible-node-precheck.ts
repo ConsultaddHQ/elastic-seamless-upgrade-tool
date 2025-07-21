@@ -1,5 +1,5 @@
 import { ClusterType } from "../../enums";
-import { BadRequestError, NotFoundError } from "../../errors";
+import { BadRequestError } from "../../errors";
 import { ClusterNodeType } from "../../models/cluster-node.model";
 import { ansibleInventoryService } from "../../services/ansible-inventory.service";
 import { ansibleRunnerService } from "../../services/ansible-runner.service";
@@ -39,6 +39,7 @@ export abstract class BaseAnsibleNodePrecheck extends BaseNodePrecheck {
 				elasticsearch_uri: elastic.url,
 				es_username: elastic.username!!,
 				es_password: elastic.password!!,
+				es_api_key: elastic.apiKey,
 				cluster_type: ClusterType.ELASTIC,
 				playbook_run_id: precheckGroupId,
 				playbook_run_type: "PRECHECK",

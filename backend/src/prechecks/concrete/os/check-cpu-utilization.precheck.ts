@@ -1,4 +1,5 @@
 import { InfrastructureType } from "../../../models/cluster-info.model";
+import { ClusterNodeType } from "../../../models/cluster-node.model";
 import { BaseAnsibleNodePrecheck } from "../../base/base-ansible-node-precheck";
 import { ExecutionMode, PrecheckType } from "../../types/enums";
 import { NodeContext, PrecheckExecutionRequest, PrecheckSeverity } from "../../types/interfaces";

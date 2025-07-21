@@ -105,8 +105,14 @@
       - name: Check Elasticsearch cluster health
         uri:
             url: "{{ elasticsearch_uri }}/_cluster/health?pretty"
-            url_username: "{{ es_username }}"
-            url_password: "{{ es_password }}"
+            url_username: "{{ es_username | default(omit) }}"
+            url_password: "{{ es_password | default(omit) }}"
+            headers: >-
+                {{
+                  {
+                    'Authorization': 'ApiKey ' + es_api_key
+                  } if es_api_key is defined else omit
+                }}
             validate_certs: false
             method: GET
         register: cluster_health

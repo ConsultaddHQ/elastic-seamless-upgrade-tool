@@ -102,7 +102,7 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 					authPref: res?.data?.clusterData?.elastic?.username ? "U/P" : "API_KEY",
 					username: res?.data?.clusterData?.elastic?.username,
 					password: res?.data?.clusterData?.elastic?.password,
-					apiKey: "",
+					apiKey: res?.data?.clusterData?.elastic?.apiKey,
 					sshUser: res?.data?.clusterData?.sshUser,
 					pathToSSH: res?.data?.clusterData?.pathToKey,
 					kibanaConfigs: res?.data?.clusterData?.kibanaConfigs,
@@ -355,7 +355,6 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 																		onSelect={(value: string | number) =>
 																			formik.setFieldValue("authPref", value)
 																		}
-																		comingSoon
 																	/>
 																</Box>
 																{formik.touched.authPref &&
