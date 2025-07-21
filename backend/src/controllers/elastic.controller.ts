@@ -193,13 +193,13 @@ export const getNodesInfo = async (req: Request, res: Response) => {
 
 		// Finding the minimum rank among AVAILABLE (non-upgraded) nodes
 		const minNonUpgradedNodeRank = elasticNodes
-			.filter((n) => n.status === NodeStatus.AVAILABLE)
+			.filter((n) => ![NodeStatus.UPGRADED].includes(n.status))
 			.map((n) => n.rank)
 			.reduce((a, b) => Math.min(a, b), Infinity);
 
 		// Map over all nodes, marking them as disabled if they have higher priority than allowed
 		const nodes = elasticNodes.map((node) => {
-			const shouldDisable = node.status !== NodeStatus.UPGRADED && node.rank > minNonUpgradedNodeRank;
+			const shouldDisable = node.status === NodeStatus.UPGRADED || node.rank > minNonUpgradedNodeRank;
 
 			return {
 				nodeId: node.nodeId,
