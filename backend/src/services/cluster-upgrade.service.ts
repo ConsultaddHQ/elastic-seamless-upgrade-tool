@@ -25,9 +25,7 @@ class ClusterUpgradeService {
 				pathToKey,
 				sshUser: clusterInfo.sshUser,
 			});
-			if (!clusterUpgradeJob.targetVersion || !clusterInfo.elastic.username || !clusterInfo.elastic.password) {
-				return false;
-			}
+
 			const playbookRunId = randomUUID();
 
 			ansibleRunnerService
