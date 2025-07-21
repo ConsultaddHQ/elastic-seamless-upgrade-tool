@@ -139,9 +139,7 @@ class ClusterUpgradeService {
 				sshUser: clusterInfo.sshUser,
 				node: node,
 			});
-			if (!clusterInfo.elastic.username || !clusterInfo.elastic.password) {
-				return;
-			}
+
 			const playbookRunId = randomUUID();
 
 			ansibleRunnerService
