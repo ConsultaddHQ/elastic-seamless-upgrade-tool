@@ -38,7 +38,7 @@
                         } if es_api_key is defined else omit
                       }}
                   validate_certs: false
-                  force_basic_auth: true
+
               register: response
               until: "'kbn_name' in response and response.status == 200"
               retries: 30
@@ -58,7 +58,6 @@
                       }}
                       "kbn-version": "{{ elk_version }}"
                   validate_certs: false
-                  force_basic_auth: true
                   body_format: json
                   body: "{{ set_default_index }}"
         when: version_found.stdout is version_compare(elk_version, '<')

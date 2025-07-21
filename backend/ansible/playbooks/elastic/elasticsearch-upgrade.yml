@@ -30,7 +30,7 @@
                     'Authorization': 'ApiKey ' + es_api_key
                   } if es_api_key is defined else omit
                 }}
-            force_basic_auth: true
+
             validate_certs: false
         register: version_found
         retries: 10
@@ -68,7 +68,7 @@
                           'Authorization': 'ApiKey ' + es_api_key
                         } if es_api_key is defined else omit
                       }}
-                  force_basic_auth: true
+
                   validate_certs: false
                   method: PUT
                   body_format: json
@@ -85,7 +85,7 @@
                           'Authorization': 'ApiKey ' + es_api_key
                         } if es_api_key is defined else omit
                       }}
-                  force_basic_auth: true
+
                   validate_certs: false
                   method: GET
               register: response
@@ -104,7 +104,7 @@
                           'Authorization': 'ApiKey ' + es_api_key
                         } if es_api_key is defined else omit
                       }}
-                  force_basic_auth: true
+
                   method: PUT
                   validate_certs: false
                   body_format: json
@@ -121,7 +121,7 @@
                           'Authorization': 'ApiKey ' + es_api_key
                         } if es_api_key is defined else omit
                       }}
-                  force_basic_auth: true
+
                   validate_certs: false
                   method: POST
                   status_code: "200, 409"
@@ -148,7 +148,7 @@
                           'Authorization': 'ApiKey ' + es_api_key
                         } if es_api_key is defined else omit
                       }}
-                  force_basic_auth: true
+
                   method: GET
                   validate_certs: false
               register: response
@@ -185,7 +185,7 @@
                           'Authorization': 'ApiKey ' + es_api_key
                         } if es_api_key is defined else omit
                       }}
-                  force_basic_auth: true
+
                   method: GET
                   validate_certs: false
               register: response
@@ -204,7 +204,7 @@
                           'Authorization': 'ApiKey ' + es_api_key
                         } if es_api_key is defined else omit
                       }}
-                  force_basic_auth: true
+
                   validate_certs: false
                   method: PUT
                   body_format: json
@@ -226,7 +226,7 @@
                           'Authorization': 'ApiKey ' + es_api_key
                         } if es_api_key is defined else omit
                       }}
-                  force_basic_auth: true
+
                   method: GET
                   return_content: yes
               register: response
