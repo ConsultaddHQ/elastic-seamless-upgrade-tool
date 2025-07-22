@@ -60,4 +60,3 @@
                   validate_certs: false
                   body_format: json
                   body: "{{ set_default_index }}"
-        when: version_found.stdout is version_compare(elk_version, '<')
