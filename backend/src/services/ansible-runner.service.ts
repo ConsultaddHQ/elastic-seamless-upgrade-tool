@@ -31,7 +31,7 @@ class AnsibleRunnerService {
 	}) {
 		const runId = variables.playbook_run_id;
 		const extraVars = [
-			...Object.entries(variables).filter(([, value]) => value == undefined || value == null),
+			...Object.entries(variables).filter(([, value]) => !(value == undefined || value == null)),
 			...Object.entries({ runId: runId }),
 		]
 			.map(([key, value]) => `${key}=${value}`)
