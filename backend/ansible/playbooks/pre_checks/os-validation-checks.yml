@@ -107,6 +107,7 @@
             url: "{{ elasticsearch_uri }}/_cluster/health?pretty"
             url_username: "{{ es_username | default(omit) }}"
             url_password: "{{ es_password | default(omit) }}"
+            force_basic_auth: "{{ false if es_api_key is defined else true }}"
             headers: >-
                 {{
                   {

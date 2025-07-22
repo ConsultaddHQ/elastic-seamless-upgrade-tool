@@ -24,6 +24,7 @@
             method: GET
             url_username: "{{ es_username | default(omit) }}"
             url_password: "{{ es_password | default(omit) }}"
+            force_basic_auth: "{{ false if es_api_key is defined else true }}"
             headers: >-
                 {{
                   {
@@ -62,6 +63,7 @@
                   url: "{{ es_host_protocol }}://localhost:{{ es_http_port }}/_cluster/settings"
                   url_username: "{{ es_username | default(omit) }}"
                   url_password: "{{ es_password | default(omit) }}"
+                  force_basic_auth: "{{ false if es_api_key is defined else true }}"
                   headers: >-
                       {{
                         {
@@ -79,6 +81,7 @@
                   url: "{{ es_host_protocol }}://localhost:{{ es_http_port }}/_cluster/health"
                   url_username: "{{ es_username | default(omit) }}"
                   url_password: "{{ es_password | default(omit) }}"
+                  force_basic_auth: "{{ false if es_api_key is defined else true }}"
                   headers: >-
                       {{
                         {
@@ -98,6 +101,7 @@
                   url: "{{ es_host_protocol }}://localhost:{{ es_http_port }}/_cluster/settings"
                   url_username: "{{ es_username | default(omit) }}"
                   url_password: "{{ es_password | default(omit) }}"
+                  force_basic_auth: "{{ false if es_api_key is defined else true }}"
                   headers: >-
                       {{
                         {
@@ -115,6 +119,7 @@
                   url: "{{ es_host_protocol }}://localhost:{{ es_http_port }}/_flush"
                   url_username: "{{ es_username | default(omit) }}"
                   url_password: "{{ es_password | default(omit) }}"
+                  force_basic_auth: "{{ false if es_api_key is defined else true }}"
                   headers: >-
                       {{
                         {
@@ -142,6 +147,7 @@
                   url: "{{ es_host_protocol }}://{{ es_host }}:{{ es_http_port }}/_cluster/health"
                   url_username: "{{ es_username | default(omit) }}"
                   url_password: "{{ es_password | default(omit) }}"
+                  force_basic_auth: "{{ false if es_api_key is defined else true }}"
                   headers: >-
                       {{
                         {
@@ -179,6 +185,7 @@
                   url: "{{ es_host_protocol }}://localhost:{{ es_http_port }}/_cluster/health"
                   url_username: "{{ es_username | default(omit) }}"
                   url_password: "{{ es_password | default(omit) }}"
+                  force_basic_auth: "{{ false if es_api_key is defined else true }}"
                   headers: >-
                       {{
                         {
@@ -198,6 +205,7 @@
                   url: "{{ es_host_protocol }}://localhost:{{ es_http_port }}/_cluster/settings"
                   url_username: "{{ es_username | default(omit) }}"
                   url_password: "{{ es_password | default(omit) }}"
+                  force_basic_auth: "{{ false if es_api_key is defined else true }}"
                   headers: >-
                       {{
                         {
@@ -220,6 +228,7 @@
                   validate_certs: false
                   url_username: "{{ es_username | default(omit) }}"
                   url_password: "{{ es_password | default(omit) }}"
+                  force_basic_auth: "{{ false if es_api_key is defined else true }}"
                   headers: >-
                       {{
                         {

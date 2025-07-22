@@ -38,6 +38,7 @@
                         } if es_api_key is defined else omit
                       }}
                   validate_certs: false
+                  force_basic_auth: "{{ false if es_api_key is defined else true }}"
 
               register: response
               until: "'kbn_name' in response and response.status == 200"
@@ -52,11 +53,14 @@
                   url_password: "{{ es_password | default(omit) }}"
                   headers: >-
                       {{
-                        {
+                        dict({
+                          'kbn-version': elk_version,
                           'Authorization': 'ApiKey ' + es_api_key
-                        } if es_api_key is defined else omit
+                        }) if es_api_key is defined else {
+                          'kbn-version': elk_version
+                        }
                       }}
-                      "kbn-version": "{{ elk_version }}"
                   validate_certs: false
                   body_format: json
+                  force_basic_auth: "{{ false if es_api_key is defined else true }}"
                   body: "{{ set_default_index }}"
