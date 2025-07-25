@@ -5,11 +5,11 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 
 @JsonTypeName("ELASTIC")
 public class ElasticNode extends ClusterNode {
+  private boolean isMaster;
+
   public ElasticNode() {
     setType(ClusterNodeType.ELASTIC);
   }
-
-  private boolean isMaster;
 
   public boolean isMaster() {
     return isMaster;

@@ -82,7 +82,15 @@ public class ClusterService {
 
   public List<GetClusterResponse> getClusters() {
     return clusterRepository.findAll().stream()
-        .map(cluster -> clusterMapper.toGetClusterResponse(cluster, null))
+        .map(cluster -> {
+          List<ClusterNode> nodes = clusterNodeRepository.findByClusterId(cluster.getId());
+          List<GetClusterKibanaNodeResponse> kibanaNodes = nodes.stream()
+              .filter(node -> node.getType() == ClusterNodeType.KIBANA)
+              .map(node -> new GetClusterKibanaNodeResponse(node.getId(), node.getName(),
+                  node.getIp()))
+              .toList();
+          return clusterMapper.toGetClusterResponse(cluster, kibanaNodes);
+        })
         .toList();
   }
 }

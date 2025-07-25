@@ -13,10 +13,11 @@ public abstract class GetClusterResponse {
   private String id;
   private String name;
   private ClusterType type;
-  private String apiKey;
   private String elasticUrl;
   private String kibanaUrl;
   private String username;
+  private String password;
+  private String apiKey;
 
   public String getId() {
     return id;
@@ -72,5 +73,13 @@ public abstract class GetClusterResponse {
 
   public void setUsername(String username) {
     this.username = username;
+  }
+
+  public String getPassword() {
+    return password;
+  }
+
+  public void setPassword(String password) {
+    this.password = password;
   }
 }

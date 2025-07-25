@@ -13,11 +13,6 @@ public class DiskCheck extends BaseNodePrecheck {
   }
 
   @Override
-  public boolean shouldRun(NodeContext context) {
-    return false;
-  }
-
-  @Override
   public void run(NodeContext context) {
 
   }

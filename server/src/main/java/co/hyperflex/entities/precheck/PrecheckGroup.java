@@ -14,6 +14,8 @@ public class PrecheckGroup {
 
   private String clusterUpgradeJobId;
 
+  private String clusterId;
+
   private PrecheckStatus status = PrecheckStatus.PENDING;
 
   @CreatedDate
@@ -30,6 +32,14 @@ public class PrecheckGroup {
     this.id = id;
     this.clusterUpgradeJobId = clusterUpgradeJobId;
     this.status = status;
+  }
+
+  public String getClusterId() {
+    return clusterId;
+  }
+
+  public void setClusterId(String clusterId) {
+    this.clusterId = clusterId;
   }
 
   public String getId() {

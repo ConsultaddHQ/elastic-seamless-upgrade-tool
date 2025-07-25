@@ -1,11 +1,19 @@
 package co.hyperflex.dtos.clusters;
 
 import co.hyperflex.entities.cluster.ClusterType;
+import jakarta.validation.constraints.NotNull;
+import java.util.Collections;
 import java.util.List;
 
 public class AddSelfManagedClusterRequest extends AddClusterRequest {
 
-  private List<AddClusterKibanaNodeRequest> kibanaNodes;
+  @NotNull
+  private List<AddClusterKibanaNodeRequest> kibanaNodes = Collections.emptyList();
+
+  @NotNull
+  private String sshUsername;
+  @NotNull
+  private String sshKey;
 
   public AddSelfManagedClusterRequest() {
     setType(ClusterType.SELF_MANAGED);
@@ -17,5 +25,21 @@ public class AddSelfManagedClusterRequest extends AddClusterRequest {
 
   public void setKibanaNodes(List<AddClusterKibanaNodeRequest> kibanaNodes) {
     this.kibanaNodes = kibanaNodes;
+  }
+
+  public String getSshKey() {
+    return sshKey;
+  }
+
+  public void setSshKey(String sshKey) {
+    this.sshKey = sshKey;
+  }
+
+  public String getSshUsername() {
+    return sshUsername;
+  }
+
+  public void setSshUsername(String sshUsername) {
+    this.sshUsername = sshUsername;
   }
 }

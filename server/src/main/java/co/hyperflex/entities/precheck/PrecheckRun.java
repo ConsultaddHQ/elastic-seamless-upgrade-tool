@@ -11,8 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
  * Base Precheck class with polymorphic serialization.
  */
 @Document(collection = "precheck-runs")
-@JsonTypeInfo(
-    use = JsonTypeInfo.Id.NAME,
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME,
     include = JsonTypeInfo.As.EXISTING_PROPERTY,
     property = "type",
     visible = true
@@ -26,6 +25,8 @@ public abstract class PrecheckRun {
 
   private String precheckId;
 
+  private String clusterId;
+
   private String name;
 
   private PrecheckType type;
@@ -33,8 +34,6 @@ public abstract class PrecheckRun {
   private PrecheckSeverity severity = PrecheckSeverity.WARNING;
 
   private String precheckGroupId;
-
-  private String clusterUpgradeJobId;
 
   private PrecheckStatus status = PrecheckStatus.PENDING;
 
@@ -84,14 +83,6 @@ public abstract class PrecheckRun {
     this.precheckGroupId = precheckGroupId;
   }
 
-  public String getClusterUpgradeJobId() {
-    return clusterUpgradeJobId;
-  }
-
-  public void setClusterUpgradeJobId(String clusterUpgradeJobId) {
-    this.clusterUpgradeJobId = clusterUpgradeJobId;
-  }
-
   public PrecheckStatus getStatus() {
     return status;
   }
@@ -120,6 +111,10 @@ public abstract class PrecheckRun {
     return endAt;
   }
 
+  public void setEndAt(Date endAt) {
+    this.endAt = endAt;
+  }
+
   public String getPrecheckId() {
     return precheckId;
   }
@@ -128,8 +123,12 @@ public abstract class PrecheckRun {
     this.precheckId = precheckId;
   }
 
-  public void setEndAt(Date endAt) {
-    this.endAt = endAt;
+  public String getClusterId() {
+    return clusterId;
+  }
+
+  public void setClusterId(String clusterId) {
+    this.clusterId = clusterId;
   }
 }
 

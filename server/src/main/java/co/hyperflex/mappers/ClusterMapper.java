@@ -13,8 +13,10 @@ import co.hyperflex.entities.cluster.Cluster;
 import co.hyperflex.entities.cluster.ClusterNode;
 import co.hyperflex.entities.cluster.ClusterNodeType;
 import co.hyperflex.entities.cluster.ElasticCloudCluster;
+import co.hyperflex.entities.cluster.ElasticNode;
 import co.hyperflex.entities.cluster.KibanaNode;
 import co.hyperflex.entities.cluster.SelfManagedCluster;
+import co.hyperflex.entities.cluster.SshInfo;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
@@ -23,22 +25,29 @@ import org.springframework.stereotype.Component;
 public class ClusterMapper {
 
   public Cluster toEntity(AddClusterRequest request) {
-    if (request instanceof AddSelfManagedClusterRequest selfManagedRequest) {
-      SelfManagedCluster cluster = new SelfManagedCluster();
-      cluster.setName(selfManagedRequest.getName());
-      cluster.setElasticUrl(selfManagedRequest.getUrl());
-      cluster.setUsername(selfManagedRequest.getUsername());
-      cluster.setKibanaUrl(selfManagedRequest.getKibanaUrl());
-      cluster.setPassword(selfManagedRequest.getPassword());
-      return cluster;
-    } else if (request instanceof AddElasticCloudClusterRequest elasticCloudRequest) {
-      ElasticCloudCluster cluster = new ElasticCloudCluster();
-      cluster.setName(elasticCloudRequest.getName());
-      cluster.setApiKey(elasticCloudRequest.getApiKey());
-      cluster.setDeploymentId(elasticCloudRequest.getDeploymentId());
-      return cluster;
-    }
-    throw new IllegalArgumentException("Unknown AddClusterRequest type");
+    final Cluster cluster = switch (request) {
+      case AddSelfManagedClusterRequest selfManagedRequest -> {
+        SelfManagedCluster selfManagedCluster = new SelfManagedCluster();
+        selfManagedCluster.setSshInfo(new SshInfo(
+            selfManagedRequest.getSshUsername(),
+            selfManagedRequest.getSshKey()));
+        yield selfManagedCluster;
+      }
+      case AddElasticCloudClusterRequest elasticCloudRequest -> {
+        ElasticCloudCluster elasticCloudCluster = new ElasticCloudCluster();
+        elasticCloudCluster.setDeploymentId(elasticCloudRequest.getDeploymentId());
+        yield elasticCloudCluster;
+      }
+      default -> throw new IllegalArgumentException("Invalid request");
+    };
+    cluster.setName(request.getName());
+    cluster.setElasticUrl(request.getUrl());
+    cluster.setKibanaUrl(request.getKibanaUrl());
+    cluster.setUsername(request.getUsername());
+    cluster.setPassword(request.getPassword());
+    cluster.setApiKey(request.getApiKey());
+
+    return cluster;
   }
 
   public ClusterNode toNodeEntity(AddClusterKibanaNodeRequest request) {
@@ -52,25 +61,33 @@ public class ClusterMapper {
     return node;
   }
 
-  public GetClusterResponse toGetClusterResponse(Cluster cluster, List<GetClusterKibanaNodeResponse> kibanaNodes) {
-    if (cluster instanceof SelfManagedCluster selfManagedCluster) {
-      GetSelfManagedClusterResponse response = new GetSelfManagedClusterResponse();
-      response.setId(selfManagedCluster.getId());
-      response.setName(selfManagedCluster.getName());
-      response.setElasticUrl(selfManagedCluster.getElasticUrl());
-      response.setKibanaUrl(selfManagedCluster.getKibanaUrl());
-      response.setUsername(selfManagedCluster.getUsername());
-      response.setKibanaNodes(kibanaNodes);
-      return response;
-    } else if (cluster instanceof ElasticCloudCluster elasticCloudCluster) {
-      GetElasticCloudClusterResponse response = new GetElasticCloudClusterResponse();
-      response.setId(elasticCloudCluster.getId());
-      response.setName(elasticCloudCluster.getName());
-      response.setDeploymentId(elasticCloudCluster.getDeploymentId());
-      response.setApiKey(elasticCloudCluster.getApiKey());
-      return response;
-    }
-    throw new IllegalArgumentException("Unknown Cluster type");
+  public GetClusterResponse toGetClusterResponse(Cluster cluster,
+                                                 List<GetClusterKibanaNodeResponse> kibanaNodes) {
+    GetClusterResponse response = switch (cluster) {
+      case SelfManagedCluster selfManagedCluster -> {
+        GetSelfManagedClusterResponse selfManagedClusterResponse =
+            new GetSelfManagedClusterResponse();
+        selfManagedClusterResponse.setKibanaNodes(kibanaNodes);
+        yield selfManagedClusterResponse;
+      }
+      case ElasticCloudCluster elasticCloudCluster -> {
+        GetElasticCloudClusterResponse elasticCloudClusterResponse =
+            new GetElasticCloudClusterResponse();
+        elasticCloudClusterResponse.setDeploymentId(elasticCloudCluster.getDeploymentId());
+        yield elasticCloudClusterResponse;
+      }
+      default -> throw new IllegalArgumentException("Invalid cluster");
+    };
+
+    response.setId(cluster.getId());
+    response.setName(cluster.getName());
+    response.setElasticUrl(cluster.getElasticUrl());
+    response.setKibanaUrl(cluster.getKibanaUrl());
+    response.setUsername(cluster.getUsername());
+    response.setPassword(cluster.getPassword());
+    response.setApiKey(cluster.getApiKey());
+
+    return response;
   }
 
   public GetClusterNodeResponse toGetClusterNodeResponse(ClusterNode node) {
@@ -83,8 +100,9 @@ public class ClusterMapper {
         node.getType(),
         node.getClusterId(),
         node.getProgress(),
-        null,
-        null
+        node.getStatus(),
+        node.getOs(),
+        node instanceof ElasticNode elasticNode && elasticNode.isMaster()
     );
   }
 

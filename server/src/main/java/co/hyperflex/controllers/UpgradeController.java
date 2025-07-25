@@ -4,9 +4,14 @@ import co.hyperflex.clients.ElasticClient;
 import co.hyperflex.clients.ElasticsearchClientProvider;
 import co.hyperflex.clients.KibanaClient;
 import co.hyperflex.clients.KibanaClientProvider;
+import co.hyperflex.dtos.upgrades.ClusterNodeUpgradeRequest;
+import co.hyperflex.dtos.upgrades.ClusterNodeUpgradeResponse;
 import co.hyperflex.dtos.upgrades.ClusterUpgradeRequest;
+import co.hyperflex.dtos.upgrades.CreateClusterUpgradeJobRequest;
+import co.hyperflex.dtos.upgrades.CreateClusterUpgradeJobResponse;
 import co.hyperflex.entities.cluster.ClusterNode;
 import co.hyperflex.entities.cluster.KibanaNode;
+import co.hyperflex.services.ClusterUpgradeService;
 import co.hyperflex.upgrader.planner.UpgradePlanBuilder;
 import co.hyperflex.upgrader.tasks.Configuration;
 import co.hyperflex.upgrader.tasks.Context;
@@ -32,11 +37,27 @@ public class UpgradeController {
   private final ExecutorService executor = Executors.newFixedThreadPool(1);
   private final ElasticsearchClientProvider elasticsearchClientProvider;
   private final KibanaClientProvider kibanaClientProvider;
+  private final ClusterUpgradeService clusterUpgradeService;
 
   public UpgradeController(ElasticsearchClientProvider elasticsearchClientProvider,
-                           KibanaClientProvider kibanaClientProvider) {
+                           KibanaClientProvider kibanaClientProvider,
+                           ClusterUpgradeService clusterUpgradeService) {
     this.elasticsearchClientProvider = elasticsearchClientProvider;
     this.kibanaClientProvider = kibanaClientProvider;
+    this.clusterUpgradeService = clusterUpgradeService;
+  }
+
+
+  @PostMapping("/jobs")
+  public CreateClusterUpgradeJobResponse clusterUpgradeJob(
+      @RequestBody CreateClusterUpgradeJobRequest request) {
+    return clusterUpgradeService.createClusterUpgradeJob(request);
+  }
+
+  @PostMapping("/node")
+  public ClusterNodeUpgradeResponse clusterNodeUpgrade(
+      @RequestBody ClusterNodeUpgradeRequest request) {
+    return clusterUpgradeService.upgradeNode(request);
   }
 
 

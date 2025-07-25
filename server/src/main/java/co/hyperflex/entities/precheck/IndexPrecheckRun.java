@@ -10,6 +10,14 @@ public class IndexPrecheckRun extends PrecheckRun {
     setType(PrecheckType.INDEX);
   }
 
+  public IndexInfo getIndex() {
+    return index;
+  }
+
+  public void setIndex(IndexInfo index) {
+    this.index = index;
+  }
+
   public static class IndexInfo {
     private String name;
 
@@ -25,14 +33,7 @@ public class IndexPrecheckRun extends PrecheckRun {
     }
 
     public void setName(String name) {
+      this.name = name;
     }
-  }
-
-  public IndexInfo getIndex() {
-    return index;
-  }
-
-  public void setIndex(IndexInfo index) {
-    this.index = index;
   }
 }

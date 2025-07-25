@@ -25,13 +25,13 @@ public class Setting {
     return id;
   }
 
+  public void setId(String id) {
+    this.id = id;
+  }
+
   @Nullable
   public String getNotificationWebhookUrl() {
     return notificationWebhookUrl;
-  }
-
-  public void setId(String id) {
-    this.id = id;
   }
 
   public void setNotificationWebhookUrl(@Nullable String notificationWebhookUrl) {
@@ -42,12 +42,12 @@ public class Setting {
     return createdAt;
   }
 
-  public Instant getUpdatedAt() {
-    return updatedAt;
-  }
-
   public void setCreatedAt(Instant createdAt) {
     this.createdAt = createdAt;
+  }
+
+  public Instant getUpdatedAt() {
+    return updatedAt;
   }
 
   public void setUpdatedAt(Instant updatedAt) {

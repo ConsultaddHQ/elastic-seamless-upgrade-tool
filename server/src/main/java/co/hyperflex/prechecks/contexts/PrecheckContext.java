@@ -30,4 +30,8 @@ public abstract class PrecheckContext {
   public KibanaClient getKibanaClient() {
     return kibanaClient;
   }
+
+  public PrecheckLogger getLogger() {
+    return logger;
+  }
 }

@@ -8,6 +8,8 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface PrecheckRunRepository extends MongoRepository<PrecheckRun, String> {
-  List<PrecheckRun> findTop20ByStatus(PrecheckStatus status);
+  List<PrecheckRun> findTop40ByStatus(PrecheckStatus status);
+
+  List<PrecheckRun> findByPrecheckGroupId(String precheckGroupId);
 
 }

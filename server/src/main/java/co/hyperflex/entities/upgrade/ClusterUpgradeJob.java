@@ -11,7 +11,7 @@ public class ClusterUpgradeJob {
   private String clusterId;
   private String currentVersion;
   private String targetVersion;
-  private ClusterUpgradeStatus status;
+  private ClusterUpgradeStatus status = ClusterUpgradeStatus.PENDING;
 
 
   public String getId() {

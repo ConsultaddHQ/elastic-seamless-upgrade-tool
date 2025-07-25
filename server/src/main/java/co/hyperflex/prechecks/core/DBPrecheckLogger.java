@@ -1,18 +1,20 @@
 package co.hyperflex.prechecks.core;
 
+import co.hyperflex.entities.precheck.PrecheckRun;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DBPrecheckLogger implements PrecheckLogger {
-  private final String precheckRunId;
+  private final PrecheckRun precheckRun;
   private final Logger slf4jLogger = LoggerFactory.getLogger(DBPrecheckLogger.class);
 
-  public DBPrecheckLogger(String precheckRunId) {
-    this.precheckRunId = precheckRunId;
+  public DBPrecheckLogger(PrecheckRun precheckRun) {
+    this.precheckRun = precheckRun;
   }
 
   private void saveLog(String level, String message) {
-    // todo
+    // TODO we need to thing about it
+    precheckRun.getLogs().add(String.format("[%s] %s", level, message));
   }
 
   @Override
