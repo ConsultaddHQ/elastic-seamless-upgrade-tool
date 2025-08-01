@@ -43,7 +43,7 @@ const UPGRADE_ENUM = {
 	),
 }
 
-const columns: TUpgradeColumn = [
+const columns: TColumn = [
 	{
 		key: "node_name",
 		label: "Node name",

@@ -29,7 +29,7 @@ function Setup() {
 
 	const [creds, setCreds] = useState<TCreds>({
 		type: infraType,
-		name:"",
+		name: "",
 		elasticUrl: "",
 		kibanaUrl: "",
 		authPref: null,
@@ -48,7 +48,7 @@ function Setup() {
 	const handleStepInfraSubmit = (value: string | null) => {
 		if (value) {
 			setInfraType(value)
-			setCreds({...creds, type: value})
+			setCreds({ ...creds, type: value })
 			handleNextStep()
 		}
 	}
@@ -83,20 +83,20 @@ function Setup() {
 					elasticUrl: creds.elasticUrl,
 					kibanaUrl: creds.kibanaUrl,
 					username: creds.username,
-					password: creds.password ,
+					password: creds.password,
 					certificateIds: certIds,
 					type: infraType,
 					sshUsername: creds.sshUser,
 					sshKey: creds.pathToSSH ?? "",
 					apiKey: creds.apiKey,
 					kibanaNodes: creds.kibanaConfigs,
-					deploymentId: creds.deploymentId
+					deploymentId: creds.deploymentId,
 				})
 				.then((res) => {
 					setClusterAdded(true)
 					setStep(1)
 					setClusterId(res?.data?.id)
-					navigate("/cluster-overview")
+					navigate("/")
 				})
 				.catch((err) => toast.error(err?.response?.data.err ?? StringManager.GENERIC_ERROR))
 		},

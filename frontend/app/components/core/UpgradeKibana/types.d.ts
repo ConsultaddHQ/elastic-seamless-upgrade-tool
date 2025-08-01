@@ -12,7 +12,7 @@ type TUpgradeRow = {
 	ip: string
 }
 
-type TUpgradeColumn = Array<{
+type TColumn = Array<{
 	key: string
 	label: string
 	align: "start" | "center" | "end" | undefined

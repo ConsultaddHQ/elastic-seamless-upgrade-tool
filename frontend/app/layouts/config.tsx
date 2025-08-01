@@ -1,5 +1,5 @@
-import { Box, Typography } from "@mui/material"
-import { ArrowRight2, Convertshape2, Share } from "iconsax-react"
+import { Box, Breadcrumbs, Typography } from "@mui/material"
+import { ArrowRight2, Convertshape2, HambergerMenu, Share } from "iconsax-react"
 import { Link, Outlet, useLocation } from "react-router"
 import { toast } from "sonner"
 import { cn } from "~/lib/Utils"
@@ -15,7 +15,7 @@ const CENTER_ARROW_COMPLETE_GRADIENT = "linear-gradient(90deg, #52D97F 30%, #52D
 
 function ConfigLayout() {
 	const { pathname } = useLocation()
-	const upgradeAllowed  = useSafeRouteStore((state: any) => state.upgradeAssistAllowed)
+	const upgradeAllowed = useSafeRouteStore((state: any) => state.upgradeAssistAllowed)
 
 	const GradientBox = ({
 		to,
@@ -107,41 +107,64 @@ function ConfigLayout() {
 
 	return (
 		<>
-			<Box className="flex relative bg-[#0A0A0A]" padding="0px 24px">
-				<GradientBox
-					to="/cluster-overview"
-					icon={Share}
-					title="Cluster overview"
-					zIndex="z-[1]"
-					isActive={PATH_META_DATA[pathname].label === "CLUSTER_OVERVIEW"}
-					isCompleted={PATH_META_DATA[pathname].pos > 1}
-				/>
+			<Box className="flex flex-col gap-[10px]" padding="0px 24px">
 				<Box
-					className="flex absolute z-10 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full p-px"
-					sx={{
-						background:
-							PATH_META_DATA[pathname].pos === 1
-								? "#292929"
-								: PATH_META_DATA[pathname].pos === 2
-								? CENTER_ARROW_MIDDLE_GRADIENT
-								: CENTER_ARROW_COMPLETE_GRADIENT,
-					}}
+					className="flex gap-[6px] w-max items-center rounded-lg border border-solid border-[#2F2F2F] bg-[#141415]"
+					padding="6px 10px 8px 10px"
 				>
-					<Box className="flex bg-neutral-950 min-w-[31px] min-h-[31px] rounded-full items-center justify-center">
-						<ArrowRight2 color="#FFF" size="16px" />
-					</Box>
+					<Breadcrumbs separator={<ArrowRight2 color="#ADADAD" size="14px" />}>
+						<Link to="/">
+							<Typography
+								className="flex items-center gap-[6px]"
+								color="#ADADAD"
+								fontSize="12px"
+								fontWeight="500"
+								lineHeight="normal"
+							>
+								<HambergerMenu color="currentColor" size="14px" /> Cluster details
+							</Typography>
+						</Link>
+						<Typography color="#BDA0FF" fontSize="12px" fontWeight="500" lineHeight="normal">
+							Cluster overview
+						</Typography>
+					</Breadcrumbs>
 				</Box>
-				<GradientBox
-					to="/upgrade-assistant"
-					icon={Convertshape2}
-					title="Upgrade assistant"
-					borderRadius="rounded-r-[10px]"
-					zIndex="z-0"
-					isActive={PATH_META_DATA[pathname].label === "UPGRADE_ASSISTANT"}
-					isCompleted={PATH_META_DATA[pathname].pos > 2}
-					isDisabled={!upgradeAllowed}
-					disabledClickEvent={() => toast.info("Please select update available to access the page.")}
-				/>
+				<Box className="flex relative bg-[#0A0A0A]">
+					<GradientBox
+						to="/cluster-overview"
+						icon={Share}
+						title="Cluster overview"
+						zIndex="z-[1]"
+						isActive={PATH_META_DATA[pathname].label === "CLUSTER_OVERVIEW"}
+						isCompleted={PATH_META_DATA[pathname].pos > 1}
+					/>
+					<Box
+						className="flex absolute z-10 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full p-px"
+						sx={{
+							background:
+								PATH_META_DATA[pathname].pos === 1
+									? "#292929"
+									: PATH_META_DATA[pathname].pos === 2
+									? CENTER_ARROW_MIDDLE_GRADIENT
+									: CENTER_ARROW_COMPLETE_GRADIENT,
+						}}
+					>
+						<Box className="flex bg-neutral-950 min-w-[31px] min-h-[31px] rounded-full items-center justify-center">
+							<ArrowRight2 color="#FFF" size="16px" />
+						</Box>
+					</Box>
+					<GradientBox
+						to="/upgrade-assistant"
+						icon={Convertshape2}
+						title="Upgrade assistant"
+						borderRadius="rounded-r-[10px]"
+						zIndex="z-0"
+						isActive={PATH_META_DATA[pathname].label === "UPGRADE_ASSISTANT"}
+						isCompleted={PATH_META_DATA[pathname].pos > 2}
+						isDisabled={!upgradeAllowed}
+						disabledClickEvent={() => toast.info("Please select update available to access the page.")}
+					/>
+				</Box>
 			</Box>
 			<Outlet />
 		</>

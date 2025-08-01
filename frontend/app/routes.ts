@@ -1,9 +1,11 @@
 import { type RouteConfig, index, layout, route } from "@react-router/dev/routes"
 
 export default [
-	layout("safeRoutes/clusterAdded.tsx", [layout("layouts/data.tsx", [index("routes/setup.tsx")])]),
-	layout("safeRoutes/clusterNotAdded.tsx", [
-		layout("layouts/common.tsx", [
+	// layout("safeRoutes/clusterAdded.tsx", [layout("layouts/data.tsx", [index("routes/setup.tsx")])]),
+	layout("layouts/data.tsx", [route("add-cluster",  "routes/setup.tsx")]),
+	layout("layouts/common.tsx", [
+		index("routes/clusterListing.tsx"),
+		layout("safeRoutes/clusterNotAdded.tsx", [
 			layout("layouts/config.tsx", [
 				route("cluster-overview", "routes/clusterOverview.tsx"),
 				route("upgrade-assistant", "routes/upgradeAssist.tsx"),
