@@ -11,6 +11,7 @@ import co.elastic.clients.elasticsearch.nodes.NodesInfoResponse;
 import co.elastic.clients.elasticsearch.nodes.info.NodeInfo;
 import co.hyperflex.clients.elastic.ElasticClient;
 import co.hyperflex.clients.elastic.ElasticsearchClientProvider;
+import co.hyperflex.clients.kibana.KibanaClient;
 import co.hyperflex.clients.kibana.KibanaClientProvider;
 import co.hyperflex.clients.kibana.dto.GetKibanaStatusResponse;
 import co.hyperflex.clients.kibana.dto.OsStats;
@@ -45,6 +46,7 @@ import co.hyperflex.repositories.ClusterRepository;
 import co.hyperflex.utils.HashUtil;
 import co.hyperflex.utils.NodeRoleRankerUtils;
 import co.hyperflex.utils.UpgradePathUtils;
+import co.hyperflex.utils.UrlUtils;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -81,6 +83,7 @@ public class ClusterService {
 
   public AddClusterResponse add(final AddClusterRequest request) {
     final Cluster cluster = this.clusterMapper.toEntity(request);
+    validateCluster(cluster);
     clusterRepository.save(cluster);
     syncElasticNodes(cluster);
     if (request instanceof AddSelfManagedClusterRequest selfManagedRequest) {
@@ -107,6 +110,8 @@ public class ClusterService {
     cluster.setUsername(request.getUsername());
     cluster.setApiKey(request.getApiKey());
     cluster.setPassword(request.getPassword());
+
+    validateCluster(cluster);
 
 
     if (request instanceof UpdateSelfManagedClusterRequest selfManagedRequest && cluster instanceof SelfManagedCluster selfManagedCluster) {
@@ -183,10 +188,7 @@ public class ClusterService {
       } catch (Exception e) {
         log.error("Error getting cluster list from Elasticsearch:", e);
       }
-      return new ClusterListItemResponse(cluster.getId(),
-          cluster.getName(),
-          cluster.getType().name(),
-          cluster.getType().getDisplayName(),
+      return new ClusterListItemResponse(cluster.getId(), cluster.getName(), cluster.getType().name(), cluster.getType().getDisplayName(),
           version, status);
     }).toList();
   }
@@ -327,4 +329,24 @@ public class ClusterService {
     }
   }
 
+
+  private void validateCluster(Cluster cluster) {
+    cluster.setKibanaUrl(UrlUtils.validateAndCleanUrl(cluster.getKibanaUrl()));
+    cluster.setElasticUrl(UrlUtils.validateAndCleanUrl(cluster.getElasticUrl()));
+    try {
+      ElasticClient elasticClient = elasticsearchClientProvider.getClient(cluster);
+      elasticClient.getHealthStatus();
+    } catch (Exception e) {
+      log.warn("Error validating cluster credentials", e);
+      throw new BadRequestException("Elastic credentials are invalid");
+    }
+
+    try {
+      KibanaClient kibanaClient = kibanaClientProvider.getClient(cluster);
+      kibanaClient.getKibanaVersion();
+    } catch (Exception e) {
+      log.warn("Error validating cluster credentials", e);
+      throw new BadRequestException("Kibana credentials are invalid");
+    }
+  }
 }

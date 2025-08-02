@@ -34,6 +34,10 @@ public class KibanaClient {
     return getKibanaNodeDetails(nodeIp).version().number();
   }
 
+  public String getKibanaVersion() {
+    return getKibanaNodeDetails(null).version().number();
+  }
+
   public GetKibanaStatusResponse getKibanaNodeDetails(String nodeIp) {
     String url =
         Optional.ofNullable(nodeIp).map(ip -> String.format("http://%s:5601/api/status", ip))
