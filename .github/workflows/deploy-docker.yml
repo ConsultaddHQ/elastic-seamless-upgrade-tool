@@ -1,6 +1,11 @@
 name: Build Elastic Seamless Upgrade Tool
 run-name: build-elastic-seamless-upgrade-tool
 
+permissions:
+  contents: read
+  checks: write
+  id-token: write
+
 on:
   push:
     branches:
@@ -102,6 +107,13 @@ jobs:
 
       - name: Run tests
         run: ./gradlew test
+
+      - name: Comment JUnit test summary on PR
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: 'server/build/test-results/test/TEST-*.xml'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
   build-tool:
     if: |
