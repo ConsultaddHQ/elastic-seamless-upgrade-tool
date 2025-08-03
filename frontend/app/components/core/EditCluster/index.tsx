@@ -171,6 +171,7 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 						...certIds,
 					],
 					sshUsername: values.sshUser,
+					apiKey: values.apiKey,
 					sshKey: values.pathToSSH ?? "",
 					kibanaNodes: values.kibanaConfigs
 				})
