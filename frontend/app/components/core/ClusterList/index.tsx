@@ -85,7 +85,9 @@ function ClusterList() {
 					return <span className="text-[#ADADAD]">{row.name}</span>
 				case "infrastructure_type":
 					return (
-						<span className="text-[#ADADAD] capitalize">{row.type.split("_").join(" ").toLowerCase()}</span>
+						<span className="text-[#ADADAD] capitalize">
+							{row.typeDisplayName.replaceAll("_", " ").toLowerCase()}
+						</span>
 					)
 				case "es_version":
 					return <span className="text-[#FFF]">{row.version}</span>
@@ -119,7 +121,7 @@ function ClusterList() {
 	)
 
 	const handleClusterSelect = (clusterId: Key) => {
-		const selectedCluster = data?.filter((item: any) => item.id === clusterId)
+		const selectedCluster = data?.filter((item: any) => item.id === clusterId)[0]
 		if (selectedCluster.length !== 0) {
 			setClusterId(clusterId)
 			setInfraType(selectedCluster.type)

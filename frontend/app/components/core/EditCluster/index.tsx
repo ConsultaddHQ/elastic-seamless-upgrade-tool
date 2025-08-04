@@ -72,7 +72,10 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 	})
 
 	useEffect(() => {
-		if (isOpen) formik.resetForm()
+		if (isOpen) {
+			formik.resetForm()
+			refetch()
+		}
 	}, [isOpen])
 
 	const handleChange = (fn: React.Dispatch<React.SetStateAction<(File | TExistingFile)[]>>, files: File[]) => {
@@ -95,7 +98,7 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 	}
 
 	const getCluster = async () => {
-		await axiosJSON
+		axiosJSON
 			.get("/clusters/" + clusterId)
 			.then((res) => {
 				const cluster = res?.data
@@ -131,7 +134,7 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 	const { isLoading, isRefetching, refetch } = useQuery({
 		queryKey: ["get-cluster-info"],
 		queryFn: getCluster,
-		staleTime: Infinity,
+		staleTime: 0,
 	})
 
 	const { mutate: HandleSubmit, isPending } = useMutation({

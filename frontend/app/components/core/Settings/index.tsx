@@ -69,7 +69,7 @@ function Settings({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: () 
 	const { isLoading, isRefetching, refetch } = useQuery({
 		queryKey: ["get-settings"],
 		queryFn: getSettings,
-		staleTime: Infinity,
+		staleTime: 0,
 	})
 
 	const { mutate: HandleSubmit, isPending } = useMutation({
