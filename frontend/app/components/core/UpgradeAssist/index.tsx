@@ -21,6 +21,7 @@ function UpgradeAssistant() {
 	const clusterId = useLocalStore((state: any) => state.clusterId)
 	const infraType = useLocalStore((state: any) => state.infraType)
 	const deploymentId = useLocalStore((state: any) => state.deploymentId)
+	const setDeploymentId = useLocalStore((state: any) => state.setDeploymentId)
 	const { remainingTime, startTimer, resetTimer } = useCountdownTimer()
 	const setDeprecationChangesAllowed = useSafeRouteStore((state: any) => state.setDeprecationChangesAllowed)
 	const setElasticNodeUpgradeAllowed = useSafeRouteStore((state: any) => state.setElasticNodeUpgradeAllowed)
@@ -123,6 +124,7 @@ function UpgradeAssistant() {
 				handleRoutingStates(step3Status, setDeprecationChangesAllowed)
 				handleRoutingStates(step4Status, setElasticNodeUpgradeAllowed)
 				handleRoutingStates(step5Status, setKibanaNodeUpgradeAllowed)
+				setDeploymentId(response?.deploymentId ?? "")
 			})
 			.catch((err) => toast.error(err?.response?.data.err ?? StringManager.GENERIC_ERROR))
 		return response

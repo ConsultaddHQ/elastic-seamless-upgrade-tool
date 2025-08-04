@@ -1,13 +1,15 @@
 package co.hyperflex.dtos;
 
 import co.hyperflex.entities.precheck.PrecheckStatus;
+import com.mongodb.lang.Nullable;
 import jakarta.validation.constraints.NotNull;
 
 public record ClusterInfoResponse(
     @NotNull Elastic elastic,
     @NotNull Kibana kibana,
-    @NotNull Precheck precheck
-) {
+    @NotNull Precheck precheck,
+    @Nullable String deploymentId
+    ) {
   public record Elastic(
       boolean isUpgradable,
       DeprecationCounts deprecationCounts,

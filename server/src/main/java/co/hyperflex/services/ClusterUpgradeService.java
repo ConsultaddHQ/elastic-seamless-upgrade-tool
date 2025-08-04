@@ -7,6 +7,8 @@ import co.hyperflex.clients.kibana.KibanaClientProvider;
 import co.hyperflex.dtos.ClusterInfoResponse;
 import co.hyperflex.dtos.GetElasticsearchSnapshotResponse;
 import co.hyperflex.dtos.clusters.GetClusterNodeResponse;
+import co.hyperflex.dtos.clusters.GetClusterResponse;
+import co.hyperflex.dtos.clusters.GetElasticCloudClusterResponse;
 import co.hyperflex.dtos.prechecks.GetPrecheckGroupResponse;
 import co.hyperflex.dtos.upgrades.ClusterNodeUpgradeRequest;
 import co.hyperflex.dtos.upgrades.ClusterNodeUpgradeResponse;
@@ -117,7 +119,7 @@ public class ClusterUpgradeService {
     try {
       ElasticClient client = elasticsearchClientProvider.getElasticsearchClientByClusterId(clusterId);
       KibanaClient kibanaClient = kibanaClientProvider.getKibanaClientByClusterId(clusterId);
-
+      GetClusterResponse cluster = clusterService.getClusterById(clusterId);
       PrecheckStatus precheckStatus = null;
       if (activeUpgradeJob != null) {
         GetPrecheckGroupResponse latestPrecheckGroup = precheckRunService.getPrecheckGroupByJobId(activeUpgradeJob.getId());
@@ -152,8 +154,8 @@ public class ClusterUpgradeService {
       ClusterInfoResponse.Kibana kibana = new ClusterInfoResponse.Kibana(isKibanaUpgradable, kibanaDeprecationCounts);
 
       ClusterInfoResponse.Precheck precheck = new ClusterInfoResponse.Precheck(precheckStatus);
-
-      return new ClusterInfoResponse(elastic, kibana, precheck);
+      String deploymentId = cluster instanceof GetElasticCloudClusterResponse elasticCloud ? elasticCloud.getDeploymentId() : null;
+      return new ClusterInfoResponse(elastic, kibana, precheck, deploymentId);
     } catch (Exception e) {
       log.error("Failed to get upgrade info for clusterId: {}", clusterId, e);
       throw new RuntimeException(e);
