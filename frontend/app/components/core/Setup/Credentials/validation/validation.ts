@@ -55,8 +55,8 @@ const validationSchema = Yup.object().shape({
 			schema
 				.of(
 					Yup.object({
-						name: Yup.string().required("Cluster name is required."),
-						ip: Yup.string().required("Cluster IP is required."),
+						name: Yup.string().required("Node name is required."),
+						ip: Yup.string().required("Node IP is required."),
 					})
 				)
 				.min(1, "At least one Kibana config is required."),

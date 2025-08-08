@@ -16,16 +16,11 @@ function Setup() {
 	const navigate = useNavigate()
 
 	const setClusterAdded = useSafeRouteStore((state: any) => state.setClusterAdded)
-
 	const infraType = useLocalStore((state: any) => state.infraType)
 	const setInfraType = useLocalStore((state: any) => state.setInfraType)
 	const setClusterId = useLocalStore((state: any) => state.setClusterId)
 	const step = useSessionStore((state: any) => state.setupStep)
 	const setStep = useSessionStore((state: any) => state.setSetupStep)
-	// const [infraType, setClusterId, setInfraType] = useLocalStore((state: any) => {
-	// 	return [state.infraType, state.setClusterId, state.setInfraType]
-	// })
-	// const { step, setStep } = useSessionStore((state: any) => ({ step: state.setupStep, setStep: state.setSetupStep }))
 
 	const [creds, setCreds] = useState<TCreds>({
 		type: infraType,

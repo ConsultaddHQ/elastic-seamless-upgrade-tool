@@ -575,7 +575,7 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 																	fontWeight="400"
 																	lineHeight="20px"
 																>
-																	Kibana clusters
+																	Kibana nodes
 																</Typography>
 																<Box>
 																	<OutlinedButton
@@ -603,7 +603,7 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 																		}}
 																	>
 																		<Add size="16px" color="currentColor" />
-																		Add cluster
+																		Add node
 																	</OutlinedButton>
 																</Box>
 															</Box>
@@ -611,7 +611,7 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 																{_.map(
 																	formik.values.kibanaConfigs,
 																	(
-																		cluster: { name: string; ip: string },
+																		node: { name: string; ip: string },
 																		index: number
 																	) => {
 																		return (
@@ -621,11 +621,11 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 																						<Input
 																							fullWidth
 																							id={`kibanaConfigs.${index}`}
-																							name={`kibanaConfigs.${index}`}
+																							name={`kibanaConfigs.${index}.name`}
 																							type="text"
-																							placeholder="Enter cluster name"
+																							placeholder="Enter node name"
 																							varient="outlined"
-																							value={cluster.name}
+																							value={node.name}
 																							onBlur={formik.handleBlur}
 																							onChange={(e: any) => {
 																								let newOptions = [
@@ -645,9 +645,7 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 																							error={
 																								Boolean(
 																									formik.errors
-																										.kibanaConfigs?.[
-																										index
-																									]
+																										.kibanaConfigs?.[index]?.name
 																								) &&
 																								formik.touched
 																									.kibanaConfigs
@@ -656,11 +654,11 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 																						<Input
 																							fullWidth
 																							id={`kibanaConfigs.${index}`}
-																							name={`kibanaConfigs.${index}`}
+																							name={`kibanaConfigs.${index}.ip`}
 																							type="text"
-																							placeholder="Enter cluster name"
+																							placeholder="Enter node ip"
 																							varient="outlined"
-																							value={cluster.ip}
+																							value={node.ip}
 																							onBlur={formik.handleBlur}
 																							onChange={(e: any) => {
 																								let newOptions = [
@@ -680,9 +678,7 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 																							error={
 																								Boolean(
 																									formik.errors
-																										.kibanaConfigs?.[
-																										index
-																									]
+																										.kibanaConfigs?.[index]?.ip
 																								) &&
 																								formik.touched
 																									.kibanaConfigs

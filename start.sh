@@ -54,8 +54,7 @@ sleep 5
 
 # Check each service
 check_service "mongodb"
-check_service "backend"
-check_service "frontend"
+check_service "seamless-upgrade-tool"
 
 echo "Seamless upgrade tool running on:"
 echo "http://localhost:8080"
