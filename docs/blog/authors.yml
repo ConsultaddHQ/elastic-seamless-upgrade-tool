@@ -1,0 +1,12 @@
+vijaypatidar:
+  name: Vijay Patidar
+  title: Software engineer
+  url: https://sebastienlorber.com
+  image_url: https://github.com/vijaypatidar.png
+  page:
+    # customize the url of the author page at /blog/authors/<permalink>
+    permalink: '/vijaypatidar'
+  socials:
+    x: vijaypatidar
+    linkedin: vijaypatidar31
+    github: vijaypatidar
