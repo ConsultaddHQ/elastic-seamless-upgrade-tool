@@ -1,16 +1,22 @@
 package co.hyperflex.repositories;
 
 import co.hyperflex.entities.upgrade.ClusterUpgradeJob;
-import co.hyperflex.entities.upgrade.ClusterUpgradeStatus;
 import java.util.List;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface ClusterUpgradeJobRepository extends MongoRepository<ClusterUpgradeJob, String> {
-  List<ClusterUpgradeJob> findByClusterIdAndStatusIsNot(
-      String clusterId,
-      ClusterUpgradeStatus status);
+public class ClusterUpgradeJobRepository extends AbstractMongoRepository<ClusterUpgradeJob, String> {
 
-  List<ClusterUpgradeJob> findByClusterId(String clusterId);
+  protected ClusterUpgradeJobRepository(MongoTemplate mongoTemplate) {
+    super(mongoTemplate, ClusterUpgradeJob.class);
+  }
+
+  public List<ClusterUpgradeJob> findByClusterId(String clusterId) {
+    Query query = new Query();
+    query.addCriteria(Criteria.where(ClusterUpgradeJob.CLUSTER_ID).is(clusterId));
+    return mongoTemplate.find(query, ClusterUpgradeJob.class, collectionName);
+  }
 }

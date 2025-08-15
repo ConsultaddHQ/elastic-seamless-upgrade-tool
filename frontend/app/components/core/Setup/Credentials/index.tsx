@@ -9,7 +9,7 @@ import { cn } from "~/lib/Utils"
 import validationSchema from "./validation/validation"
 import SelectionTile from "./widgets/SelectionTile"
 import { useLocalStore } from "~/store/common"
-import SshFileInput from "~/components/common/SshFileInput"
+import SshFileInput from "~/components/utilities/SshFileInput"
 
 function Credentials({ initialValues: IV, backStep, onSubmit }: TCredentialsComp) {
 	const [showPassword, setShowPassword] = useState<boolean>(false)

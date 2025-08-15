@@ -21,7 +21,7 @@ import useSafeRouteStore from "~/store/safeRoutes"
 import validationSchema from "./validation/validation"
 import { FullScreenDrawer } from "~/components/utilities/FullScreenDrawer"
 import AppBreadcrumb from "~/components/utilities/AppBreadcrumb"
-import SshFileInput from "~/components/common/SshFileInput"
+import SshFileInput from "~/components/utilities/SshFileInput"
 
 const INITIAL_VALUES = {
 	type: "",

@@ -1,22 +1,28 @@
 package co.hyperflex.services;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.InfoResponse;
 import co.hyperflex.clients.elastic.ElasticClient;
 import co.hyperflex.clients.elastic.ElasticsearchClientProvider;
 import co.hyperflex.dtos.upgrades.CreateClusterUpgradeJobRequest;
 import co.hyperflex.dtos.upgrades.CreateClusterUpgradeJobResponse;
-import co.hyperflex.entities.cluster.ClusterNode;
+import co.hyperflex.dtos.upgrades.GetTargetVersionResponse;
+import co.hyperflex.dtos.upgrades.GetUpgradeJobStatusResponse;
+import co.hyperflex.dtos.upgrades.StopClusterUpgradeResponse;
 import co.hyperflex.entities.upgrade.ClusterUpgradeJob;
 import co.hyperflex.entities.upgrade.ClusterUpgradeStatus;
-import co.hyperflex.entities.upgrade.NodeUpgradeStatus;
 import co.hyperflex.exceptions.ConflictException;
 import co.hyperflex.exceptions.NotFoundException;
-import co.hyperflex.repositories.ClusterNodeRepository;
 import co.hyperflex.repositories.ClusterUpgradeJobRepository;
+import co.hyperflex.services.notifications.NotificationService;
+import co.hyperflex.services.notifications.UpgradeProgressChangeEvent;
+import co.hyperflex.utils.UpgradePathUtils;
 import jakarta.validation.constraints.NotNull;
+import java.io.IOException;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -24,20 +30,25 @@ public class ClusterUpgradeJobService {
   private static final Logger logger = LoggerFactory.getLogger(ClusterUpgradeJobService.class);
   private final ClusterUpgradeJobRepository clusterUpgradeJobRepository;
   private final ElasticsearchClientProvider elasticsearchClientProvider;
-  private final ClusterNodeRepository clusterNodeRepository;
+  private final ClusterService clusterService;
+  private final NotificationService notificationService;
 
   public ClusterUpgradeJobService(ClusterUpgradeJobRepository clusterUpgradeJobRepository,
                                   ElasticsearchClientProvider elasticsearchClientProvider,
-                                  ClusterNodeRepository clusterNodeRepository) {
+                                  ClusterService clusterService, NotificationService notificationService) {
     this.clusterUpgradeJobRepository = clusterUpgradeJobRepository;
     this.elasticsearchClientProvider = elasticsearchClientProvider;
-    this.clusterNodeRepository = clusterNodeRepository;
+    this.clusterService = clusterService;
+    this.notificationService = notificationService;
   }
 
   public @NotNull ClusterUpgradeJob getActiveJobByClusterId(@NotNull String clusterId) {
     return clusterUpgradeJobRepository
-        .findByClusterIdAndStatusIsNot(clusterId, ClusterUpgradeStatus.UPDATED)
-        .stream().filter(ClusterUpgradeJob::isActive).findFirst().orElseThrow(
+        .findByClusterId(clusterId)
+        .stream()
+        .filter(ClusterUpgradeJob::isActive)
+        .filter(clusterUpgradeJob -> !ClusterUpgradeStatus.UPDATED.equals(clusterUpgradeJob.getStatus()))
+        .findFirst().orElseThrow(
             () -> new NotFoundException("Active upgrade job not found for this cluster."));
   }
 
@@ -89,18 +100,70 @@ public class ClusterUpgradeJobService {
 
     clusterUpgradeJobRepository.saveAll(jobs);
 
-    resetUpgradeStatus(clusterId);
+    // Update node status back to available
+    clusterService.resetUpgradeStatus(clusterId);
 
     return new CreateClusterUpgradeJobResponse("Cluster upgrade job created successfully", existingJob.getId());
   }
 
-  private void resetUpgradeStatus(@NotNull String clusterId) {
-    List<ClusterNode> clusterNodes = clusterNodeRepository.findByClusterId(clusterId);
-    clusterNodes.forEach(node -> {
-      node.setStatus(NodeUpgradeStatus.AVAILABLE);
-      node.setProgress(0);
-    });
-    clusterNodeRepository.saveAll(clusterNodes);
+  public StopClusterUpgradeResponse stopClusterUpgrade(@NotNull String clusterId) {
+    final ClusterUpgradeJob job = getActiveJobByClusterId(clusterId);
+    Update update = new Update().set(ClusterUpgradeJob.STOP, true);
+    clusterUpgradeJobRepository.updateById(job.getId(), update);
+    notificationService.sendNotification(new UpgradeProgressChangeEvent());
+    return new StopClusterUpgradeResponse();
   }
 
+  public void setJobStatus(String id, ClusterUpgradeStatus status) {
+    Update update = new Update().set(ClusterUpgradeJob.STATUS, status);
+    update.set(ClusterUpgradeJob.STOP, false);
+    clusterUpgradeJobRepository.updateById(id, update);
+  }
+
+  public ClusterUpgradeJob getUpgradeJobById(@NotNull String clusterUpgradeJobId) {
+    return clusterUpgradeJobRepository.findById(clusterUpgradeJobId).orElseThrow();
+  }
+
+  public void setCheckPoint(final String jobId, final String nodeId, final int checkPoint) {
+    Update update = new Update().set("nodeCheckPoints." + nodeId, checkPoint);
+    clusterUpgradeJobRepository.updateById(jobId, update);
+  }
+
+  public int getCheckPoint(final String jobId, final String nodeId) {
+    return getUpgradeJobById(jobId).getNodeCheckPoints().getOrDefault(nodeId, 0);
+  }
+
+  public GetTargetVersionResponse getTargetVersionInfo(String clusterId) {
+    try {
+      String targetVersion = null;
+      boolean underUpgrade = false;
+      try {
+        ClusterUpgradeJob job = getActiveJobByClusterId(clusterId);
+        targetVersion = job.getTargetVersion();
+        underUpgrade = job.getStatus() != ClusterUpgradeStatus.PENDING;
+      } catch (Exception e) {
+        logger.debug("Cluster upgrade job not found for [cluster: {}].", clusterId);
+      }
+      List<String> possibleUpgrades;
+      if (underUpgrade) {
+        possibleUpgrades = List.of();
+      } else {
+        ElasticClient elasticClient = elasticsearchClientProvider.getClientByClusterId(clusterId);
+        ElasticsearchClient client = elasticClient.getElasticsearchClient();
+        var info = client.info();
+        possibleUpgrades = UpgradePathUtils.getPossibleUpgrades(info.version().number());
+      }
+      return new GetTargetVersionResponse(targetVersion, underUpgrade, possibleUpgrades);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public GetUpgradeJobStatusResponse getUpgradeJobStatus(String clusterId) {
+    final ClusterUpgradeJob upgradeJob = getLatestJobByClusterId(clusterId);
+    return new GetUpgradeJobStatusResponse(
+        upgradeJob.isStop(),
+        upgradeJob.getStatus()
+    );
+  }
 }

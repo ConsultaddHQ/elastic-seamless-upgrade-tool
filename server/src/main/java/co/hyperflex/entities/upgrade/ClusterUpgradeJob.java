@@ -7,6 +7,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "cluster-upgrade-jobs")
 public class ClusterUpgradeJob {
+  public static final String CLUSTER_ID = "clusterId";
+  public static final String ACTIVE = "isActive";
+  public static final String STOP = "stop";
+  public static final String STATUS = "status";
 
   @Id
   private String id;
@@ -14,6 +18,7 @@ public class ClusterUpgradeJob {
   private String currentVersion;
   private String targetVersion;
   private boolean isActive;
+  private boolean stop = false;
   private Map<String, Integer> nodeCheckPoints = new HashMap<>();
   private ClusterUpgradeStatus status = ClusterUpgradeStatus.PENDING;
 
@@ -72,5 +77,13 @@ public class ClusterUpgradeJob {
 
   public void setNodeCheckPoints(Map<String, Integer> nodeCheckPoints) {
     this.nodeCheckPoints = nodeCheckPoints;
+  }
+
+  public boolean isStop() {
+    return stop;
+  }
+
+  public void setStop(boolean stop) {
+    this.stop = stop;
   }
 }

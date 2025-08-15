@@ -1,7 +1,5 @@
 package co.hyperflex.dtos.clusters;
 
-import java.util.List;
-
 public record ClusterOverviewResponse(
     String clusterName,
     String clusterUUID,
@@ -19,9 +17,6 @@ public record ClusterOverviewResponse(
     int unassignedShards,
     int initializingShards,
     int relocatingShards,
-    String infrastructureType,
-    String targetVersion,
-    List<String> possibleUpgradeVersions,
-    boolean underUpgrade
+    String infrastructureType
 ) {
 }

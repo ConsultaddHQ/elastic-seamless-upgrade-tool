@@ -36,8 +36,6 @@ import co.hyperflex.entities.cluster.KibanaNode;
 import co.hyperflex.entities.cluster.OperatingSystemInfo;
 import co.hyperflex.entities.cluster.SelfManagedCluster;
 import co.hyperflex.entities.cluster.SshInfo;
-import co.hyperflex.entities.upgrade.ClusterUpgradeJob;
-import co.hyperflex.entities.upgrade.ClusterUpgradeStatus;
 import co.hyperflex.entities.upgrade.NodeUpgradeStatus;
 import co.hyperflex.exceptions.BadRequestException;
 import co.hyperflex.exceptions.NotFoundException;
@@ -46,8 +44,8 @@ import co.hyperflex.repositories.ClusterNodeRepository;
 import co.hyperflex.repositories.ClusterRepository;
 import co.hyperflex.utils.HashUtil;
 import co.hyperflex.utils.NodeRoleRankerUtils;
-import co.hyperflex.utils.UpgradePathUtils;
 import co.hyperflex.utils.UrlUtils;
+import jakarta.validation.constraints.NotNull;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -68,18 +66,16 @@ public class ClusterService {
   private final ClusterMapper clusterMapper;
   private final ElasticsearchClientProvider elasticsearchClientProvider;
   private final KibanaClientProvider kibanaClientProvider;
-  private final ClusterUpgradeJobService clusterUpgradeJobService;
   private final SshKeyService sshKeyService;
 
   public ClusterService(ClusterRepository clusterRepository, ClusterNodeRepository clusterNodeRepository, ClusterMapper clusterMapper,
                         ElasticsearchClientProvider elasticsearchClientProvider, KibanaClientProvider kibanaClientProvider,
-                        ClusterUpgradeJobService clusterUpgradeJobService, SshKeyService sshKeyService) {
+                        SshKeyService sshKeyService) {
     this.clusterRepository = clusterRepository;
     this.clusterNodeRepository = clusterNodeRepository;
     this.clusterMapper = clusterMapper;
     this.elasticsearchClientProvider = elasticsearchClientProvider;
     this.kibanaClientProvider = kibanaClientProvider;
-    this.clusterUpgradeJobService = clusterUpgradeJobService;
     this.sshKeyService = sshKeyService;
   }
 
@@ -200,15 +196,6 @@ public class ClusterService {
     Cluster cluster = clusterRepository.getCluster(clusterId);
     ElasticClient elasticClient = elasticsearchClientProvider.getClientByClusterId(cluster.getId());
     ElasticsearchClient client = elasticClient.getElasticsearchClient();
-    String targetVersion = null;
-    boolean underUpgrade = false;
-    try {
-      ClusterUpgradeJob activeJobByCluster = clusterUpgradeJobService.getActiveJobByClusterId(clusterId);
-      targetVersion = activeJobByCluster.getTargetVersion();
-      underUpgrade = activeJobByCluster.getStatus() != ClusterUpgradeStatus.PENDING;
-    } catch (Exception ignore) {
-      log.warn("Cluster upgrade job not found for cluster [ClusterId: {}]", clusterId);
-    }
 
     try {
       InfoResponse info = client.info();
@@ -221,9 +208,7 @@ public class ClusterService {
           counts.dataNodes(), counts.totalNodes(), activeMasters.size(),
           activeMasters.stream().map(MasterRecord::id).collect(Collectors.joining(",")), adaptiveReplicaEnabled, indices.valueBody().size(),
           counts.activePrimaryShards(), counts.activeShards(), counts.unassignedShards(), counts.initializingShards(),
-          counts.relocatingShards(), cluster.getType().getDisplayName(), targetVersion,
-          UpgradePathUtils.getPossibleUpgrades(info.version().number()), underUpgrade);
-
+          counts.relocatingShards(), cluster.getType().getDisplayName());
     } catch (IOException e) {
       log.error("Failed to get cluster overview for clusterId: {}", clusterId, e);
       throw new RuntimeException(e);
@@ -246,6 +231,16 @@ public class ClusterService {
       log.error("Failed to sync cluster state for clusterId: {}", clusterId, e);
     }
   }
+
+  public void resetUpgradeStatus(@NotNull String clusterId) {
+    List<ClusterNode> clusterNodes = clusterNodeRepository.findByClusterId(clusterId);
+    clusterNodes.forEach(node -> {
+      node.setStatus(NodeUpgradeStatus.AVAILABLE);
+      node.setProgress(0);
+    });
+    clusterNodeRepository.saveAll(clusterNodes);
+  }
+
 
   private void addKibanaNodes(SelfManagedCluster cluster, List<KibanaNode> nodes) {
     var kibanaClient = kibanaClientProvider.getClient(cluster);
