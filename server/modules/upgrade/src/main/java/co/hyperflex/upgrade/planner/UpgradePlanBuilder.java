@@ -1,7 +1,10 @@
 package co.hyperflex.upgrade.planner;
 
+import co.hyperflex.common.utils.VersionUtils;
 import co.hyperflex.core.entites.clusters.nodes.ClusterNodeEntity;
 import co.hyperflex.core.models.enums.ClusterNodeType;
+import co.hyperflex.core.upgrade.ClusterUpgradeJobEntity;
+import co.hyperflex.upgrade.tasks.AddRepositoryTask;
 import co.hyperflex.upgrade.tasks.Task;
 import co.hyperflex.upgrade.tasks.elastic.DisableShardAllocationTask;
 import co.hyperflex.upgrade.tasks.elastic.EnableShardAllocationTask;
@@ -34,9 +37,12 @@ import org.springframework.stereotype.Component;
 public class UpgradePlanBuilder implements ApplicationContextAware {
   private ApplicationContext applicationContext;
 
-  public List<Task> buildPlanFor(ClusterNodeEntity node) {
+  public List<Task> buildPlanFor(ClusterNodeEntity node, ClusterUpgradeJobEntity upgradeJob) {
     List<Task> tasks = new ArrayList<>();
 
+    if (VersionUtils.isMajorVersionUpgrade(upgradeJob.getCurrentVersion(), upgradeJob.getTargetVersion())) {
+      tasks.add(applicationContext.getBean(AddRepositoryTask.class));
+    }
     if (node.getType() == ClusterNodeType.ELASTIC) {
       tasks.add(applicationContext.getBean(StartElasticsearchServiceTask.class));
       tasks.add(applicationContext.getBean(WaitForElasticsearchTransportPortTask.class));

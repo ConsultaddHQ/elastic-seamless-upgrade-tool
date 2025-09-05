@@ -36,10 +36,10 @@ public class DeprecationService {
       List<GetKibanaDeprecationResponse.Deprecation> deprecations =
           Optional.ofNullable(kibanaClient.getDeprecations()).map(GetKibanaDeprecationResponse::deprecations).orElse(new LinkedList<>());
       return deprecations.stream().map((item) -> new GetDeprecationsResponse(
-          item.title(),
+          Optional.ofNullable(item.title()).orElse("unknown"),
           item.message(),
           item.level(),
-          item.correctiveActions().manualSteps()
+          Optional.ofNullable(item.correctiveActions().manualSteps()).orElse(List.of("Check docs"))
       )).toList();
     } catch (Exception e) {
       return Collections.emptyList();

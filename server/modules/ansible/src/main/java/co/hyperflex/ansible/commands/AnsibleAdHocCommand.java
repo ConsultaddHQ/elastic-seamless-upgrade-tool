@@ -58,6 +58,11 @@ public class AnsibleAdHocCommand {
       return this;
     }
 
+    public Builder aptRepository() {
+      this.module = "ansible.builtin.apt_repository";
+      return this;
+    }
+
     public AnsibleAdHocCommand build() {
       Objects.requireNonNull(module, "module is required");
       return new AnsibleAdHocCommand(args, module);

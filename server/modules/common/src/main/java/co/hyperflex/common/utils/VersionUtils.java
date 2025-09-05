@@ -27,4 +27,7 @@ public class VersionUtils {
     return VersionUtils.VERSION_COMPARATOR.compare(version2, version1) < 0;
   }
 
+  public static boolean isMajorVersionUpgrade(String currentVersion, String targetVersion) {
+    return currentVersion.charAt(0) != targetVersion.charAt(0);
+  }
 }

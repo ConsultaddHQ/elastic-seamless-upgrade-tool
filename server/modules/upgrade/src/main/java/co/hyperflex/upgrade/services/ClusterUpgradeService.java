@@ -208,7 +208,7 @@ public class ClusterUpgradeService {
               new Configuration(9300, 9200, cluster.getSshInfo(), targetVersion);
           Context context = new Context(node, config, log, elasticClient, kibanaClient);
 
-          List<Task> tasks = upgradePlanBuilder.buildPlanFor(node);
+          List<Task> tasks = upgradePlanBuilder.buildPlanFor(node, clusterUpgradeJobService.getUpgradeJobById(clusterUpgradeJobId));
 
           int checkPoint = clusterUpgradeJobService.getCheckPoint(clusterUpgradeJobId, node.getId());
 
