@@ -2,7 +2,7 @@ package co.hyperflex.pluginmanager;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
+import java.net.URI;
 import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -10,15 +10,18 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ElasticPluginArtifactValidator implements PluginArtifactValidator {
+  private static final String CLASSIC_DESCRIPTOR = "plugin-descriptor.properties";
+  private static final String STABLE_DESCRIPTOR = "stable-plugin-descriptor.properties";
 
   @Override
   public boolean verifyPlugin(String pluginUrl, String targetEsVersion) {
-    try (InputStream in = new URL(pluginUrl).openStream();
+    try (InputStream in = URI.create(pluginUrl).toURL().openStream();
          ZipInputStream zip = new ZipInputStream(in)) {
 
       ZipEntry entry;
       while ((entry = zip.getNextEntry()) != null) {
-        if (entry.getName().equals("plugin-descriptor.properties")) {
+        String name = entry.getName();
+        if (CLASSIC_DESCRIPTOR.equals(name) || STABLE_DESCRIPTOR.equals(name)) {
           Properties props = new Properties();
           props.load(zip);
 

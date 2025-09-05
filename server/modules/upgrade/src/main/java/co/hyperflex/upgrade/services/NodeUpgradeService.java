@@ -41,7 +41,7 @@ public class NodeUpgradeService {
       SelfManagedClusterEntity cluster = (SelfManagedClusterEntity) clusterRepository.getCluster(clusterId);
       ClusterNodeEntity node = clusterNodeRepository.findById(nodeId).orElseThrow();
       Configuration config =
-          new Configuration(9300, 9200, cluster.getSshInfo().username(), cluster.getSshInfo().keyPath(), null);
+          new Configuration(9300, 9200, cluster.getSshInfo(), null);
       Context context = new Context(node, config, LOG, null, null);
       TaskResult result;
       if (node instanceof ElasticNodeEntity) {

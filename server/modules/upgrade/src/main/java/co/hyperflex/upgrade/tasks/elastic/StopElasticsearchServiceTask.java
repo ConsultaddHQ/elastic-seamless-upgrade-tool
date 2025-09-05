@@ -1,6 +1,6 @@
 package co.hyperflex.upgrade.tasks.elastic;
 
-import co.hyperflex.ansible.commands.AnsibleAdHocSystemdCommand;
+import co.hyperflex.ansible.commands.AnsibleAdHocCommand;
 import co.hyperflex.upgrade.tasks.AbstractAnsibleTask;
 import co.hyperflex.upgrade.tasks.Context;
 import co.hyperflex.upgrade.tasks.TaskResult;
@@ -17,13 +17,10 @@ public class StopElasticsearchServiceTask extends AbstractAnsibleTask {
 
   @Override
   public TaskResult run(Context context) {
-    AnsibleAdHocSystemdCommand cmd = new AnsibleAdHocSystemdCommand.Builder()
-        .hostIp(context.node().getIp())
+    var cmd = AnsibleAdHocCommand.builder()
+        .systemd()
         .args(Map.of("name", "elasticsearch", "state", "stopped"))
-        .useBecome(true)
-        .sshUsername(context.config().sshUser())
-        .sshKeyPath(context.config().sshKeyPath())
         .build();
-    return runAdHocCommand(cmd);
+    return runAdHocCommand(cmd, context);
   }
 }

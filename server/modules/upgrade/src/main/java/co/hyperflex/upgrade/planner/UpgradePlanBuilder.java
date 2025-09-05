@@ -15,6 +15,8 @@ import co.hyperflex.upgrade.tasks.elastic.WaitForElasticsearchHttpPortTask;
 import co.hyperflex.upgrade.tasks.elastic.WaitForElasticsearchTransportPortTask;
 import co.hyperflex.upgrade.tasks.elastic.WaitForGreenClusterStatusTask;
 import co.hyperflex.upgrade.tasks.elastic.WaitForYellowOrGreenClusterStatusTask;
+import co.hyperflex.upgrade.tasks.elastic.ml.DisableUpgradeModeTask;
+import co.hyperflex.upgrade.tasks.elastic.ml.EnableUpgradeModeTask;
 import co.hyperflex.upgrade.tasks.kibana.RestartKibanaServiceTask;
 import co.hyperflex.upgrade.tasks.kibana.SetDefaultIndexTask;
 import co.hyperflex.upgrade.tasks.kibana.UpdateKibanaPluginTask;
@@ -41,6 +43,9 @@ public class UpgradePlanBuilder implements ApplicationContextAware {
       tasks.add(applicationContext.getBean(WaitForGreenClusterStatusTask.class));
       tasks.add(applicationContext.getBean(DisableShardAllocationTask.class));
       tasks.add(applicationContext.getBean(SyncedFlushTask.class));
+      if (node.getRoles().contains("ml")) {
+        tasks.add(applicationContext.getBean(EnableUpgradeModeTask.class));
+      }
       tasks.add(applicationContext.getBean(StopElasticsearchServiceTask.class));
       tasks.add(applicationContext.getBean(UpdateElasticsearchTask.class));
       tasks.add(applicationContext.getBean(UpdateElasticPluginTask.class));
@@ -50,6 +55,9 @@ public class UpgradePlanBuilder implements ApplicationContextAware {
       tasks.add(applicationContext.getBean(WaitForYellowOrGreenClusterStatusTask.class));
       tasks.add(applicationContext.getBean(EnableShardAllocationTask.class));
       tasks.add(applicationContext.getBean(WaitForGreenClusterStatusTask.class));
+      if (node.getRoles().contains("ml")) {
+        tasks.add(applicationContext.getBean(DisableUpgradeModeTask.class));
+      }
     } else if (node.getType() == ClusterNodeType.KIBANA) {
       tasks.add(applicationContext.getBean(UpdateKibanaTask.class));
       tasks.add(applicationContext.getBean(RestartKibanaServiceTask.class));

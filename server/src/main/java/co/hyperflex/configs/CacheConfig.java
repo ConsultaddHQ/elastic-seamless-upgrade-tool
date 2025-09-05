@@ -1,7 +1,6 @@
 package co.hyperflex.configs;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.RemovalCause;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
@@ -20,16 +19,7 @@ public class CacheConfig {
 
   private static CaffeineCache getElasticClientCache() {
     return new CaffeineCache("elasticClientCache",
-        Caffeine.newBuilder().expireAfterAccess(20, TimeUnit.MINUTES).removalListener((Object key, Object value, RemovalCause cause) -> {
-          if (value instanceof AutoCloseable autoCloseable) {
-            try {
-              autoCloseable.close();
-              log.info("ElasticClient cache has been closed");
-            } catch (Exception e) {
-              log.warn("Error closing AutoCloseable", e);
-            }
-          }
-        }).build());
+        Caffeine.newBuilder().expireAfterAccess(20, TimeUnit.MINUTES).build());
   }
 
   private static CaffeineCache getSettingCache() {

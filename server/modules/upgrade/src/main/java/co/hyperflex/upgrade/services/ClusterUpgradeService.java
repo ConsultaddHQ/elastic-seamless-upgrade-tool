@@ -205,7 +205,7 @@ public class ClusterUpgradeService {
           }
 
           Configuration config =
-              new Configuration(9300, 9200, cluster.getSshInfo().username(), cluster.getSshInfo().keyPath(), targetVersion);
+              new Configuration(9300, 9200, cluster.getSshInfo(), targetVersion);
           Context context = new Context(node, config, log, elasticClient, kibanaClient);
 
           List<Task> tasks = upgradePlanBuilder.buildPlanFor(node);

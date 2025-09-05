@@ -1,19 +1,67 @@
 package co.hyperflex.ansible.commands;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
-public abstract class AnsibleAdHocCommand {
+public class AnsibleAdHocCommand {
+  private final Map<String, Object> args;
+  private final String module;
 
-  public abstract String getHostIp();
+  public AnsibleAdHocCommand(Map<String, Object> args, String module) {
+    this.args = args;
+    this.module = module;
+  }
 
-  public abstract String getModule();
+  public String getModule() {
+    return module;
+  }
 
-  public abstract boolean isUseBecome();
+  public List<String> getArguments() {
+    if (args == null) {
+      return Collections.emptyList();
+    }
+    return args.entrySet().stream().map(entry -> entry.getKey() + "=" + entry.getValue()).toList();
+  }
 
-  public abstract String getSshUser();
+  public static Builder builder() {
+    return new Builder();
+  }
 
-  public abstract String getSshKeyPath();
+  public static class Builder {
+    private Map<String, Object> args;
+    private String module;
 
-  public abstract List<String> getArguments();
+    public Builder args(Map<String, Object> args) {
+      this.args = args;
+      return this;
+    }
+
+    public Builder apt() {
+      this.module = "ansible.builtin.apt";
+      return this;
+    }
+
+    public Builder dnf() {
+      this.module = "ansible.builtin.dnf";
+      return this;
+    }
+
+    public Builder yum() {
+      this.module = "ansible.builtin.yum";
+      return this;
+    }
+
+    public Builder systemd() {
+      this.module = "ansible.builtin.systemd";
+      return this;
+    }
+
+    public AnsibleAdHocCommand build() {
+      Objects.requireNonNull(module, "module is required");
+      return new AnsibleAdHocCommand(args, module);
+    }
+  }
 }
 

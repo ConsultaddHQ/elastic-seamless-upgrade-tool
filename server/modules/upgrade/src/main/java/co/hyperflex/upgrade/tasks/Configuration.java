@@ -1,5 +1,7 @@
 package co.hyperflex.upgrade.tasks;
 
-public record Configuration(int esTransportPort, int esHttpPort, String sshUser, String sshKeyPath,
+import co.hyperflex.core.models.clusters.SshInfo;
+
+public record Configuration(int esTransportPort, int esHttpPort, SshInfo sshInfo,
                             String targetVersion) {
 }

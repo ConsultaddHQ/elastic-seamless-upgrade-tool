@@ -13,8 +13,8 @@ public record Context(ClusterNodeEntity node, Configuration config, Logger logge
     return new SshCommandExecutor(
         node.getIp(),
         22,
-        config.sshUser(),
-        config.sshKeyPath()
+        config.sshInfo().username(),
+        config.sshInfo().keyPath()
     );
   }
 }

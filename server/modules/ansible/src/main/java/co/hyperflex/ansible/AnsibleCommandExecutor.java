@@ -6,7 +6,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
@@ -16,11 +15,13 @@ public class AnsibleCommandExecutor {
 
   private static final Logger logger = LoggerFactory.getLogger(AnsibleCommandExecutor.class);
 
-  public int run(@NotNull AnsibleAdHocCommand cmd,
-                 @NotNull Consumer<String> stdLogsConsumer,
-                 @NotNull Consumer<String> errLogsConsumer) {
+  public int run(
+      @NotNull ExecutionContext context,
+      @NotNull AnsibleAdHocCommand cmd,
+      @NotNull Consumer<String> stdLogsConsumer,
+      @NotNull Consumer<String> errLogsConsumer) {
     try {
-      Process process = getProcess(cmd);
+      Process process = getProcess(context, cmd);
 
       BufferedReader stdOut = new BufferedReader(new InputStreamReader(process.getInputStream()));
       BufferedReader stdErr = new BufferedReader(new InputStreamReader(process.getErrorStream()));
@@ -41,17 +42,8 @@ public class AnsibleCommandExecutor {
     }
   }
 
-  public AnsibleAdHocCommandResult run(@NotNull AnsibleAdHocCommand cmd) {
-    List<String> stdOutLogs = new LinkedList<>();
-    List<String> strErrLogs = new LinkedList<>();
-
-    int success = run(cmd, stdOutLogs::add, strErrLogs::add);
-
-    return new AnsibleAdHocCommandResult(success == 0, stdOutLogs, strErrLogs);
-  }
-
-  protected Process getProcess(AnsibleAdHocCommand cmd) throws IOException {
-    String inventory = cmd.getHostIp() + ",";
+  protected Process getProcess(ExecutionContext context, AnsibleAdHocCommand cmd) throws IOException {
+    String inventory = context.getHostIp() + ",";
     List<String> command = new ArrayList<>();
     command.add("ansible");
     command.add("all");
@@ -67,9 +59,9 @@ public class AnsibleCommandExecutor {
     }
 
     command.add("-u");
-    command.add(cmd.getSshUser());
+    command.add(context.getSshUser());
     command.add("--private-key");
-    command.add(cmd.getSshKeyPath());
+    command.add(context.getSshKeyPath());
     command.add("-e");
     command.add("ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'");
     command.add("-b");
