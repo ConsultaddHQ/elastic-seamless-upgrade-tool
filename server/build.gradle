@@ -37,6 +37,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
     implementation 'org.springframework.boot:spring-boot-starter-cache'
     implementation 'com.github.ben-manes.caffeine:caffeine'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
     //Dev dependencies
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -173,16 +174,16 @@ project(":server:modules:breaking-changes") {
 }
 
 
-bootJar {
-    // Include Vite build output in the final Spring Boot JAR
-    dependsOn ':frontend:build'
-    from("../frontend/build/client") {
-        into "BOOT-INF/classes/static" // Place files in Spring Boot's static directory
-    }
-}
+//bootJar {
+//    // Include Vite build output in the final Spring Boot JAR
+//    dependsOn ':frontend:build'
+//    from("../frontend/build/client") {
+//        into "BOOT-INF/classes/static" // Place files in Spring Boot's static directory
+//    }
+//}
 
 tasks.clean.dependsOn ':frontend:clean'
-tasks.build.dependsOn ':frontend:build'
+//tasks.build.dependsOn ':frontend:build'
 
 tasks.register('testReport', TestReport) {
     destinationDirectory = new File(projectDir, "build/reports/allTests")

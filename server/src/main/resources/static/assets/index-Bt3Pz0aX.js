@@ -1,0 +1,1 @@
+import{r,l as n}from"./chunk-HA7DTUK3-DrNZtXfs.js";import{a as s,u as i,l as u}from"./filter-props-CDQEcbTi.js";function l({children:e,isValidProp:o,...t}){o&&u(o),t={...r.useContext(s),...t},t.isStatic=i(()=>t.isStatic);const a=r.useMemo(()=>t,[JSON.stringify(t.transition),t.transformPagePoint,t.reducedMotion]);return n.jsx(s.Provider,{value:a,children:e})}export{l as M};

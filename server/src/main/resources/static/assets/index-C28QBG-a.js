@@ -1,0 +1,1 @@
+import{l as e}from"./chunk-HA7DTUK3-DrNZtXfs.js";import{B as o}from"./Box-lkY65lPb.js";import{s as l}from"./chunk-TLYTI3QM-OrR10yBI.js";function a({show:r,component:s,height:n,className:t="rounded-lg"}){return e.jsx(o,{className:"flex",children:r?e.jsx(l,{className:t,children:e.jsx(o,{height:n})}):s})}export{a as O};

@@ -1,0 +1,1 @@
+import{a as e}from"./clsx-B6oeREpB.js";import{l as t,O as o,N as r}from"./chunk-HA7DTUK3-DrNZtXfs.js";import{u as s}from"./safeRoutes-BEx6aiyI.js";import"./middleware-BV1xb2r4.js";import"./Utils-6MWpJHdW.js";function p(){return s(a=>a.elasticNodeUpgradeAllowed)?t.jsx(o,{}):t.jsx(r,{to:"/upgrade-assistant"})}const l=e(p);export{l as default};

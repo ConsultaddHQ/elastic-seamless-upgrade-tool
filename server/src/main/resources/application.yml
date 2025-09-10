@@ -7,7 +7,7 @@ spring:
       database: seamless-upgrade
   servlet:
     multipart:
-      max-file-size: 1MB
+      max-file-size: 50MB
       max-request-size: 10MB
       enabled: true
   cache:

@@ -1,0 +1,1 @@
+import{a as o}from"./clsx-B6oeREpB.js";import{l as e,O as a,N as r}from"./chunk-HA7DTUK3-DrNZtXfs.js";import{u as s}from"./safeRoutes-BEx6aiyI.js";import"./middleware-BV1xb2r4.js";import"./Utils-6MWpJHdW.js";function n(){return s(t=>t.deprecationChangesAllowed)?e.jsx(a,{}):e.jsx(r,{to:"/upgrade-assistant"})}const l=o(n);export{l as default};

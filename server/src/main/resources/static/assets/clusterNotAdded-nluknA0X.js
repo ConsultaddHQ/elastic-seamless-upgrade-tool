@@ -1,0 +1,1 @@
+import{a as e}from"./clsx-B6oeREpB.js";import{l as t,O as s,N as r}from"./chunk-HA7DTUK3-DrNZtXfs.js";import{u as a}from"./safeRoutes-BEx6aiyI.js";import"./middleware-BV1xb2r4.js";import"./Utils-6MWpJHdW.js";function u(){return a(o=>o.clusterAdded)?t.jsx(s,{}):t.jsx(r,{to:"/"})}const f=e(u);export{f as default};

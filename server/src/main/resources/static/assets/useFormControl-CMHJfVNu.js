@@ -1,0 +1,1 @@
+import{r as t}from"./chunk-HA7DTUK3-DrNZtXfs.js";function m(n){const{controlled:e,default:r,name:f,state:C="value"}=n,{current:o}=t.useRef(e!==void 0),[s,a]=t.useState(r),l=o?e:s,u=t.useCallback(c=>{o||a(c)},[]);return[l,u]}const d=t.createContext(void 0);function v(){return t.useContext(d)}export{d as F,m as a,v as u};

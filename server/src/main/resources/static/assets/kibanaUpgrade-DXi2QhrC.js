@@ -1,0 +1,1 @@
+import{a as o}from"./clsx-B6oeREpB.js";import{l as a,O as e,N as r}from"./chunk-HA7DTUK3-DrNZtXfs.js";import{u as s}from"./safeRoutes-BEx6aiyI.js";import"./middleware-BV1xb2r4.js";import"./Utils-6MWpJHdW.js";function p(){return s(t=>t.kibanaNodeUpgradeAllowed)?a.jsx(e,{}):a.jsx(r,{to:"/upgrade-assistant"})}const g=o(p);export{g as default};

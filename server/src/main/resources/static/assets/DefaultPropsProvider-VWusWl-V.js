@@ -1,0 +1,1 @@
+import{l as t}from"./chunk-HA7DTUK3-DrNZtXfs.js";import{c as o,G as s,b as a,z as u,A as l}from"./Box-lkY65lPb.js";const f=o();function i(e){return t.jsx(s,{...e,defaultTheme:f,themeId:a})}function m(e){return function(r){return t.jsx(i,{styles:typeof e=="function"?n=>e({theme:n,...r}):e})}}function b(){return u}function d(e){return l(e)}export{f as d,m as g,b as i,d as u};
