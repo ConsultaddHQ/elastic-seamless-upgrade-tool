@@ -75,7 +75,7 @@ function Settings({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: () 
 				.post("/settings", {
 					notificationWebhookUrl: values.webhookURL,
 				})
-				.then((res) => {
+				.then(() => {
 					toast.success("Settings updated successfully")
 					setInitialValues(initialValues)
 					formik.resetForm()

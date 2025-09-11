@@ -29,7 +29,7 @@ function AllocationExplainBreadcrumb({ onBack }: { onBack: () => void }) {
 }
 
 function useAllocationExplain() {
-	const clusterId = useLocalStore((state: any) => state.clusterId)
+	const clusterId = useLocalStore((state) => state.clusterId)
 	const fetchAllocationExplain = async () => {
 		const res = await axiosJSON.get<IAllocationExplain[]>(`/clusters/${clusterId}/allocation-explanations`)
 		return res.data ?? []

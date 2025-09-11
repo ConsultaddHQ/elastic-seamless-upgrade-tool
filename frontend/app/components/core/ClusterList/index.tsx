@@ -39,8 +39,8 @@ const columns: TColumn = [
 function ClusterList() {
 	const navigate = useNavigate()
 	const setClusterAdded = useSafeRouteStore((state) => state.setClusterAdded)
-	const setClusterId = useLocalStore((state: any) => state.setClusterId)
-	const setInfraType = useLocalStore((state: any) => state.setInfraType)
+	const setClusterId = useLocalStore((state) => state.setClusterId)
+	const setInfraType = useLocalStore((state) => state.setInfraType)
 
 	const getClustersData = async () => {
 		const response = await axiosJSON.get("/clusters")

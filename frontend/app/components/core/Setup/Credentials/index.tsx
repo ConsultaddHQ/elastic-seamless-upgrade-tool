@@ -13,7 +13,7 @@ import SshFileInput from "~/components/utilities/SshFileInput"
 
 function Credentials({ initialValues: IV, backStep, onSubmit }: TCredentialsComp) {
 	const [showPassword, setShowPassword] = useState<boolean>(false)
-	const infraType = useLocalStore((state: any) => state.infraType)
+	const infraType = useLocalStore((state) => state.infraType)
 
 	const formik = useFormik({
 		initialValues: _.cloneDeep(IV),
@@ -309,7 +309,6 @@ function Credentials({ initialValues: IV, backStep, onSubmit }: TCredentialsComp
 															onBlur={formik.handleBlur}
 															onChange={(e: any) => {
 																let newOptions = [...formik.values.kibanaConfigs]
-																// @ts-ignore
 																newOptions[index].ip = e.target.value
 																formik.setFieldValue(
 																	"kibanaConfigs",

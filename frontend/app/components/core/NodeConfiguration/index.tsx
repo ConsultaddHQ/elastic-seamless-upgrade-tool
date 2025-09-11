@@ -29,7 +29,7 @@ function NodeConfigurationBreadcrumb({ onBack }: { onBack: () => void }) {
 }
 
 function useNodeConfiguration(nodeId: string) {
-	const clusterId = useLocalStore((state: any) => state.clusterId)
+	const clusterId = useLocalStore((state) => state.clusterId)
 	const [updatedConfig, setUpdatedConfig] = React.useState<string | undefined>()
 
 	const fetchNodeConfig = async () => {

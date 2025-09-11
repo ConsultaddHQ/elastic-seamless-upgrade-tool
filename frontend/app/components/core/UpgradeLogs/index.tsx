@@ -29,7 +29,7 @@ function LogsBreadcrumb({ onBack }: { onBack: () => void }) {
 }
 
 function useUpgradeLogs(nodeId: string) {
-	const clusterId = useLocalStore((state: any) => state.clusterId)
+	const clusterId = useLocalStore((state) => state.clusterId)
 	const fetchUpgradeLogs = async () => {
 		const res = await axiosJSON.get(`/clusters/${clusterId}/upgrades/nodes/${nodeId}/logs`)
 		return res.data.logs ?? []

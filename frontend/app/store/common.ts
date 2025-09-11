@@ -21,10 +21,10 @@ export const useLocalStore = create<LocalStoreState>()(
 			infraType: "",
 			sessionName: "",
 			deploymentId: "",
-			setDeploymentId: (id: string) => set((state) => ({ deploymentId: id })),
-			setClusterId: (id: string) => set((state) => ({ clusterId: id })),
-			setInfraType: (type: string) => set((state) => ({ infraType: type })),
-			setSessionName: (name: string) => set((state) => ({ sessionName: name })),
+			setDeploymentId: (id: string) => set(() => ({ deploymentId: id })),
+			setClusterId: (id: string) => set(() => ({ clusterId: id })),
+			setInfraType: (type: string) => set(() => ({ infraType: type })),
+			setSessionName: (name: string) => set(() => ({ sessionName: name })),
 			reset: () =>
 				set(() => ({
 					clusterId: "",
@@ -50,9 +50,9 @@ export const useSessionStore = create<SessionStoreState>()(
 	persist(
 		(set) => ({
 			setupStep: 1,
-			setSetupStep: (step: number) => set((state: any) => ({ setupStep: step })),
+			setSetupStep: (step: number) => set(() => ({ setupStep: step })),
 			reset: () =>
-				set((_: any) => ({
+				set(() => ({
 					setupStep: 1,
 				})),
 		}),
