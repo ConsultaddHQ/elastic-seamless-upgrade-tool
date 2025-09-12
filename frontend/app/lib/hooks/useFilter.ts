@@ -1,72 +1,86 @@
-import { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router';
+import { useCallback, useEffect, useState } from "react"
+import { useLocation, useNavigate } from "react-router"
 
-// Define a flexible type for filters
-type FilterValue = string | boolean | string[];
-type Filters = Record<string, FilterValue>;
+export type FilterValue = string | boolean | string[]
+export type Filters = Record<string, FilterValue>
+type UpdateFilter<T> = <K extends keyof T>(key: K, value: T[K]) => void
 
-function useFilters<T extends Filters>(initialFilters: T): [T, (key: keyof T, value: FilterValue) => void] {
-    const location = useLocation();
-    const navigate = useNavigate();
+function useFilters<T extends Filters>(initialFilters: T): [T, UpdateFilter<T>] {
+	const location = useLocation()
+	const navigate = useNavigate()
 
-    // Parse filters from the URL
-    const getFiltersFromUrl = (): Partial<T> => {
-        const params = new URLSearchParams(location.search);
-        const filters: Partial<T> = {};
+	const getFiltersFromUrl = useCallback((): Partial<T> => {
+		const params = new URLSearchParams(location.search)
+		const out: Partial<T> = {}
 
-        for (const [key, value] of params.entries()) {
-            if (value === 'true' || value === 'false') {
-                filters[key as keyof T] = value === 'true';
-            } else if (value.startsWith('[') && value.endsWith(']')) {
-                try {
-                    filters[key as keyof T] = JSON.parse(value);
-                } catch {
-                    filters[key as keyof T] = [] as unknown as T[keyof T];
-                }
-            } else {
-                filters[key as keyof T] = value as unknown as T[keyof T];
-            }
-        }
+		for (const [rawKey, rawValue] of params.entries()) {
+			const key = rawKey as keyof T
+			let parsed: FilterValue
 
-        return filters;
-    };
+			if (rawValue === "true" || rawValue === "false") {
+				parsed = rawValue === "true"
+			} else if (rawValue.startsWith("[") && rawValue.endsWith("]")) {
+				try {
+					const parsedArr = JSON.parse(rawValue)
+					parsed = Array.isArray(parsedArr) ? parsedArr.map(String) : []
+				} catch {
+					parsed = []
+				}
+			} else {
+				parsed = rawValue
+			}
 
-    const [filters, setFilters] = useState<T>(() => {
-        const urlFilters = getFiltersFromUrl();
-        return { ...initialFilters, ...urlFilters };
-    });
+			out[key] = parsed as T[keyof T]
+		}
 
-    // Sync filters with URL
-    useEffect(() => {
-        const params = new URLSearchParams();
+		return out
+	}, [location.search])
 
-        Object.entries(filters).forEach(([key, value]) => {
-            if (
-                value !== null &&
-                value !== '' &&
-                (Array.isArray(value) ? value.length > 0 : true) &&
-                value !== false
-            ) {
-                if (Array.isArray(value)) {
-                    params.set(key, JSON.stringify(value));
-                } else {
-                    params.set(key, value.toString());
-                }
-            }
-        });
+	const [filters, setFilters] = useState<T>(() => {
+		const urlFilters = getFiltersFromUrl()
+		return { ...initialFilters, ...urlFilters } as T
+	})
 
-        navigate({ search: params.toString() }, { replace: true });
-    }, [filters, navigate]);
+	// Sync filters -> URL
+	useEffect(() => {
+		const params = new URLSearchParams()
 
-    // Method to update individual filter
-    const updateFilter = (key: keyof T, value: FilterValue) => {
-        setFilters((prev) => ({
-            ...prev,
-            [key]: value as T[keyof T],
-        }));
-    };
+		;(Object.entries(filters) as [keyof T, T[keyof T]][]).forEach(([key, value]) => {
+			if (value !== null && value !== "" && (Array.isArray(value) ? value.length > 0 : true) && value !== false) {
+				if (Array.isArray(value)) {
+					params.set(String(key), JSON.stringify(value))
+				} else {
+					params.set(String(key), String(value))
+				}
+			}
+		})
 
-    return [filters, updateFilter];
+		const search = params.toString() ? `?${params.toString()}` : ""
+		navigate({ pathname: location.pathname, search }, { replace: true })
+	}, [filters, navigate, location.pathname])
+
+	// Sync URL -> filters (back/forward navigation)
+	useEffect(() => {
+		const next = getFiltersFromUrl() as T
+		setFilters((prev) => {
+			if (JSON.stringify(prev) === JSON.stringify(next)) return prev
+			return next
+		})
+	}, [location.search, getFiltersFromUrl])
+
+	const updateFilter: UpdateFilter<T> = useCallback((key, value) => {
+		setFilters((prev) => {
+			const data = { ...prev }
+			if (value === null || value === undefined) {
+				delete data[key]
+			} else {
+				data[key] = value
+			}
+			return data
+		})
+	}, [])
+
+	return [filters, updateFilter]
 }
 
-export default useFilters;
+export default useFilters

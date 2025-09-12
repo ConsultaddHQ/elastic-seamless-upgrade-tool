@@ -21,7 +21,7 @@ export function meta({}: Route.MetaArgs) {
 function PreCheckPage() {
 	const clusterId = useLocalStore((state) => state.clusterId)
 	const [isExportPending, setIsExportPending] = useState(false)
-	const reReunPrecheck = async () => {
+	const reRunPrecheck = async () => {
 		await axiosJSON.post(`/clusters/${clusterId}/prechecks/rerun`, {}).catch((err) => {
 			toast.error(err?.response?.data.error ?? StringManager.GENERIC_ERROR)
 		})
@@ -39,7 +39,7 @@ function PreCheckPage() {
 
 	const { mutate: HandleRerun, isPending } = useMutation({
 		mutationKey: ["re-run-prechecks"],
-		mutationFn: reReunPrecheck,
+		mutationFn: reRunPrecheck,
 	})
 	const handleExport = async () => {
 		setIsExportPending(true)
