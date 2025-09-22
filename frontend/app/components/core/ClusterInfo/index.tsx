@@ -18,9 +18,9 @@ const CLUSTER_STATUS_COLOR: { [key: string]: string } = {
 }
 
 function ClusterInfo() {
-	const clusterId = useLocalStore((state: any) => state.clusterId)
-	const infraType = useLocalStore((state: any) => state.infraType)
-	const refresh = useRefreshStore((state: any) => state.refreshToggle)
+	const clusterId = useLocalStore((state) => state.clusterId)
+	const infraType = useLocalStore((state) => state.infraType)
+	const refresh = useRefreshStore((state) => state.refreshToggle)
 	const [showAllocation, setShowAllocation] = useState(false)
 
 	const getClusterInfo = async () => {

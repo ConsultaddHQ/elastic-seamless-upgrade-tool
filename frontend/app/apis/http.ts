@@ -16,28 +16,22 @@ let refreshPromise: any | null = null
 const clearPromise = () => (refreshPromise = null)
 
 const resetAuthState = () => {
-	// @ts-ignore
 	const setSession = useLocalStore.getState().setSessionName
 	setSession("")
-	// LocalStorageHandler.removeItem(StorageManager.SESSION_NAME)
 }
 
 const getRefreshToken = async (token: string) => {
 	return await axiosJSON
 		.post(`${URLManager.REFRESH_TOKEN_URL}?refreshTokenId=${token}`)
 		.then((res) => res)
-		.catch((error) => {
-			// @ts-ignore
-			const reset = useLocalStore.getState().reset
-			reset()
+		.catch(() => {
+			useLocalStore.getState().reset()
 		})
 }
 
 axiosJSON.interceptors.request.use(
 	(config) => {
-		// @ts-ignore
 		const session = useLocalStore.getState().sessionName
-
 		config.headers.authorization = `Bearer ${session}`
 		config.headers.Accept = "application/json"
 		return config
@@ -54,9 +48,7 @@ axiosJSON.interceptors.response.use(
 	async (error) => {
 		toast.error(error?.response?.data.err ?? StringManager.GENERIC_ERROR)
 		const state = useLocalStore.getState()
-		// @ts-ignore
 		const session = state.sessionName
-		// @ts-ignore
 		const setSession = state.setSessionName
 		let originalRequest = error.config
 
@@ -85,8 +77,6 @@ axiosJSON.interceptors.response.use(
 			return axiosJSON(originalRequest)
 		} else if (error.response.status === 400) {
 			if (error.response.data.path === "/") resetAuthState()
-		} else if (error.response.status === 500 || error.response.status === 502) {
-			// window.open(`/page500`, "_self")
 		}
 
 		return Promise.reject(error)

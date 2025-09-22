@@ -19,7 +19,7 @@ export function meta({}: Route.MetaArgs) {
 }
 
 function PreCheckPage() {
-	const clusterId = useLocalStore((state: any) => state.clusterId)
+	const clusterId = useLocalStore((state) => state.clusterId)
 	const [isExportPending, setIsExportPending] = useState(false)
 	const reReunPrecheck = async () => {
 		await axiosJSON.post(`/clusters/${clusterId}/prechecks/rerun`, {}).catch((err) => {

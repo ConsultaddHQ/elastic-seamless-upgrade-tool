@@ -47,7 +47,7 @@ const columns: TDeprecationColumn = [
 ]
 
 function DeprecationLogs({ clusterType }: { clusterType: "ELASTIC" | "KIBANA" }) {
-	const clusterId = useLocalStore((state: any) => state.clusterId)
+	const clusterId = useLocalStore((state) => state.clusterId)
 	const [search, setSearch] = useState<string>("")
 
 	const getLogs = async () => {
@@ -242,7 +242,6 @@ function DeprecationLogs({ clusterType }: { clusterType: "ELASTIC" | "KIBANA" })
 							}
 						>
 							{(item) => (
-								// @ts-ignore
 								<TableRow key={item?.key}>
 									{(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
 								</TableRow>

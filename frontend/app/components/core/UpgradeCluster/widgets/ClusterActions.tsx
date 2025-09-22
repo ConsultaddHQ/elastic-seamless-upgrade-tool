@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useRealtimeEventListener } from "~/lib/hooks/useRealtimeEventListener"
 
 export const ClusterActions = ({ clusterType }: { clusterType: string }) => {
-	const clusterId = useLocalStore((state: any) => state.clusterId)
+	const clusterId = useLocalStore((state) => state.clusterId)
 
 	const performUpgradeAll = async () => {
 		await axiosJSON.post(`/clusters/${clusterId}/upgrades?nodeType=${clusterType}`)

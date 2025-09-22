@@ -86,7 +86,7 @@ const columns: TColumn = [
 ]
 
 function UpgradeCluster({ clusterType }: TUpgradeCluster) {
-	const clusterId = useLocalStore((state: any) => state.clusterId)
+	const clusterId = useLocalStore((state) => state.clusterId)
 	const [showNodeLogs, setShowNodeLogs] = useState<TUpgradeRow | undefined>()
 	const [showNodeConfig, setShowNodeConfig] = useState<TUpgradeRow | undefined>()
 

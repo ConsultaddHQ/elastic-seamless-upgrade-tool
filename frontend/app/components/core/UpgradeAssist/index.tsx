@@ -16,10 +16,10 @@ import StepBox from "./widgets/StepBox"
 import { FiArrowUpRight } from "react-icons/fi"
 
 function UpgradeAssistant() {
-	const clusterId = useLocalStore((state: any) => state.clusterId)
-	const infraType = useLocalStore((state: any) => state.infraType)
-	const deploymentId = useLocalStore((state: any) => state.deploymentId)
-	const setDeploymentId = useLocalStore((state: any) => state.setDeploymentId)
+	const clusterId = useLocalStore((state) => state.clusterId)
+	const infraType = useLocalStore((state) => state.infraType)
+	const deploymentId = useLocalStore((state) => state.deploymentId)
+	const setDeploymentId = useLocalStore((state) => state.setDeploymentId)
 	const { remainingTime, startTimer, resetTimer } = useCountdownTimer()
 	const setDeprecationChangesAllowed = useSafeRouteStore((state) => state.setDeprecationChangesAllowed)
 	const setElasticNodeUpgradeAllowed = useSafeRouteStore((state) => state.setElasticNodeUpgradeAllowed)

@@ -66,7 +66,7 @@ const PrecheckNotTriggered = ({ refetch }: { refetch: () => void }) => {
 }
 
 function Precheck({ selectedTab }: { selectedTab: TCheckTab }) {
-	const clusterId = useLocalStore((state: any) => state.clusterId)
+	const clusterId = useLocalStore((state) => state.clusterId)
 
 	const getPrecheck = async () => {
 		try {

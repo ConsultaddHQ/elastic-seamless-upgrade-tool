@@ -30,16 +30,16 @@ const useSafeRouteStore = create<TSafeRouteStore>()(
 			upgradeAssistAllowed: false,
 			precheckAllowed: false,
 
-			setClusterAdded: (payload: boolean) => set((_: any) => ({ clusterAdded: payload })),
-			setPrecheckAllowed: (payload: boolean) => set((_: any) => ({ precheckAllowed: payload })),
+			setClusterAdded: (payload: boolean) => set(() => ({ clusterAdded: payload })),
+			setPrecheckAllowed: (payload: boolean) => set(() => ({ precheckAllowed: payload })),
 			setDeprecationChangesAllowed: (payload: boolean) =>
-				set((_: any) => ({ deprecationChangesAllowed: payload })),
+				set(() => ({ deprecationChangesAllowed: payload })),
 			setElasticNodeUpgradeAllowed: (payload: boolean) =>
-				set((_: any) => ({ elasticNodeUpgradeAllowed: payload })),
-			setKibanaNodeUpgradeAllowed: (payload: boolean) => set((_: any) => ({ kibanaNodeUpgradeAllowed: payload })),
-			setUpgradeAssistAllowed: (payload: boolean) => set((_: any) => ({ upgradeAssistAllowed: payload })),
+				set(() => ({ elasticNodeUpgradeAllowed: payload })),
+			setKibanaNodeUpgradeAllowed: (payload: boolean) => set(() => ({ kibanaNodeUpgradeAllowed: payload })),
+			setUpgradeAssistAllowed: (payload: boolean) => set(() => ({ upgradeAssistAllowed: payload })),
 			resetForEditCluster: () =>
-				set((_: any) => ({
+				set(() => ({
 					deprecationChangesAllowed: false,
 					elasticNodeUpgradeAllowed: false,
 					kibanaNodeUpgradeAllowed: false,
@@ -47,7 +47,7 @@ const useSafeRouteStore = create<TSafeRouteStore>()(
 					precheckAllowed: false,
 				})),
 			resetSafeRoutes: () =>
-				set((_: any) => ({
+				set(() => ({
 					clusterAdded: false,
 					deprecationChangesAllowed: false,
 					elasticNodeUpgradeAllowed: false,
