@@ -42,7 +42,8 @@ public class Prompts {
            Example (exactly this format, nothing else on that line):
            {"tool":"httpGet","input":{"url":"https://www.elastic.co/guide/en/elasticsearch/reference/8.19/breaking-changes-8.19.html"}}
          - After emitting that JSON, wait for the tool result. Do not include any additional text on the same line.
-         - Use tools sparingly — only when official docs, release notes, or external evidence are required to determine applicability or to provide precise commands.
+         - Use tools sparingly — only when official docs, release notes, or external evidence are required to determine applicability or
+           to provide precise commands.
       
       How to use tool results:
         1. Summarize the fetched content in 1–2 sentences.
