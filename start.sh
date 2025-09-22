@@ -28,6 +28,10 @@ services:
       - seamless-upgrade-tool:/output
     depends_on:
       - seamless-upgrade-mongodb
+    environment:
+      SEAMLESS_UPGRADE_TOOL_TLS_KEY_STORE: ${SEAMLESS_UPGRADE_TOOL_TLS_KEY_STORE}
+      SEAMLESS_UPGRADE_TOOL_TLS_KEY_STORE_PASSWORD: ${SEAMLESS_UPGRADE_TOOL_TLS_KEY_STORE_PASSWORD}
+      SEAMLESS_UPGRADE_TOOL_TLS_KEY_ALIAS: ${SEAMLESS_UPGRADE_TOOL_TLS_KEY_ALIAS}
 
 volumes:
   seamless-upgrade-tool:
@@ -53,7 +57,7 @@ check_service() {
 sleep 5
 
 # Check each service
-check_service "mongodb"
+check_service "seamless-upgrade-mongodb"
 check_service "seamless-upgrade-tool"
 
 echo "Seamless upgrade tool running on:"
