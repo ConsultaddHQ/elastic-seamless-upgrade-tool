@@ -43,7 +43,7 @@ function Prechecks({
 				(precheck) => !severity || (severity == precheck.severity && precheck.status == "FAILED")
 			)
 		)
-	}, [allPrechecks])
+	}, [allPrechecks, severity])
 
 	const handlePrecheckRerun = () => {
 		selectedPrecheck &&
