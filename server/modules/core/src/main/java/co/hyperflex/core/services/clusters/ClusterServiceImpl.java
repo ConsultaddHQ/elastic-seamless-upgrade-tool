@@ -35,6 +35,8 @@ import co.hyperflex.core.services.clusters.dtos.ClusterOverviewResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterKibanaNodeResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterNodeResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterResponse;
+import co.hyperflex.core.services.clusters.dtos.UpdateClusterCredentialRequest;
+import co.hyperflex.core.services.clusters.dtos.UpdateClusterCredentialResponse;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterResponse;
 import co.hyperflex.core.services.clusters.dtos.UpdateElasticCloudClusterRequest;
@@ -49,6 +51,7 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
@@ -149,6 +152,25 @@ public class ClusterServiceImpl implements ClusterService {
     clusterRepository.save(cluster);
     syncElasticNodes(cluster);
     return new UpdateClusterResponse();
+  }
+
+  @Override
+  public UpdateClusterCredentialResponse updateClusterCredential(String clusterId, UpdateClusterCredentialRequest request) {
+    var tempId = UUID.randomUUID().toString();
+    try {
+      var cluster = clusterRepository.findById(clusterId).orElseThrow();
+      var secret = ClusterAuthUtils.getAuthSecret(
+          request.getUsername(),
+          request.getPassword(),
+          request.getApiKey()
+      );
+      secretStoreService.putSecret(tempId, secret);
+      validateCluster(cluster, tempId);
+      secretStoreService.putSecret(clusterId, secret);
+      return new UpdateClusterCredentialResponse();
+    } finally {
+      secretStoreService.removeSecret(tempId);
+    }
   }
 
   @Override
@@ -332,11 +354,16 @@ public class ClusterServiceImpl implements ClusterService {
     }
   }
 
+
   private void validateCluster(ClusterEntity cluster) {
+    validateCluster(cluster, cluster.getId());
+  }
+
+  private void validateCluster(ClusterEntity cluster, String secretKey) {
     cluster.setKibanaUrl(UrlUtils.validateAndCleanUrl(cluster.getKibanaUrl()));
     cluster.setElasticUrl(UrlUtils.validateAndCleanUrl(cluster.getElasticUrl()));
     try {
-      ElasticClient elasticClient = elasticsearchClientProvider.getClient(ClusterAuthUtils.getElasticConnectionDetail(cluster));
+      ElasticClient elasticClient = elasticsearchClientProvider.getClient(ClusterAuthUtils.getElasticConnectionDetail(cluster, secretKey));
       elasticClient.getHealthStatus();
     } catch (Exception e) {
       log.warn("Error validating cluster credentials", e);
@@ -344,7 +371,7 @@ public class ClusterServiceImpl implements ClusterService {
     }
 
     try {
-      KibanaClient kibanaClient = kibanaClientProvider.getClient(ClusterAuthUtils.getKibanaConnectionDetail(cluster));
+      KibanaClient kibanaClient = kibanaClientProvider.getClient(ClusterAuthUtils.getKibanaConnectionDetail(cluster, secretKey));
       kibanaClient.getKibanaVersion();
     } catch (Exception e) {
       log.warn("Error validating cluster credentials", e);

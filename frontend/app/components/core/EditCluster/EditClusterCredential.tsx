@@ -1,21 +1,27 @@
 import { Box, IconButton, InputAdornment, Typography } from "@mui/material"
-import { useMutation } from "@tanstack/react-query"
-import { useFormik } from "formik"
 import { Eye, EyeSlash } from "iconsax-react"
-import _ from "lodash"
-import { useState } from "react"
 import { toast } from "sonner"
 import Input from "~/components/utilities/Input"
 import SelectionTile from "../Setup/Credentials/widgets/SelectionTile"
 import axiosJSON from "~/apis/http"
-import { OneLineSkeleton } from "~/components/utilities/Skeletons"
 import { useLocalStore } from "~/store/common"
-import validationSchema from "./validation/validation"
+import validationSchema, { credentialSchema } from "./validation/validation"
+import { OutlinedBorderButton, OutlinedButton } from "~/components/utilities/Buttons"
+import { useMutation } from "@tanstack/react-query"
+import { useFormik } from "formik"
+import { DocumentText1, DocumentUpload, Trash } from "iconsax-react"
+import _ from "lodash"
+import { useState } from "react"
+// @ts-ignore-block
+import Files from "react-files"
+import StringManager from "~/constants/StringManager"
+
 const INITIAL_VALUES = {
 	authPref: null,
 	username: "",
 	password: "",
 	apiKey: "",
+	certFiles: [],
 }
 
 export function EditClusterCredential() {
@@ -27,7 +33,7 @@ export function EditClusterCredential() {
 	const formik = useFormik({
 		initialValues: initialValues,
 		enableReinitialize: true,
-		validationSchema: validationSchema,
+		validationSchema: credentialSchema,
 		onSubmit: async (values) => {
 			HandleSubmit(values)
 		},
@@ -37,37 +43,66 @@ export function EditClusterCredential() {
 		mutationKey: ["update-cluster-credential", clusterId, formik.values],
 		mutationFn: async (values: TClusterCredentialValues) => {
 			await axiosJSON
-				.put("clusters/" + clusterId, {
+				.put(`clusters/${clusterId}/credentials`, {
 					username: values.username,
 					password: values.password,
 					apiKey: values.apiKey,
 				})
 				.then(() => {
+					setEditCredential(false)
+					formik.resetForm()
 					toast.success("Credential updated successfully")
 				})
 		},
 	})
 
+	const handleChange = (fn: React.Dispatch<React.SetStateAction<(File | TExistingFile)[]>>, files: File[]) => {
+		fn([...formik.values.certFiles, ...files])
+	}
+
+	const handleError = (error: any) => {
+		toast.error(error.message ?? StringManager.GENERIC_ERROR)
+	}
+
+	const handleDelete = (
+		fn: React.Dispatch<React.SetStateAction<(File | TExistingFile)[]>>,
+		file: File | TExistingFile,
+		index: number
+	) => {
+		fn([
+			...formik.values.certFiles.slice(0, index),
+			...formik.values.certFiles.slice(index + 1, formik.values.certFiles.length),
+		])
+	}
+
 	return (
 		<form onSubmit={formik.handleSubmit} onReset={formik.handleReset} className="flex flex-col gap-2 w-full">
-			<Box
-				className="flex p-px rounded-2xl"
-				sx={{ background: "radial-gradient(#6E687C, #1D1D1D)" }}
-			>
+			<Box className="flex p-px rounded-2xl" sx={{ background: "radial-gradient(#6E687C, #1D1D1D)" }}>
 				<Box className="flex flex-col gap-6 pt-6 rounded-2xl bg-[#0D0D0D] w-full items-start">
-					<Box
-						className="flex flex-col w-full gap-3 overflow-auto items-center"
-						padding="0px 32px 24px 32px"
-					>
+					<Box className="flex flex-col w-full gap-3 overflow-auto items-center" padding="0px 32px 24px 32px">
 						<Box className="flex flex-col max-w-[552px] w-full">
-							<Box className="flex flex-col items-stretch gap-6 max-w-[552px] w-full">
-								<Box className="flex flex-col gap-[6px] max-w-[515px]">
-									<Typography color="#ABA9B1" fontSize="14px" fontWeight="400" lineHeight="20px">
-										Authentication preference
-									</Typography>
-									<OneLineSkeleton
-										show={isEditCredential}
-										component={
+							<Box className="flex flex-row items-center justify-between gap-[6px] max-w-[515px]">
+								<Typography color="#ABA9B1" fontSize="14px" fontWeight="900" lineHeight="20px">
+									Edit Credentials
+								</Typography>
+								{!isEditCredential && (
+									<OutlinedButton onClick={() => setEditCredential(!isEditCredential)}>
+										Edit
+									</OutlinedButton>
+								)}
+							</Box>
+							{isEditCredential && (
+								<>
+									<Box className="flex flex-col items-stretch gap-6 max-w-[552px] w-full">
+										<Box className="flex flex-col gap-[6px] max-w-[515px]">
+											<Typography
+												color="#ABA9B1"
+												fontSize="14px"
+												fontWeight="400"
+												lineHeight="20px"
+											>
+												Authentication preference
+											</Typography>
 											<Box className="flex flex-col gap-[2px] w-full">
 												<Box
 													className="flex flex-row gap-2 justify-between"
@@ -101,24 +136,20 @@ export function EditClusterCredential() {
 													</Typography>
 												) : null}
 											</Box>
-										}
-										height="52px"
-										className="w-full rounded-[10px]"
-									/>
-								</Box>
-								{formik.values.authPref && (
-									<Box className="flex flex-col gap-[6px] max-w-[515px]">
-										<Typography color="#ABA9B1" fontSize="14px" fontWeight="400" lineHeight="20px">
-											Credentials
-										</Typography>
-										<Box className="flex flex-col gap-[6px]" key={formik.values.authPref}>
-											{formik.values.authPref === "U/P" ? (
-												<>
-													<OneLineSkeleton
-														show={isEditCredential}
-														height="52px"
-														className="w-full rounded-[10px]"
-														component={
+										</Box>
+										{formik.values.authPref && (
+											<Box className="flex flex-col gap-[6px] max-w-[515px]">
+												<Typography
+													color="#ABA9B1"
+													fontSize="14px"
+													fontWeight="400"
+													lineHeight="20px"
+												>
+													Credentials
+												</Typography>
+												<Box className="flex flex-col gap-[6px]" key={formik.values.authPref}>
+													{formik.values.authPref === "U/P" ? (
+														<>
 															<Input
 																fullWidth
 																id="username"
@@ -137,13 +168,7 @@ export function EditClusterCredential() {
 																	formik.touched.username && formik.errors.username
 																}
 															/>
-														}
-													/>
-													<OneLineSkeleton
-														show={isEditCredential}
-														height="52px"
-														className="w-full rounded-[10px]"
-														component={
+
 															<Input
 																fullWidth
 																id="password"
@@ -187,15 +212,8 @@ export function EditClusterCredential() {
 																	),
 																}}
 															/>
-														}
-													/>
-												</>
-											) : (
-												<OneLineSkeleton
-													show={isEditCredential}
-													height="52px"
-													className="w-full rounded-[10px]"
-													component={
+														</>
+													) : (
 														<Input
 															fullWidth
 															id="apiKey"
@@ -233,13 +251,142 @@ export function EditClusterCredential() {
 																),
 															}}
 														/>
-													}
-												/>
-											)}
+													)}
+												</Box>
+											</Box>
+										)}
+										<Box className="flex flex-col gap-[6px] max-w-[515px]">
+											<Typography
+												fontSize="14px"
+												fontWeight={400}
+												lineHeight="20px"
+												color="#ABA9B1"
+											>
+												Certificates (Optional)
+											</Typography>
+											<Files
+												className="files-dropzone"
+												onChange={(files: File[]) =>
+													handleChange(
+														(data) => formik.setFieldValue("certFiles", data),
+														files
+													)
+												}
+												onError={handleError}
+												accepts={[".crt"]}
+												multiple
+												maxFileSize={10000000}
+												minFileSize={0}
+												clickable
+											>
+												<Box
+													className="flex flex-col gap-2 items-center w-full justify-center h-[104px] rounded-xl cursor-pointer border border-dashed border-[#3D3B42] bg-neutral-950 hover:border-[#C8BDE4]"
+													sx={{
+														":hover": {
+															boxShadow: "0px 0px 13px 2px rgba(127, 79, 240, 0.26)",
+															transition: "all 0.5s",
+															"& > #drag-drop-icon": {
+																color: "#FFF !important",
+																transition: "color 0.5s",
+															},
+															"& #drag-drop-label": {
+																color: "#FFF !important",
+																transition: "color 0.5s",
+															},
+														},
+													}}
+												>
+													<span id="drag-drop-icon" style={{ color: "#ABA9B1" }}>
+														<DocumentUpload size="24px" color="currentColor" />
+													</span>
+													<Box className="flex flex-col">
+														<Typography
+															id="drag-drop-label"
+															color="#6C6B6D"
+															textAlign="center"
+															fontSize="14px"
+															fontWeight="400"
+															lineHeight="20px"
+														>
+															Drag or click to upload file
+														</Typography>
+														<Typography
+															color="#6C6B6D"
+															textAlign="center"
+															fontSize="14px"
+															fontWeight="400"
+															lineHeight="20px"
+														>
+															Supported formats: .crt
+														</Typography>
+													</Box>
+												</Box>
+											</Files>
+											<Box
+												className="flex flex-col gap-[6px] mb-2 mt-2 overflow-auto"
+												height="auto"
+												sx={{
+													"::-webkit-scrollbar": {
+														width: "5px",
+													},
+													"::-webkit-scrollbar-thumb": {
+														background: "#C8BDE4",
+														borderRadius: "10px",
+													},
+												}}
+											>
+												{formik.values.certFiles.map((file, index) => {
+													return (
+														<Box
+															key={index}
+															className="flex flex-row w-full gap-3 justify-between items-center border border-solid border-[#1F1F1F] rounded-[9px] h-[42px]"
+															padding="12px 6px 14px 14px"
+														>
+															<Box className="flex flex-row gap-[10px] items-center">
+																<DocumentText1 color="#6B6B6B" size="16px" />
+																<Typography
+																	color="#ADADAD"
+																	fontSize="12px"
+																	fontWeight="500"
+																	lineHeight="normal"
+																>
+																	{file.name}
+																</Typography>
+															</Box>
+															<IconButton
+																onClick={() => {}}
+																sx={{ padding: "8px", borderRadius: "6px" }}
+																onClickCapture={() =>
+																	handleDelete(
+																		(data) => {
+																			formik.setFieldValue("certFiles", data)
+																		},
+																		file,
+																		index
+																	)
+																}
+															>
+																<Trash color="#EC7070" size="14px" />
+															</IconButton>
+														</Box>
+													)
+												})}
+											</Box>
 										</Box>
 									</Box>
-								)}
-							</Box>
+									<Box className="flex flex-row items-center justify-end gap-[6px] max-w-[515px] my-3">
+										<OutlinedButton onClick={() => setEditCredential(!isEditCredential)}>
+											Cancel
+										</OutlinedButton>
+										<OutlinedBorderButton
+											type="submit"
+											disabled={!formik.dirty || formik.isSubmitting}
+										>
+											{formik.isSubmitting ? "Updating" : "Update"}
+										</OutlinedBorderButton>
+									</Box>
+								</>
+							)}
 						</Box>
 					</Box>
 				</Box>

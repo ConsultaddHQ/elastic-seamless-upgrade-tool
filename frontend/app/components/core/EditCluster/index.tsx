@@ -77,24 +77,7 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 		}
 	}, [isOpen])
 
-	const handleChange = (fn: React.Dispatch<React.SetStateAction<(File | TExistingFile)[]>>, files: File[]) => {
-		fn([...formik.values.certFiles, ...files])
-	}
 
-	const handleError = (error: any) => {
-		toast.error(error.message ?? StringManager.GENERIC_ERROR)
-	}
-
-	const handleDelete = (
-		fn: React.Dispatch<React.SetStateAction<(File | TExistingFile)[]>>,
-		file: File | TExistingFile,
-		index: number
-	) => {
-		fn([
-			...formik.values.certFiles.slice(0, index),
-			...formik.values.certFiles.slice(index + 1, formik.values.certFiles.length),
-		])
-	}
 
 	const getCluster = async () => {
 		if (!clusterId) return null
@@ -182,16 +165,20 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 	return (
 		<FullScreenDrawer isOpen={isOpen} onOpenChange={onOpenChange}>
 			<Box minHeight="58px" />
-			<form onSubmit={formik.handleSubmit} onReset={formik.handleReset} className="flex flex-col gap-2 w-full">
-				<Box className="flex items-center gap-3 justify-between">
-					<EditClusterBreadcrumb onBack={onOpenChange} />
-					<OutlinedBorderButton type="submit" disabled={!formik.dirty || formik.isSubmitting || isPending}>
-						{formik.isSubmitting || isPending ? "Updating" : "Update"}
-					</OutlinedBorderButton>
-				</Box>
-				<Box
-					className="flex p-px rounded-2xl h-[calc(var(--window-height)-120px)]"
-					sx={{ background: "radial-gradient(#6E687C, #1D1D1D)" }}
+			<Box className="flex items-center gap-3 justify-between">
+				<EditClusterBreadcrumb onBack={onOpenChange} />
+				<OutlinedBorderButton type="submit" disabled={!formik.dirty || formik.isSubmitting || isPending}>
+					{formik.isSubmitting || isPending ? "Updating" : "Update"}
+				</OutlinedBorderButton>
+			</Box>
+			<Box
+				className="flex p-px rounded-2xl h-[calc(var(--window-height)-120px)]"
+				sx={{ background: "radial-gradient(#6E687C, #1D1D1D)" }}
+			>
+				<form
+					onSubmit={formik.handleSubmit}
+					onReset={formik.handleReset}
+					className="flex flex-col gap-2 w-full"
 				>
 					<Box className="flex flex-col gap-6 pt-6 rounded-2xl bg-[#0D0D0D] w-full h-full items-start">
 						<Box
@@ -411,7 +398,7 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 																						...formik.values.kibanaConfigs,
 																					]
 																					newOptions = newOptions.filter(
-																						(option, ind) => ind !== index
+																						(_, ind) => ind !== index
 																					)
 																					formik.setFieldValue(
 																						"kibanaConfigs",
@@ -494,123 +481,12 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 											</Box>
 										</>
 									)}
-									<Box className="flex flex-col gap-[6px] max-w-[515px]">
-										<Typography fontSize="14px" fontWeight={400} lineHeight="20px" color="#ABA9B1">
-											Certificates (Optional)
-										</Typography>
-										<Files
-											className="files-dropzone"
-											onChange={(files: File[]) =>
-												handleChange((data) => formik.setFieldValue("certFiles", data), files)
-											}
-											onError={handleError}
-											accepts={[".crt"]}
-											multiple
-											maxFileSize={10000000}
-											minFileSize={0}
-											clickable
-										>
-											<Box
-												className="flex flex-col gap-2 items-center w-full justify-center h-[104px] rounded-xl cursor-pointer border border-dashed border-[#3D3B42] bg-neutral-950 hover:border-[#C8BDE4]"
-												sx={{
-													":hover": {
-														boxShadow: "0px 0px 13px 2px rgba(127, 79, 240, 0.26)",
-														transition: "all 0.5s",
-														"& > #drag-drop-icon": {
-															color: "#FFF !important",
-															transition: "color 0.5s",
-														},
-														"& #drag-drop-label": {
-															color: "#FFF !important",
-															transition: "color 0.5s",
-														},
-													},
-												}}
-											>
-												<span id="drag-drop-icon" style={{ color: "#ABA9B1" }}>
-													<DocumentUpload size="24px" color="currentColor" />
-												</span>
-												<Box className="flex flex-col">
-													<Typography
-														id="drag-drop-label"
-														color="#6C6B6D"
-														textAlign="center"
-														fontSize="14px"
-														fontWeight="400"
-														lineHeight="20px"
-													>
-														Drag or click to upload file
-													</Typography>
-													<Typography
-														color="#6C6B6D"
-														textAlign="center"
-														fontSize="14px"
-														fontWeight="400"
-														lineHeight="20px"
-													>
-														Supported formats: .crt
-													</Typography>
-												</Box>
-											</Box>
-										</Files>
-										<Box
-											className="flex flex-col gap-[6px] mb-2 mt-2 overflow-auto"
-											height="auto"
-											sx={{
-												"::-webkit-scrollbar": {
-													width: "5px",
-												},
-												"::-webkit-scrollbar-thumb": {
-													background: "#C8BDE4",
-													borderRadius: "10px",
-												},
-											}}
-										>
-											{formik.values.certFiles.map((file, index) => {
-												return (
-													<Box
-														key={index}
-														className="flex flex-row w-full gap-3 justify-between items-center border border-solid border-[#1F1F1F] rounded-[9px] h-[42px]"
-														padding="12px 6px 14px 14px"
-													>
-														<Box className="flex flex-row gap-[10px] items-center">
-															<DocumentText1 color="#6B6B6B" size="16px" />
-															<Typography
-																color="#ADADAD"
-																fontSize="12px"
-																fontWeight="500"
-																lineHeight="normal"
-															>
-																{file.name}
-															</Typography>
-														</Box>
-														<IconButton
-															onClick={() => {}}
-															sx={{ padding: "8px", borderRadius: "6px" }}
-															onClickCapture={() =>
-																handleDelete(
-																	(data) => {
-																		formik.setFieldValue("certFiles", data)
-																	},
-																	file,
-																	index
-																)
-															}
-														>
-															<Trash color="#EC7070" size="14px" />
-														</IconButton>
-													</Box>
-												)
-											})}
-										</Box>
-									</Box>
 								</Box>
 							</Box>
 						</Box>
 					</Box>
-				</Box>
-			</form>
-
+				</form>
+			</Box>
 			<EditClusterCredential />
 		</FullScreenDrawer>
 	)

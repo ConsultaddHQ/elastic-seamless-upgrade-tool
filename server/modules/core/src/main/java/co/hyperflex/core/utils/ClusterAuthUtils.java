@@ -28,17 +28,32 @@ public class ClusterAuthUtils {
     }
   }
 
-  public static ClientConnectionDetail getKibanaConnectionDetail(ClusterEntity cluster) {
-    return new ClientConnectionDetail(
-        cluster.getKibanaUrl(),
+
+  public static ClientConnectionDetail getElasticConnectionDetail(ClusterEntity cluster) {
+    return getElasticConnectionDetail(
+        cluster,
         cluster.getId()
     );
   }
 
-  public static ClientConnectionDetail getElasticConnectionDetail(ClusterEntity cluster) {
+  public static ClientConnectionDetail getElasticConnectionDetail(ClusterEntity cluster, String secretKey) {
     return new ClientConnectionDetail(
         cluster.getElasticUrl(),
+        secretKey
+    );
+  }
+
+  public static ClientConnectionDetail getKibanaConnectionDetail(ClusterEntity cluster) {
+    return getKibanaConnectionDetail(
+        cluster,
         cluster.getId()
+    );
+  }
+
+  public static ClientConnectionDetail getKibanaConnectionDetail(ClusterEntity cluster, String secretKey) {
+    return new ClientConnectionDetail(
+        cluster.getKibanaUrl(),
+        secretKey
     );
   }
 }

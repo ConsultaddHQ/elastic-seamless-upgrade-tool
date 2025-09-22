@@ -8,6 +8,8 @@ import co.hyperflex.core.services.clusters.dtos.ClusterListItemResponse;
 import co.hyperflex.core.services.clusters.dtos.ClusterOverviewResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterNodeResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterResponse;
+import co.hyperflex.core.services.clusters.dtos.UpdateClusterCredentialRequest;
+import co.hyperflex.core.services.clusters.dtos.UpdateClusterCredentialResponse;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterResponse;
 import jakarta.validation.constraints.NotNull;
@@ -17,6 +19,8 @@ public interface ClusterService {
   AddClusterResponse add(AddClusterRequest request);
 
   UpdateClusterResponse updateCluster(String clusterId, UpdateClusterRequest request);
+
+  UpdateClusterCredentialResponse updateClusterCredential(String clusterId, UpdateClusterCredentialRequest request);
 
   GetClusterResponse getClusterById(String clusterId);
 

@@ -15,6 +15,7 @@ type TClusterCredentialValues = {
 	username: string
 	password: string
 	apiKey: string | null
+	certFiles: File[] | TExistingFile[]
 }
 
 type TKibanaConfigs = {
