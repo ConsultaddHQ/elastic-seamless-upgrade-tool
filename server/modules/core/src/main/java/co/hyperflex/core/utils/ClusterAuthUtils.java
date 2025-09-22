@@ -1,8 +1,8 @@
 package co.hyperflex.core.utils;
 
-import co.hyperflex.common.client.ClientAuthHeader;
 import co.hyperflex.common.client.ClientConnectionDetail;
 import co.hyperflex.core.entites.clusters.ClusterEntity;
+import co.hyperflex.core.services.secret.Secret;
 import java.util.Base64;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -12,16 +12,18 @@ public class ClusterAuthUtils {
 
   private static final Logger logger = LoggerFactory.getLogger(ClusterAuthUtils.class);
 
-  private static ClientAuthHeader getAuthHeader(ClusterEntity cluster) {
-    if (!Optional.ofNullable(cluster.getApiKey()).orElse("").isEmpty()) {
-      return new ClientAuthHeader("Authorization", "ApiKey " + cluster.getApiKey());
-    } else if (cluster.getUsername() != null && cluster.getPassword() != null) {
+  private ClusterAuthUtils() {
+  }
+
+  public static Secret getAuthSecret(String username, String password, String apiKey) {
+    if (!Optional.ofNullable(apiKey).orElse("").isEmpty()) {
+      return new Secret("ApiKey " + apiKey);
+    } else if (username != null && password != null) {
       String encodedCred = Base64.getEncoder()
-          .encodeToString((cluster.getUsername() + ":" + cluster.getPassword()).getBytes());
-      return new ClientAuthHeader("Authorization", "Basic " + encodedCred);
+          .encodeToString((username + ":" + password).getBytes());
+      return new Secret("Basic " + encodedCred);
     } else {
-      logger.error("Either apiKey or username/password must be provided for cluster {}",
-          cluster.getId());
+      logger.error("Either apiKey or username/password must be provided.");
       throw new IllegalArgumentException("Either apiKey or username/password must be provided");
     }
   }
@@ -29,14 +31,14 @@ public class ClusterAuthUtils {
   public static ClientConnectionDetail getKibanaConnectionDetail(ClusterEntity cluster) {
     return new ClientConnectionDetail(
         cluster.getKibanaUrl(),
-        getAuthHeader(cluster)
+        cluster.getId()
     );
   }
 
   public static ClientConnectionDetail getElasticConnectionDetail(ClusterEntity cluster) {
     return new ClientConnectionDetail(
         cluster.getElasticUrl(),
-        getAuthHeader(cluster)
+        cluster.getId()
     );
   }
 }

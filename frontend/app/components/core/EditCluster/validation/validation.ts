@@ -15,26 +15,6 @@ const validationSchema = Yup.object().shape({
 		.required("Please enter kibana url.")
 		.matches(URL_PATTERN, "Please enter a valid kibana url."),
 
-	authPref: Yup.string().required("Please select at least one preference."),
-
-	username: Yup.string().when("authPref", {
-		is: "U/P",
-		then: (schema) => schema.required("Please enter username."),
-		otherwise: (schema) => schema.notRequired(),
-	}),
-
-	password: Yup.string().when("authPref", {
-		is: "U/P",
-		then: (schema) => schema.required("Please enter password."),
-		otherwise: (schema) => schema.notRequired(),
-	}),
-
-	apiKey: Yup.string().when("authPref", {
-		is: "API_KEY",
-		then: (schema) => schema.required("Please enter api key."),
-		otherwise: (schema) => schema.notRequired(),
-	}),
-
 	sshUser: Yup.string().when("type", {
 		is: "SELF_MANAGED",
 		then: (schema) => schema.required("Please enter SSH username."),
@@ -63,6 +43,28 @@ const validationSchema = Yup.object().shape({
 	deploymentId: Yup.string().when("type", {
 		is: "ELASTIC_CLOUD",
 		then: (schema) => schema.required("Please enter deployment ID."),
+		otherwise: (schema) => schema.notRequired(),
+	}),
+})
+
+export const credentialSchema = Yup.object().shape({
+	authPref: Yup.string().required("Please select at least one preference."),
+
+	username: Yup.string().when("authPref", {
+		is: "U/P",
+		then: (schema) => schema.required("Please enter username."),
+		otherwise: (schema) => schema.notRequired(),
+	}),
+
+	password: Yup.string().when("authPref", {
+		is: "U/P",
+		then: (schema) => schema.required("Please enter password."),
+		otherwise: (schema) => schema.notRequired(),
+	}),
+
+	apiKey: Yup.string().when("authPref", {
+		is: "API_KEY",
+		then: (schema) => schema.required("Please enter api key."),
 		otherwise: (schema) => schema.notRequired(),
 	}),
 })

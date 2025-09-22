@@ -4,14 +4,17 @@ type TClusterValues = {
 	deploymentId?: string
 	elasticUrl: string
 	kibanaUrl: string
-	authPref: "U/P" | "API_KEY" | null
-	username: string
-	password: string
-	apiKey: string | null
 	sshUser: string
 	pathToSSH: string
 	kibanaConfigs: TKibanaConfigs[]
 	certFiles: File[] | TExistingFile[]
+}
+
+type TClusterCredentialValues = {
+	authPref: "U/P" | "API_KEY" | null
+	username: string
+	password: string
+	apiKey: string | null
 }
 
 type TKibanaConfigs = {

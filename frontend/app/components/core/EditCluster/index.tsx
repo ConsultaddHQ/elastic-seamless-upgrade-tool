@@ -1,14 +1,13 @@
-import { Box, IconButton, InputAdornment, Typography } from "@mui/material"
+import { Box, IconButton, Typography } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { useFormik, type FormikErrors } from "formik"
-import { Add, ArrowLeft, DocumentText1, DocumentUpload, Eye, EyeSlash, Trash } from "iconsax-react"
+import { Add, ArrowLeft, DocumentText1, DocumentUpload, Trash } from "iconsax-react"
 import _ from "lodash"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { OutlinedBorderButton, OutlinedButton } from "~/components/utilities/Buttons"
 import Input from "~/components/utilities/Input"
 import { cn } from "~/lib/Utils"
-import SelectionTile from "../Setup/Credentials/widgets/SelectionTile"
 // @ts-ignore-block
 import Files from "react-files"
 import { useLocation } from "react-router"
@@ -22,6 +21,7 @@ import validationSchema from "./validation/validation"
 import { FullScreenDrawer } from "~/components/utilities/FullScreenDrawer"
 import AppBreadcrumb from "~/components/utilities/AppBreadcrumb"
 import SshFileInput from "~/components/utilities/SshFileInput"
+import { EditClusterCredential } from "./EditClusterCredential"
 
 const INITIAL_VALUES = {
 	type: "",
@@ -29,10 +29,6 @@ const INITIAL_VALUES = {
 	deploymentId: "",
 	elasticUrl: "",
 	kibanaUrl: "",
-	authPref: null,
-	username: "",
-	password: "",
-	apiKey: "",
 	pathToSSH: "",
 	sshUser: "",
 	kibanaConfigs: [],
@@ -64,7 +60,6 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 	const infraType = useLocalStore((state) => state.infraType)
 	const { pathname } = useLocation()
 	const [initialValues, setInitialValues] = useState<TClusterValues>(INITIAL_VALUES)
-	const [showPassword, setShowPassword] = useState<boolean>(false)
 
 	const formik = useFormik({
 		initialValues: initialValues,
@@ -86,7 +81,7 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 		fn([...formik.values.certFiles, ...files])
 	}
 
-	const handleError = (error: any, file: File) => {
+	const handleError = (error: any) => {
 		toast.error(error.message ?? StringManager.GENERIC_ERROR)
 	}
 
@@ -111,10 +106,6 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 				type: cluster.type,
 				elasticUrl: cluster.elasticUrl,
 				kibanaUrl: cluster.kibanaUrl,
-				authPref: cluster.username ? "U/P" : "API_KEY",
-				username: cluster.username,
-				password: cluster.password,
-				apiKey: cluster.apiKey,
 				sshUser: cluster.sshUsername,
 				pathToSSH: cluster.sshKey,
 				kibanaConfigs: cluster.kibanaNodes,
@@ -176,7 +167,7 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 					sshKey: values.pathToSSH ?? "",
 					kibanaNodes: values.kibanaConfigs,
 				})
-				.then((res) => {
+				.then(() => {
 					refetch()
 					resetForEditCluster()
 					if (pathname === "/cluster-overview") {
@@ -204,7 +195,7 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 				>
 					<Box className="flex flex-col gap-6 pt-6 rounded-2xl bg-[#0D0D0D] w-full h-full items-start">
 						<Box
-							className="flex flex-col h-full w-full gap-3 overflow-auto items-center"
+							className="flex flex-col w-full gap-3 overflow-auto items-center"
 							padding="0px 32px 24px 32px"
 						>
 							<Box className="flex flex-col max-w-[552px] w-full">
@@ -213,7 +204,7 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 										<Typography color="#ABA9B1" fontSize="14px" fontWeight="400" lineHeight="20px">
 											Cluster name
 										</Typography>
-										<Box className="flex flex-col gap-[6px]" key={formik.values.authPref}>
+										<Box className="flex flex-col gap-[6px]">
 											<OneLineSkeleton
 												show={isLoading || isRefetching}
 												height="52px"
@@ -290,197 +281,6 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 											/>
 										</Box>
 									</Box>
-									<Box className="flex flex-col gap-[6px] max-w-[515px]">
-										<Typography color="#ABA9B1" fontSize="14px" fontWeight="400" lineHeight="20px">
-											Authentication preference
-										</Typography>
-										<OneLineSkeleton
-											show={isLoading || isRefetching}
-											component={
-												<Box className="flex flex-col gap-[2px] w-full">
-													<Box
-														className="flex flex-row gap-2 justify-between"
-														onBlur={() => formik.setFieldTouched("authPref", true)}
-													>
-														<SelectionTile
-															label="Username & password"
-															isSelected={formik.values.authPref === "U/P"}
-															value="U/P"
-															onSelect={(value: string | number) =>
-																formik.setFieldValue("authPref", value)
-															}
-														/>
-														<SelectionTile
-															label="API Key"
-															isSelected={formik.values.authPref === "API_KEY"}
-															value="API_KEY"
-															onSelect={(value: string | number) =>
-																formik.setFieldValue("authPref", value)
-															}
-														/>
-													</Box>
-													{formik.touched.authPref && Boolean(formik.errors.authPref) ? (
-														<Typography
-															fontSize="12px"
-															fontWeight={400}
-															lineHeight="20px"
-															color="#ef4444"
-														>
-															{formik.touched.authPref && formik.errors.authPref}
-														</Typography>
-													) : null}
-												</Box>
-											}
-											height="52px"
-											className="w-full rounded-[10px]"
-										/>
-									</Box>
-									{formik.values.authPref && (
-										<Box className="flex flex-col gap-[6px] max-w-[515px]">
-											<Typography
-												color="#ABA9B1"
-												fontSize="14px"
-												fontWeight="400"
-												lineHeight="20px"
-											>
-												Credentials
-											</Typography>
-											<Box className="flex flex-col gap-[6px]" key={formik.values.authPref}>
-												{formik.values.authPref === "U/P" ? (
-													<>
-														<OneLineSkeleton
-															show={isLoading || isRefetching}
-															height="52px"
-															className="w-full rounded-[10px]"
-															component={
-																<Input
-																	fullWidth
-																	id="username"
-																	name="username"
-																	type="text"
-																	placeholder="Enter username"
-																	variant="outlined"
-																	value={formik.values.username}
-																	onChange={formik.handleChange}
-																	onBlur={formik.handleBlur}
-																	error={
-																		formik.touched.username &&
-																		Boolean(formik.errors.username)
-																	}
-																	helperText={
-																		formik.touched.username &&
-																		formik.errors.username
-																	}
-																/>
-															}
-														/>
-														<OneLineSkeleton
-															show={isLoading || isRefetching}
-															height="52px"
-															className="w-full rounded-[10px]"
-															component={
-																<Input
-																	fullWidth
-																	id="password"
-																	name="password"
-																	type={showPassword ? "text" : "password"}
-																	placeholder="Enter password"
-																	variant="outlined"
-																	value={formik.values.password}
-																	onChange={formik.handleChange}
-																	onBlur={formik.handleBlur}
-																	error={
-																		formik.touched.password &&
-																		Boolean(formik.errors.password)
-																	}
-																	helperText={
-																		formik.touched.password &&
-																		formik.errors.password
-																	}
-																	InputProps={{
-																		endAdornment: (
-																			<InputAdornment position="end">
-																				<IconButton
-																					aria-label="toggle password visibility"
-																					onClick={() =>
-																						setShowPassword(!showPassword)
-																					}
-																					onMouseDown={(event) =>
-																						event.preventDefault()
-																					}
-																					edge="end"
-																				>
-																					{showPassword ? (
-																						<Eye size="18px" color="#FFF" />
-																					) : (
-																						<EyeSlash
-																							size="18px"
-																							color="#FFF"
-																						/>
-																					)}
-																				</IconButton>
-																			</InputAdornment>
-																		),
-																	}}
-																/>
-															}
-														/>
-													</>
-												) : (
-													<OneLineSkeleton
-														show={isLoading || isRefetching}
-														height="52px"
-														className="w-full rounded-[10px]"
-														component={
-															<Input
-																fullWidth
-																id="apiKey"
-																name="apiKey"
-																type="text"
-																placeholder="Enter apiKey"
-																variant="outlined"
-																value={formik.values.apiKey}
-																onChange={formik.handleChange}
-																onBlur={formik.handleBlur}
-																error={
-																	formik.touched.apiKey &&
-																	Boolean(formik.errors.apiKey)
-																}
-																helperText={
-																	formik.touched.apiKey && formik.errors.apiKey
-																}
-																InputProps={{
-																	endAdornment: (
-																		<InputAdornment position="end">
-																			<IconButton
-																				aria-label="toggle api key visibility"
-																				onClick={() =>
-																					setShowPassword(!showPassword)
-																				}
-																				onMouseDown={(event) =>
-																					event.preventDefault()
-																				}
-																				edge="end"
-																			>
-																				{showPassword ? (
-																					<Eye size="18px" color="#FFF" />
-																				) : (
-																					<EyeSlash
-																						size="18px"
-																						color="#FFF"
-																					/>
-																				)}
-																			</IconButton>
-																		</InputAdornment>
-																	),
-																}}
-															/>
-														}
-													/>
-												)}
-											</Box>
-										</Box>
-									)}
 									{infraType == "SELF_MANAGED" && (
 										<>
 											<Box className="flex flex-col gap-[6px]">
@@ -810,6 +610,8 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 					</Box>
 				</Box>
 			</form>
+
+			<EditClusterCredential />
 		</FullScreenDrawer>
 	)
 }
