@@ -26,3 +26,14 @@ springdoc:
 seamless:
   output:
     dir: "output"
+
+# enable/disable https
+server:
+  ssl:
+    enabled: true
+    key-store-type: PKCS12
+    key-store: ${SEAMLESS_UPGRADE_TOOL_TLS_KEY_STORE:classpath:keystore/keystore.p12}
+    key-store-password: ${SEAMLESS_UPGRADE_TOOL_TLS_KEY_STORE_PASSWORD:changeit}
+    key-alias: ${SEAMLESS_UPGRADE_TOOL_TLS_KEY_ALIAS:hyperflex}
+    protocol: TLS
+    enabled-protocols: TLSv1.2
