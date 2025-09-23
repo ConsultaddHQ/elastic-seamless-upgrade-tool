@@ -25,25 +25,29 @@ public class AiAssistantController {
 
   @PostMapping("/ask")
   public String ask(@RequestBody AskRequest request) {
-    SessionContextHolder.setSessionContext(request.context());
-    var message = request.message().asText();
-    if (request.context() != null && request.context().precheckId() != null) {
-      var precheckId = request.context().precheckId();
-      if (!contextMap.containsKey(1) || !precheckId.equals(contextMap.get(1))) {
-        var change = breakingChangeRepository.findById(precheckId).orElseThrow();
-        contextMap.put(1, change.getId());
-        message = """
-            # Breaking Change Context
-            - **Title:** %s
-            - **Description:** %s
-            - **Source:** %s
-            
-            # User Query
-            %s
-            """.formatted(change.getTitle(), change.getDescription(), change.getUrl(), message);
+    try {
+      SessionContextHolder.setSessionContext(request.context());
+      var message = request.message().asText();
+      if (request.context() != null && request.context().precheckId() != null) {
+        var precheckId = request.context().precheckId();
+        if (!contextMap.containsKey(1) || !precheckId.equals(contextMap.get(1))) {
+          var change = breakingChangeRepository.findById(precheckId).orElseThrow();
+          contextMap.put(1, change.getId());
+          message = """
+              # Breaking Change Context
+              - **Title:** %s
+              - **Description:** %s
+              - **Source:** %s
+              
+              # User Query
+              %s
+              """.formatted(change.getTitle(), change.getDescription(), change.getUrl(), message);
 
+        }
       }
+      return assistant.chat(1, message);
+    } finally {
+      SessionContextHolder.removeSessionContext();
     }
-    return assistant.chat(1, message);
   }
 }

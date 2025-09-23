@@ -1,6 +1,9 @@
 package co.hyperflex.ai;
 
 public class SessionContextHolder {
+  private SessionContextHolder() {
+  }
+
   private static final ThreadLocal<SessionContext> sessionContextHolder = new ThreadLocal<>();
 
   public static SessionContext getSessionContext() {
@@ -9,5 +12,9 @@ public class SessionContextHolder {
 
   public static void setSessionContext(SessionContext sessionContext) {
     sessionContextHolder.set(sessionContext);
+  }
+
+  public static void removeSessionContext() {
+    sessionContextHolder.remove();
   }
 }
