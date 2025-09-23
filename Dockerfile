@@ -1,7 +1,5 @@
-
-
 # Stage 1: Build the JAR using Gradle
-FROM gradle:8.5-jdk21 as builder
+FROM gradle:8.5-jdk21 AS builder
 
 WORKDIR /app
 COPY . /app
@@ -16,6 +14,6 @@ FROM hyperflex/jre21ansible:latest
 COPY --from=builder /app/server/build/libs/*.jar /app.jar
 
 # Copy Ansible files
-COPY data/breaking-changes.json data/breaking-changes.json
+COPY data/ data/
 
 ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-jar", "app.jar"]

@@ -1,9 +1,9 @@
 import { addToast, Button, Divider, ToastProvider, useDisclosure } from "@heroui/react"
 import { Box, Typography } from "@mui/material"
-import { Edit, Magicpen, Refresh2, Setting2, TickCircle, Warning2 } from "iconsax-react"
+import { Edit, ElementPlus, Magicpen, Refresh2, Setting2, TickCircle, Warning2 } from "iconsax-react"
 import { useEffect } from "react"
 import { FiArrowUpRight, FiX } from "react-icons/fi"
-import { Link, Outlet, useLocation } from "react-router"
+import { Link, Outlet, useLocation, useNavigate } from "react-router"
 import EditCluster from "~/components/core/EditCluster"
 import Settings from "~/components/core/Settings"
 import UpcomingFeature from "~/components/core/UpcomingFeature"
@@ -18,6 +18,7 @@ function Common() {
 	const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onOpenChange: onSettingsOpenChange } = useDisclosure()
 	const { isOpen: isEditOpen, onOpen: onEditOpen, onOpenChange: onEditOpenChange } = useDisclosure()
 	const { pathname } = useLocation()
+	const navigate = useNavigate()
 
 	useEffect(() => {
 		connect() // Connect on mount
@@ -73,18 +74,6 @@ function Common() {
 		false
 	)
 
-	// const [headerIndexChange, setHeaderIndexChange] = useState<boolean>(false)
-
-	// useMemo(() => {
-	// 	const timeout = !(isOpen || isEditOpen) ? 150 : 0
-	// 	const changeState = () => {
-	// 		setHeaderIndexChange(isOpen || isEditOpen)
-	// 	}
-	// 	setTimeout(() => {
-	// 		changeState()
-	// 	}, timeout)
-	// }, [isOpen, isEditOpen])
-
 	return (
 		<Box className="flex flex-col w-full pb-4 bg-[#0A0A0A]" height="var(--window-height)">
 			<ToastProvider placement="bottom-right" />
@@ -117,6 +106,16 @@ function Common() {
 								onPress={onSettingsOpen}
 							>
 								<Setting2 color="currentColor" size="20px" />
+							</Button>
+							<Divider orientation="vertical" className="bg-[#3A3544]" />
+							<Button
+								aria-label="Settings"
+								variant="light"
+								radius="none"
+								className="min-w-11 min-h-11"
+								onPress={() => navigate("/plugins")}
+							>
+								<ElementPlus color="currentColor" size="20px" />
 							</Button>
 							<Divider orientation="vertical" className="bg-[#3A3544]" />
 						</>

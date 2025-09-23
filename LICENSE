@@ -1,0 +1,39 @@
+Business Source License 1.1 (BSL-1.1)
+
+Copyright (C) 2025 Hyperflex (a subsidiary of Consultadd Inc.).
+All Rights Reserved.
+“Business Source License” is a trademark of MariaDB plc.
+
+Terms:
+
+The Licensor hereby grants you the right to copy, modify, create derivative works, redistribute, and make non-production use of the Licensed Work.
+
+Additional Use Grant:
+None.
+
+Change Date:
+On August 26, 2029 (or four years from the date of first availability of this version), this Licensed Work will convert to the Change License.
+
+Change License:
+GNU General Public License version 3.0 or later.
+
+If your use of the Licensed Work does not comply with the requirements currently in effect, you must purchase a commercial license from the Licensor or refrain from using the Licensed Work.
+
+All copies of the original and modified Licensed Work, and derivative works of the Licensed Work, are subject to this License. This License applies separately to each version of the Licensed Work, and the Change Date may vary between versions.
+
+You must conspicuously display this License on each original or modified copy of the Licensed Work.
+
+Any use of the Licensed Work in violation of this License will automatically terminate your rights under this License for the current and all other versions.
+
+This License does not grant any rights to trademarks or logos of the Licensor, except as expressly required by this License.
+
+TO THE EXTENT PERMITTED BY APPLICABLE LAW, THE LICENSED WORK IS PROVIDED ON AN “AS IS” BASIS. LICENSOR DISCLAIMS ALL WARRANTIES AND CONDITIONS, EXPRESS OR IMPLIED, INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, AND TITLE.
+
+MariaDB hereby grants you permission to use this License’s text to license your works, and to refer to it using the trademark “Business Source License,” as long as you comply with the Covenants of Licensor below.
+
+Covenants of Licensor:
+
+1. To specify the Change License as GPL v2.0 or any later version, or a license compatible with GPL v2.0 or later.
+2. To either specify an Additional Use Grant (above) or insert the text “None.”
+3. To specify a Change Date.
+4. Not to modify this License in any other way.

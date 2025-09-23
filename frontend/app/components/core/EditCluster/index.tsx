@@ -1,6 +1,6 @@
 import { Box, IconButton, InputAdornment, Typography } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { useFormik } from "formik"
+import { useFormik, type FormikErrors } from "formik"
 import { Add, ArrowLeft, DocumentText1, DocumentUpload, Eye, EyeSlash, Trash } from "iconsax-react"
 import _ from "lodash"
 import { useEffect, useState } from "react"
@@ -21,7 +21,7 @@ import useSafeRouteStore from "~/store/safeRoutes"
 import validationSchema from "./validation/validation"
 import { FullScreenDrawer } from "~/components/utilities/FullScreenDrawer"
 import AppBreadcrumb from "~/components/utilities/AppBreadcrumb"
-import SshFileInput from "~/components/common/SshFileInput"
+import SshFileInput from "~/components/utilities/SshFileInput"
 
 const INITIAL_VALUES = {
 	type: "",
@@ -58,10 +58,10 @@ function EditClusterBreadcrumb({ onBack }: { onBack: () => void }) {
 }
 
 function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: () => void }) {
-	const refresh = useRefreshStore((state: any) => state.refresh)
-	const resetForEditCluster = useSafeRouteStore((state: any) => state.resetForEditCluster)
-	const clusterId = useLocalStore((state: any) => state.clusterId)
-	const infraType = useLocalStore((state: any) => state.infraType)
+	const refresh = useRefreshStore((state) => state.refresh)
+	const resetForEditCluster = useSafeRouteStore((state) => state.resetForEditCluster)
+	const clusterId = useLocalStore((state) => state.clusterId)
+	const infraType = useLocalStore((state) => state.infraType)
 	const { pathname } = useLocation()
 	const [initialValues, setInitialValues] = useState<TClusterValues>(INITIAL_VALUES)
 	const [showPassword, setShowPassword] = useState<boolean>(false)
@@ -102,36 +102,32 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 	}
 
 	const getCluster = async () => {
-		try {
-			const response = await axiosJSON.get(`/clusters/${clusterId}`)
-			const cluster = response.data
-			cluster &&
-				setInitialValues({
-					name: cluster.name,
-					type: cluster.type,
-					elasticUrl: cluster.elasticUrl,
-					kibanaUrl: cluster.kibanaUrl,
-					authPref: cluster.username ? "U/P" : "API_KEY",
-					username: cluster.username,
-					password: cluster.password,
-					apiKey: cluster.apiKey,
-					sshUser: cluster.sshUsername,
-					pathToSSH: cluster.sshKey,
-					kibanaConfigs: cluster.kibanaNodes,
-					deploymentId: cluster.deploymentId,
-					sshFile: null,
-					certFiles:
-						cluster.certificateIds?.map((certId: string) => ({
-							name: certId,
-							storedOnServer: true,
-						})) || [],
-				})
+		if (!clusterId) return null
+		const response = await axiosJSON.get(`/clusters/${clusterId}`)
+		const cluster = response.data
+		cluster &&
+			setInitialValues({
+				name: cluster.name,
+				type: cluster.type,
+				elasticUrl: cluster.elasticUrl,
+				kibanaUrl: cluster.kibanaUrl,
+				authPref: cluster.username ? "U/P" : "API_KEY",
+				username: cluster.username,
+				password: cluster.password,
+				apiKey: cluster.apiKey,
+				sshUser: cluster.sshUsername,
+				pathToSSH: cluster.sshKey,
+				kibanaConfigs: cluster.kibanaNodes,
+				deploymentId: cluster.deploymentId,
+				certFiles:
+					cluster.certificateIds?.map((certId: string) => ({
+						name: certId,
+						storedOnServer: true,
+					})) || [],
+			})
 
-			formik.resetForm()
-		} catch (err: any) {
-			console.error(err)
-			return null
-		}
+		formik.resetForm()
+		return null
 	}
 
 	const { isLoading, isRefetching, refetch } = useQuery({
@@ -550,7 +546,6 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 																					let newOptions = [
 																						...formik.values.kibanaConfigs,
 																					]
-																					// @ts-ignore
 																					newOptions[index].name =
 																						e.target.value
 																					formik.setFieldValue(
@@ -560,9 +555,14 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 																				}}
 																				error={
 																					Boolean(
-																						formik.errors.kibanaConfigs?.[
-																							index
-																						]?.name
+																						(
+																							formik.errors
+																								.kibanaConfigs?.[
+																								index
+																							] as
+																								| FormikErrors<TKibanaConfigs>
+																								| undefined
+																						)?.name
 																					) && formik.touched.kibanaConfigs
 																				}
 																			/>
@@ -579,7 +579,6 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 																					let newOptions = [
 																						...formik.values.kibanaConfigs,
 																					]
-																					// @ts-ignore
 																					newOptions[index].ip =
 																						e.target.value
 																					formik.setFieldValue(
@@ -589,9 +588,14 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 																				}}
 																				error={
 																					Boolean(
-																						formik.errors.kibanaConfigs?.[
-																							index
-																						]?.ip
+																						(
+																							formik.errors
+																								.kibanaConfigs?.[
+																								index
+																							] as
+																								| FormikErrors<TKibanaConfigs>
+																								| undefined
+																						)?.ip
 																					) && formik.touched.kibanaConfigs
 																				}
 																			/>
@@ -627,10 +631,18 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 																			color="#EF4444"
 																			lineHeight="20px"
 																		>
-																			{formik.errors.kibanaConfigs?.[index]
-																				?.name ||
-																				formik.errors.kibanaConfigs?.[index]
-																					?.ip}
+																			{(
+																				formik.errors.kibanaConfigs?.[index] as
+																					| FormikErrors<TKibanaConfigs>
+																					| undefined
+																			)?.name ??
+																				(
+																					formik.errors.kibanaConfigs?.[
+																						index
+																					] as
+																						| FormikErrors<TKibanaConfigs>
+																						| undefined
+																				)?.ip}
 																		</Typography>
 																	) : null}
 																</Box>

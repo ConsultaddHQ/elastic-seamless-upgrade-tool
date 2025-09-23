@@ -17,7 +17,7 @@ const CENTER_ARROW_COMPLETE_GRADIENT = "linear-gradient(90deg, #52D97F 30%, #52D
 function ConfigLayout() {
 	const { pathname } = useLocation()
 	const navigate = useNavigate()
-	const upgradeAllowed = useSafeRouteStore((state: any) => state.upgradeAssistAllowed)
+	const upgradeAllowed = useSafeRouteStore((state) => state.upgradeAssistAllowed)
 
 	const GradientBox = ({
 		to,

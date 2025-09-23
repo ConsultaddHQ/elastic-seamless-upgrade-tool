@@ -6,6 +6,9 @@ import { useRealtimeEventListener } from "~/lib/hooks/useRealtimeEventListener"
 import { FullScreenDrawer } from "~/components/utilities/FullScreenDrawer"
 import AppBreadcrumb from "~/components/utilities/AppBreadcrumb"
 import { ArrowLeft } from "iconsax-react"
+import NoData from "~/components/core/Precheck/widgets/NoData"
+import { Skeleton } from "@heroui/react"
+import React from "react"
 
 function LogsBreadcrumb({ onBack }: { onBack: () => void }) {
 	return (
@@ -26,7 +29,7 @@ function LogsBreadcrumb({ onBack }: { onBack: () => void }) {
 }
 
 function useUpgradeLogs(nodeId: string) {
-	const clusterId = useLocalStore((state: any) => state.clusterId)
+	const clusterId = useLocalStore((state) => state.clusterId)
 	const fetchUpgradeLogs = async () => {
 		const res = await axiosJSON.get(`/clusters/${clusterId}/upgrades/nodes/${nodeId}/logs`)
 		return res.data.logs ?? []
@@ -45,7 +48,21 @@ function useUpgradeLogs(nodeId: string) {
 	return { logs, isLoading, refetch }
 }
 
+function Loading() {
+	return (
+		<Box className="flex flex-col w-full gap-2 ">
+			{new Array(15).fill(0).map(() => (
+				<Skeleton className="rounded-lg">
+					<Box height="80px"></Box>
+				</Skeleton>
+			))}
+		</Box>
+	)
+}
 function LogsList({ logs }: { logs: string[] }) {
+	if (logs.length === 0) {
+		return <NoData title="No logs available to display" subtitle="There are no logs to show at the moment." />
+	}
 	return (
 		<Box className="flex w-full flex-col gap-2 overflow-scroll">
 			{logs.map((log, index) => (
@@ -95,7 +112,7 @@ function UpgradeLogs({ onOpenChange, node }: { node: TUpgradeRow; onOpenChange: 
 								{node.node_name}
 							</Typography>
 						</Box>
-						{logs && <LogsList logs={logs} />}
+						{isLoading ? <Loading /> : <LogsList logs={logs} />}
 					</Box>
 				</Box>
 			</Box>

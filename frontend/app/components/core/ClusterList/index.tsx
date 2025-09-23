@@ -36,26 +36,11 @@ const columns: TColumn = [
 	},
 ]
 
-const STATUS_COLOR_MAP: TStatusColorMap = {
-	yellow: {
-		background: "#E3C04521",
-		color: "#E0B517",
-	},
-	green: {
-		background: "#52D97F21",
-		color: "#52D97F",
-	},
-	red: {
-		background: "#E7554721",
-		color: "#E75547",
-	},
-}
-
 function ClusterList() {
 	const navigate = useNavigate()
-	const setClusterAdded = useSafeRouteStore((state: any) => state.setClusterAdded)
-	const setClusterId = useLocalStore((state: any) => state.setClusterId)
-	const setInfraType = useLocalStore((state: any) => state.setInfraType)
+	const setClusterAdded = useSafeRouteStore((state) => state.setClusterAdded)
+	const setClusterId = useLocalStore((state) => state.setClusterId)
+	const setInfraType = useLocalStore((state) => state.setInfraType)
 
 	const getClustersData = async () => {
 		const response = await axiosJSON.get("/clusters")

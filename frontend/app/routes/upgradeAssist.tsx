@@ -1,6 +1,6 @@
 import { Box } from "@mui/material"
 import type { Route } from "../+types/root"
-import UpgradeAssistant from "~/components/core/UpgradeAssist"
+import UpgradeAssistant from "../components/core/UpgradeAssist"
 
 export function meta({}: Route.MetaArgs) {
 	return [{ title: "Upgrade Assistant" }, { name: "description", content: "Welcome to Hyperflex" }]

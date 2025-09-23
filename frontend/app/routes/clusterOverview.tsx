@@ -1,5 +1,5 @@
-import { Box, Typography } from "@mui/material"
-import ClusterInfo from "~/components/core/ClusterInfo"
+import { Box } from "@mui/material"
+import ClusterInfo from "../components/core/ClusterInfo"
 import type { Route } from "../+types/root"
 
 export function meta({}: Route.MetaArgs) {

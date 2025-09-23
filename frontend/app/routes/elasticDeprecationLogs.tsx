@@ -2,7 +2,7 @@ import { Box, Breadcrumbs, Typography } from "@mui/material"
 import type { Route } from "../+types/root"
 import { ArrowRight2, Convertshape2 } from "iconsax-react"
 import { Link } from "react-router"
-import DeprecationLogs from "~/components/core/DeprecationLogs"
+import DeprecationLogs from "../components/core/DeprecationLogs"
 
 export function meta({}: Route.MetaArgs) {
 	return [{ title: "Elastic Deprecation Logs" }, { name: "description", content: "Welcome to Hyperflex" }]

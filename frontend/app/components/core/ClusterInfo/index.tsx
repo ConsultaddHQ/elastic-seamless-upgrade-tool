@@ -1,20 +1,15 @@
-import { Box, Menu, MenuItem, Typography } from "@mui/material"
-import { useMutation, useQuery } from "@tanstack/react-query"
-import { ArrowDown2 } from "iconsax-react"
+import { Box, Typography } from "@mui/material"
+import { useQuery } from "@tanstack/react-query"
 import _ from "lodash"
-import PopupState, { bindMenu, bindTrigger } from "material-ui-popup-state"
-import { useEffect } from "react"
-import { useNavigate } from "react-router"
-import { toast } from "sonner"
+import { useEffect, useState } from "react"
 import axiosJSON from "~/apis/http"
-import { OutlinedBorderButton } from "~/components/utilities/Buttons"
-import { OneLineSkeleton } from "~/components/utilities/Skeletons"
-import StringManager from "~/constants/StringManager"
 import { useLocalStore } from "~/store/common"
 import useRefreshStore from "~/store/refresh"
-import useSafeRouteStore from "~/store/safeRoutes"
 import DetailBox from "./widgets/DetailBox"
 import { useRealtimeEventListener } from "~/lib/hooks/useRealtimeEventListener"
+import TargetVersionDropdown from "~/components/utilities/TargetVersionDropdown"
+import AllocationExplain from "~/components/core/AllocationExplain"
+import { InfoCircle } from "iconsax-react"
 
 const CLUSTER_STATUS_COLOR: { [key: string]: string } = {
 	yellow: "#E0B517",
@@ -22,55 +17,15 @@ const CLUSTER_STATUS_COLOR: { [key: string]: string } = {
 	red: "#E87D65",
 }
 
-const STYLES = {
-	MENU_ITEMS: {
-		transition: "all 800ms",
-		borderRadius: "6px",
-		marginTop: "3px",
-		padding: "6px 14px",
-		color: "#898484",
-		fontSize: "13px",
-		fontWeight: "500",
-		lineHeight: "20px",
-	},
-	MENU_PAPER: {
-		style: {
-			padding: "0px 6px",
-			width: "156.73px",
-			borderRadius: "8px",
-			border: "1px solid #292929",
-			background: "#121212",
-		},
-	},
-	MENU_ROOT: {
-		style: {
-			top: "5px",
-		},
-	},
-}
-
 function ClusterInfo() {
-	const navigate = useNavigate()
-	const clusterId = useLocalStore((state: any) => state.clusterId)
-	const infraType = useLocalStore((state: any) => state.infraType)
-	const setUpgradeAssistAllowed = useSafeRouteStore((state: any) => state.setUpgradeAssistAllowed)
-	const refresh = useRefreshStore((state: any) => state.refreshToggle)
-
-	useRealtimeEventListener("CLUSTER_INFO_CHANGE", () => refetch())
+	const clusterId = useLocalStore((state) => state.clusterId)
+	const infraType = useLocalStore((state) => state.infraType)
+	const refresh = useRefreshStore((state) => state.refreshToggle)
+	const [showAllocation, setShowAllocation] = useState(false)
 
 	const getClusterInfo = async () => {
-		let response: any = []
-		await axiosJSON
-			.get(`/clusters/${clusterId}/overview`)
-			.then((res) => {
-				setUpgradeAssistAllowed(res.data?.targetVersion ? true : false)
-				response = res.data
-			})
-			.catch((err) => {
-				toast.error(err?.response?.data?.err ?? StringManager.GENERIC_ERROR)
-				throw err
-			})
-		return response
+		const response = await axiosJSON.get(`/clusters/${clusterId}/overview`)
+		return response.data
 	}
 
 	const { data, isLoading, refetch, isRefetching, error } = useQuery({
@@ -79,21 +34,7 @@ function ClusterInfo() {
 		staleTime: Infinity,
 		enabled: false,
 	})
-
-	const handleVersionSelect = async (ver: string) => {
-		await axiosJSON
-			.post(`/clusters/${clusterId}/upgrades/jobs`, { targetVersion: ver})
-			.then((res) => {
-				setUpgradeAssistAllowed(res.data?.targetVersion ? true : false)
-				navigate("/upgrade-assistant")
-			})
-			.catch((err) => toast.error(err?.response?.data?.err ?? StringManager.GENERIC_ERROR))
-	}
-
-	const { mutate: HandleVersion, isPending } = useMutation({
-		mutationKey: ["version-select"],
-		mutationFn: handleVersionSelect,
-	})
+	useRealtimeEventListener("CLUSTER_INFO_CHANGE", () => refetch())
 
 	useEffect(() => {
 		refetch()
@@ -106,6 +47,7 @@ function ClusterInfo() {
 				background: "radial-gradient(#927CC5, #1D1D1D)",
 			}}
 		>
+			{showAllocation && <AllocationExplain onOpenChange={() => setShowAllocation(false)} />}
 			<Box
 				className="flex flex-col gap-6 rounded-2xl bg-[#0D0D0D] overflow-auto w-full"
 				padding={{ xs: "14px 16px", md: "24px 32px" }}
@@ -120,52 +62,7 @@ function ClusterInfo() {
 					>
 						Details
 					</Typography>
-					<OneLineSkeleton
-						className="rounded-[10px] max-w-[250px] w-[154px]"
-						show={isLoading || isRefetching}
-						component={
-							<PopupState variant="popover" popupId="demo-popup-menu">
-								{(popupState) => (
-									<Box className="relative">
-										<OutlinedBorderButton
-											{...bindTrigger(popupState)}
-											disabled={data?.underUpgrade}
-										>
-											{isPending ? "Please wait..." : data?.targetVersion ?? "Upgrade available"}{" "}
-											<ArrowDown2 size="14px" color="#959595" />
-										</OutlinedBorderButton>
-										<Menu
-											{...bindMenu(popupState)}
-											transformOrigin={{
-												vertical: "top",
-												horizontal: "left",
-											}}
-											slotProps={{
-												root: STYLES.MENU_ROOT,
-												paper: STYLES.MENU_PAPER,
-											}}
-										>
-											{data?.possibleUpgradeVersions?.map((update: string, index: number) => {
-												return (
-													<MenuItem
-														key={index}
-														sx={STYLES.MENU_ITEMS}
-														onClick={() => {
-															popupState.close()
-															HandleVersion(update)
-														}}
-													>
-														{update}
-													</MenuItem>
-												)
-											})}
-										</Menu>
-									</Box>
-								)}
-							</PopupState>
-						}
-						height="36px"
-					/>
+					<TargetVersionDropdown />
 				</Box>
 				<Box className="flex flex-col gap-6 overflow-auto">
 					<Box className="flex flex-col sm:flex-row gap-6 sm:gap-16">
@@ -282,6 +179,11 @@ function ClusterInfo() {
 							title="Unassigned shards"
 							description={error ? "--" : data?.unassignedShards}
 							isLoading={isLoading || isRefetching}
+							action={
+								data?.unassignedShards ? (
+									<InfoCircle size={14} color="#aabbcc" onClick={() => setShowAllocation(true)} />
+								) : undefined
+							}
 						/>
 					</Box>
 				</Box>

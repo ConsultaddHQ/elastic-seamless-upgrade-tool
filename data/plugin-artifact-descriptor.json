@@ -1,0 +1,118 @@
+[
+  {
+    "name": "analysis-icu",
+    "official": true,
+    "versionSources": {}
+  },
+  {
+    "name": "analysis-kuromoji",
+    "official": true,
+    "versionSources": {}
+  },
+  {
+    "name": "analysis-nori",
+    "official": true,
+    "versionSources": {}
+  },
+  {
+    "name": "analysis-phonetic",
+    "official": true,
+    "versionSources": {}
+  },
+  {
+    "name": "analysis-smartcn",
+    "official": true,
+    "versionSources": {}
+  },
+  {
+    "name": "analysis-stempel",
+    "official": true,
+    "versionSources": {}
+  },
+  {
+    "name": "analysis-ukrainian",
+    "official": true,
+    "versionSources": {}
+  },
+  {
+    "name": "discovery-azure-classic",
+    "official": true,
+    "versionSources": {}
+  },
+  {
+    "name": "discovery-ec2",
+    "official": true,
+    "versionSources": {}
+  },
+  {
+    "name": "discovery-gce",
+    "official": true,
+    "versionSources": {}
+  },
+  {
+    "name": "ingest-attachment",
+    "official": true,
+    "versionSources": {}
+  },
+  {
+    "name": "ingest-geoip",
+    "official": true,
+    "versionSources": {}
+  },
+  {
+    "name": "ingest-user-agent",
+    "official": true,
+    "versionSources": {}
+  },
+  {
+    "name": "mapper-annotated-text",
+    "official": true,
+    "versionSources": {}
+  },
+  {
+    "name": "mapper-murmur3",
+    "official": true,
+    "versionSources": {}
+  },
+  {
+    "name": "mapper-size",
+    "official": true,
+    "versionSources": {}
+  },
+  {
+    "name": "repository-azure",
+    "official": true,
+    "versionSources": {}
+  },
+  {
+    "name": "repository-gcs",
+    "official": true,
+    "versionSources": {}
+  },
+  {
+    "name": "repository-hdfs",
+    "official": true,
+    "versionSources": {}
+  },
+  {
+    "name": "repository-s3",
+    "official": true,
+    "versionSources": {}
+  },
+  {
+    "name": "store-smb",
+    "official": true,
+    "versionSources": {}
+  },
+  {
+    "name": "transport-nio",
+    "official": true,
+    "versionSources": {}
+  },
+  {
+    "name": "analysis-ik",
+    "official": false,
+    "sourcePattern": "https://get.infini.cloud/elasticsearch/analysis-ik/$VERSION$",
+    "versionSources": {}
+  }
+]

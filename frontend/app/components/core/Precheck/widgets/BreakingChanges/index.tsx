@@ -5,24 +5,43 @@ import ListLoader from "../../loading/ListLoader"
 import LogsList from "../LogsList"
 import NoData from "../NoData"
 import NodeListItem from "../NodeListItem"
+import axiosJSON from "~/apis/http"
+import { toast } from "sonner"
+import StringManager from "~/constants/StringManager"
+import { useQuery } from "@tanstack/react-query"
+import { useLocalStore } from "~/store/common"
 
-function BreakingChangesLogs({ data, isLoading = true }: { data: any; isLoading: boolean }) {
-	const [selectedCheck, setSelectedCheck] = useState<any>(null)
+function useBreakingChanges() {
+	const clusterId = useLocalStore((state) => state.clusterId)
+	const getBreakingChanges = async () => {
+		try {
+			const response = await axiosJSON.get<TPrecheck[]>(`/clusters/${clusterId}/prechecks/breaking-changes`)
+			return response.data
+		} catch (err: any) {
+			toast.error(err?.response?.data?.message ?? StringManager.GENERIC_ERROR)
+			throw err
+		}
+	}
+
+	const { data, isLoading } = useQuery({
+		queryKey: ["get-breaking-changes"],
+		queryFn: getBreakingChanges,
+		staleTime: 0,
+	})
+	return { data: data ?? [], isLoading }
+}
+
+function BreakingChangesLogs() {
+	const { data: breakingChanges, isLoading } = useBreakingChanges()
+	const [selectedCheck, setSelectedCheck] = useState<TPrecheck | null>(null)
 
 	useEffect(() => {
-		if (
-			selectedCheck === null ||
-			data?.breakingChanges?.filter((change: any) => change.id === selectedCheck?.id).length === 0
-		) {
-			if (data?.breakingChanges?.length === 0) {
-				setSelectedCheck(null)
-			} else {
-				setSelectedCheck(data?.breakingChanges?.[0])
-			}
-		}
-	}, [data])
+		if (!breakingChanges) return
+		const selected = breakingChanges.find((c: any) => c.id === selectedCheck?.id)
+		setSelectedCheck(selected ?? breakingChanges[0])
+	}, [breakingChanges])
 
-	if (data.breakingChanges.length === 0 && !isLoading) {
+	if (breakingChanges.length === 0 && !isLoading) {
 		return (
 			<Box className="h-full p-px rounded-2xl w-full" sx={{ background: "radial-gradient(#6E687C, #1D1D1D)" }}>
 				<Box className="flex w-full h-full flex-col gap-[6px] p-4 bg-[#0D0D0D] rounded-[15px]">
@@ -61,11 +80,11 @@ function BreakingChangesLogs({ data, isLoading = true }: { data: any; isLoading:
 					>
 						Breaking changes
 					</Typography>
-					<Box className="flex flex-col gap-1">
+					<Box className="flex flex-col gap-1 overflow-y-scroll">
 						<Box className="flex flex-col px-3 py-[14px] gap-1">
 							{!isLoading ? (
-								data.breakingChanges.length !== 0 ? (
-									data.breakingChanges.map((change: any, index: number) => {
+								breakingChanges.length !== 0 ? (
+									breakingChanges.map((change: any, index: number) => {
 										return (
 											<NodeListItem
 												key={index}
@@ -120,7 +139,7 @@ function BreakingChangesLogs({ data, isLoading = true }: { data: any; isLoading:
 							</Skeleton>
 						)}
 					</Box>
-					<Box className="flex flex-col w-full gap-[2px]">
+					<Box className="flex flex-col w-full gap-[2px] overflow-y-scroll">
 						<LogsList logs={selectedCheck?.logs ?? []} isLoading={isLoading} />
 					</Box>
 				</Box>

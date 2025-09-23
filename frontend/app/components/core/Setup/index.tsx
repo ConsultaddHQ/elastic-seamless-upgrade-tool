@@ -2,25 +2,23 @@ import { Box, CssBaseline, Typography } from "@mui/material"
 import { useMutation } from "@tanstack/react-query"
 import { useMemo, useState } from "react"
 import { useNavigate } from "react-router"
-import { toast } from "sonner"
 import axiosJSON from "~/apis/http"
 import Stepper from "~/components/utilities/Stepper"
 import Certificates from "./Certificates"
 import Credentials from "./Credentials"
 import Infrastructure from "./Infrastructure"
-import StringManager from "~/constants/StringManager"
 import { useLocalStore, useSessionStore } from "~/store/common"
 import useSafeRouteStore from "~/store/safeRoutes"
 
 function Setup() {
 	const navigate = useNavigate()
 
-	const setClusterAdded = useSafeRouteStore((state: any) => state.setClusterAdded)
-	const infraType = useLocalStore((state: any) => state.infraType)
-	const setInfraType = useLocalStore((state: any) => state.setInfraType)
-	const setClusterId = useLocalStore((state: any) => state.setClusterId)
-	const step = useSessionStore((state: any) => state.setupStep)
-	const setStep = useSessionStore((state: any) => state.setSetupStep)
+	const setClusterAdded = useSafeRouteStore((state) => state.setClusterAdded)
+	const infraType = useLocalStore((state) => state.infraType)
+	const setInfraType = useLocalStore((state) => state.setInfraType)
+	const setClusterId = useLocalStore((state) => state.setClusterId)
+	const step = useSessionStore((state) => state.setupStep)
+	const setStep = useSessionStore((state) => state.setSetupStep)
 
 	const [creds, setCreds] = useState<TCreds>({
 		type: infraType,

@@ -1,6 +1,5 @@
 import { Box, Typography } from "@mui/material"
 import { AddSquare } from "iconsax-react"
-import { useCallback, type Key } from "react"
 import { Link } from "react-router"
 import ClusterList from "~/components/core/ClusterList"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"

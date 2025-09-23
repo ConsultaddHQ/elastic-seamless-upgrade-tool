@@ -4,7 +4,7 @@ import { useLocalStore } from "~/store/common"
 import { useRealtimeEventListener } from "./useRealtimeEventListener"
 
 export function usePrecheckSummary() {
-	const clusterId = useLocalStore((state: any) => state.clusterId)
+	const clusterId = useLocalStore((state) => state.clusterId)
 	const fetchPrecheckSummary = async () => {
 		const res = await axiosJSON.get(`/clusters/${clusterId}/prechecks/summary`)
 		return res.data

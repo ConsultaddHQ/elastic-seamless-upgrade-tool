@@ -11,6 +11,17 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/frontend" />
             <option value="$PROJECT_DIR$/server" />
+            <option value="$PROJECT_DIR$/server/modules" />
+            <option value="$PROJECT_DIR$/server/modules/ansible" />
+            <option value="$PROJECT_DIR$/server/modules/breaking-changes" />
+            <option value="$PROJECT_DIR$/server/modules/common" />
+            <option value="$PROJECT_DIR$/server/modules/core" />
+            <option value="$PROJECT_DIR$/server/modules/elastic-client" />
+            <option value="$PROJECT_DIR$/server/modules/kibana-client" />
+            <option value="$PROJECT_DIR$/server/modules/plugin-manager" />
+            <option value="$PROJECT_DIR$/server/modules/precheck" />
+            <option value="$PROJECT_DIR$/server/modules/ssh-client" />
+            <option value="$PROJECT_DIR$/server/modules/upgrade" />
           </set>
         </option>
       </GradleProjectSettings>

@@ -2,11 +2,9 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.5.3'
     id 'io.spring.dependency-management' version '1.1.7'
-    id 'checkstyle'
 }
 
 group = 'com.hyperflex'
-version = '1.0-SNAPSHOT'
 
 java {
     toolchain {
@@ -18,31 +16,162 @@ repositories {
     mavenCentral()
 }
 
-checkstyle {
-    ignoreFailures = false
-    maxErrors = 0
-    toolVersion = "10.26.1"
-    configFile = rootProject.file("checkstyle/checkstyle.xml")
-}
-
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation project(':server:modules:elastic-client')
+    implementation project(':server:modules:kibana-client')
+    implementation project(':server:modules:ansible')
+    implementation project(':server:modules:ssh-client')
+    implementation project(':server:modules:common')
+    implementation project(':server:modules:core')
+    implementation project(':server:modules:precheck')
+    implementation project(':server:modules:upgrade')
+    implementation project(":server:modules:breaking-changes")
+    implementation project(":server:modules:plugin-manager")
+
+
+    implementation 'jakarta.annotation:jakarta.annotation-api:3.0.0'
+    implementation 'jakarta.validation:jakarta.validation-api:3.1.0'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
     implementation 'org.springframework.boot:spring-boot-starter-cache'
     implementation 'com.github.ben-manes.caffeine:caffeine'
-    implementation 'org.apache.sshd:sshd-core:2.15.0'
     //Dev dependencies
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
-    //elastic
-    implementation 'co.elastic.clients:elasticsearch-java:8.18.0'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.0'
+    testImplementation "com.tngtech.archunit:archunit-junit5:1.4.1"
 }
+
+allprojects {
+    group = 'co.hyperflex'
+    version = rootProject.version
+
+    apply plugin: 'checkstyle'
+
+    repositories {
+        mavenCentral()
+    }
+
+    checkstyle {
+        ignoreFailures = false
+        maxErrors = 0
+        toolVersion = "10.26.1"
+        configFile = rootProject.file("checkstyle/checkstyle.xml")
+    }
+
+    tasks.withType(Checkstyle).configureEach {
+        reports {
+            xml.required = false
+            html.required = true
+        }
+    }
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+    }
+
+    tasks.withType(Test).configureEach {
+        useJUnitPlatform()
+        reports {
+            junitXml.required = true
+        }
+    }
+}
+subprojects {
+    apply plugin: 'java'
+
+
+    dependencies {
+        implementation 'com.fasterxml.jackson.core:jackson-databind:2.19.1'
+        implementation 'jakarta.annotation:jakarta.annotation-api:3.0.0'
+        implementation 'jakarta.validation:jakarta.validation-api:3.1.0'
+        implementation 'org.springframework:spring-context:6.2.8'
+        implementation 'org.slf4j:slf4j-api:1.7.36'
+
+        testImplementation 'org.mockito:mockito-core:5.13.0'
+        testImplementation 'org.mockito:mockito-junit-jupiter:5.13.0'
+        testImplementation 'org.junit.jupiter:junit-jupiter:5.11.0'
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+        testImplementation "com.tngtech.archunit:archunit-junit5:1.4.1"
+    }
+}
+
+project(":server:modules:elastic-client") {
+    dependencies {
+        implementation project(":server:modules:common")
+    }
+}
+
+project(":server:modules:kibana-client") {
+    dependencies {
+        implementation project(":server:modules:common")
+    }
+}
+
+project(":server:modules:ssh-client") {
+    dependencies {
+        implementation 'org.apache.sshd:sshd-core:2.15.0'
+    }
+}
+
+project(":server:modules:core") {
+    dependencies {
+        implementation project(":server:modules:common")
+        implementation project(":server:modules:elastic-client")
+        implementation project(":server:modules:kibana-client")
+        implementation project(":server:modules:ssh-client")
+        implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:3.5.3'
+    }
+}
+
+project(":server:modules:precheck") {
+    dependencies {
+        implementation project(":server:modules:common")
+        implementation project(":server:modules:core")
+        implementation project(":server:modules:elastic-client")
+        implementation project(":server:modules:kibana-client")
+        implementation project(":server:modules:ssh-client")
+        implementation project(":server:modules:breaking-changes")
+        implementation project(":server:modules:plugin-manager")
+        implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:3.5.3'
+    }
+}
+
+project(":server:modules:plugin-manager") {
+    dependencies {
+        implementation project(":server:modules:common")
+        implementation project(":server:modules:core")
+        implementation project(":server:modules:ssh-client")
+        implementation project(":server:modules:breaking-changes")
+        implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:3.5.3'
+    }
+}
+
+project(":server:modules:upgrade") {
+    dependencies {
+        implementation project(":server:modules:common")
+        implementation project(":server:modules:core")
+        implementation project(":server:modules:elastic-client")
+        implementation project(":server:modules:kibana-client")
+        implementation project(":server:modules:ssh-client")
+        implementation project(":server:modules:ansible")
+        implementation project(":server:modules:precheck")
+        implementation project(":server:modules:plugin-manager")
+        implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:3.5.3'
+    }
+}
+
+project(":server:modules:breaking-changes") {
+    dependencies {
+        implementation project(":server:modules:common")
+        implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:3.5.3'
+    }
+}
+
 
 bootJar {
     // Include Vite build output in the final Spring Boot JAR
@@ -52,9 +181,15 @@ bootJar {
     }
 }
 
-tasks.named('test') {
-    useJUnitPlatform()
-}
-
 tasks.clean.dependsOn ':frontend:clean'
 tasks.build.dependsOn ':frontend:build'
+
+tasks.register('testReport', TestReport) {
+    destinationDirectory = new File(projectDir, "build/reports/allTests")
+    // Aggregate all test results
+    testResults.from(allprojects.collect { it.tasks.withType(Test) })
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('testReport')
+}

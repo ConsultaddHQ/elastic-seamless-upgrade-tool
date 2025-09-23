@@ -2,7 +2,7 @@ import { Navigate, Outlet } from "react-router"
 import useSafeRouteStore from "~/store/safeRoutes"
 
 function PrecheckSafeRoute() {
-	const canAccess = useSafeRouteStore((state: any) => state.precheckAllowed)
+	const canAccess = useSafeRouteStore((state) => state.precheckAllowed)
 
 	return canAccess ? <Outlet /> : <Navigate to="/upgrade-assistant" />
 }

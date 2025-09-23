@@ -1,6 +1,6 @@
 package co.hyperflex.ws.handlers;
 
-import co.hyperflex.services.notifications.NotificationService;
+import co.hyperflex.core.services.notifications.NotificationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

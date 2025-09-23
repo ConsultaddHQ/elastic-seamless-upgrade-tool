@@ -1,7 +1,7 @@
 import { Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react"
 import { Box, Typography } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { CloseCircle, Danger, DocumentText, Flash, More, Refresh, TickCircle, Warning2 } from "iconsax-react"
+import { CloseCircle, DocumentText, Flash, More, Refresh, TickCircle, Warning2 } from "iconsax-react"
 import { type Key, useCallback, useState } from "react"
 import { toast } from "sonner"
 import axiosJSON from "~/apis/http"
@@ -11,7 +11,9 @@ import ProgressBar from "./widgets/progress"
 import { cn } from "~/lib/Utils"
 import { useRealtimeEventListener } from "~/lib/hooks/useRealtimeEventListener"
 import UpgradeLogs from "../UpgradeLogs"
-import { AppDropdown } from "~/components/utilities/AppDropdown"
+import { AppDropdown, type DropdownItem } from "~/components/utilities/AppDropdown"
+import { ClusterActions } from "~/components/core/UpgradeCluster/widgets/ClusterActions"
+import NodeConfiguration from "~/components/core/NodeConfiguration"
 
 const UPGRADE_ENUM = {
 	completed: (
@@ -84,8 +86,9 @@ const columns: TColumn = [
 ]
 
 function UpgradeCluster({ clusterType }: TUpgradeCluster) {
-	const clusterId = useLocalStore((state: any) => state.clusterId)
+	const clusterId = useLocalStore((state) => state.clusterId)
 	const [showNodeLogs, setShowNodeLogs] = useState<TUpgradeRow | undefined>()
+	const [showNodeConfig, setShowNodeConfig] = useState<TUpgradeRow | undefined>()
 
 	useRealtimeEventListener("UPGRADE_PROGRESS_CHANGE", () => refetch(), true)
 
@@ -122,17 +125,7 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 				toast.error("Failed to start upgrade")
 			})
 	}
-	const performUpgradeAll = async () => {
-		await axiosJSON
-			.post(`/clusters/${clusterId}/upgrades?nodeType=${clusterType}`)
-			.then(() => {
-				refetch()
-				toast.success("Upgrade started")
-			})
-			.catch(() => {
-				toast.error("Failed to start upgrade")
-			})
-	}
+
 	const { data, isLoading, refetch, isRefetching } = useQuery({
 		queryKey: ["nodes-info"],
 		queryFn: getNodesInfo,
@@ -144,7 +137,7 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 		mutationFn: performUpgrade,
 	})
 
-	const getAction = (row: TUpgradeRow) => {
+	const getNodeAction = (row: TUpgradeRow) => {
 		if (row.disabled && row.status === "AVAILABLE") {
 			return (
 				<Box
@@ -197,18 +190,26 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 		}
 	}
 	const getMoreAction = (row: TUpgradeRow) => {
+		const items: DropdownItem[] = [
+			{
+				label: "Logs",
+				onClick: () => {
+					setShowNodeLogs(row)
+				},
+				icon: <Flash size="14px" color="currentColor" />,
+			},
+			{
+				label: "Configuration",
+				onClick: () => {
+					setShowNodeConfig(row)
+				},
+				icon: <DocumentText size="14px" color="currentColor" />,
+			},
+		]
 		return (
 			<AppDropdown
 				label={<More size="14px" color="currentColor" style={{ transform: "rotate(90deg)" }} />}
-				items={[
-					{
-						label: "Logs",
-						onClick: () => {
-							setShowNodeLogs(row)
-						},
-						icon: <DocumentText size="14px" color="currentColor" />,
-					},
-				]}
+				items={items}
 				iconOnly={true}
 			/>
 		)
@@ -267,7 +268,7 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 				case "action":
 					return (
 						<Box className="flex justify-end">
-							{getAction(row)}
+							{getNodeAction(row)}
 							{getMoreAction(row)}
 						</Box>
 					)
@@ -281,44 +282,15 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 	return (
 		<Box className="flex w-full p-px rounded-2xl" sx={{ background: "radial-gradient(#6E687C, #1D1D1D)" }}>
 			{showNodeLogs && <UpgradeLogs node={showNodeLogs} onOpenChange={() => setShowNodeLogs(undefined)} />}
+			{showNodeConfig && (
+				<NodeConfiguration node={showNodeConfig} onOpenChange={() => setShowNodeConfig(undefined)} />
+			)}
 			<Box className="flex flex-col gap-4 w-full rounded-2xl bg-[#0d0d0d]" padding="16px 24px">
 				<Box className="flex flex-row items-center gap-2 justify-between w-full">
 					<Typography color="#FFF" fontSize="14px" fontWeight="600" lineHeight="22px">
 						Node Details
 					</Typography>
-					<Box className="flex flex-row items-center gap-2">
-						{data?.filter((item: any) => item.status === "FAILED").length !== 0 ? (
-							<Typography
-								className="inline-flex gap-[6px] items-center"
-								color="#E87D65"
-								fontSize="14px"
-								fontWeight="500"
-								lineHeight="normal"
-							>
-								<Box className="size-[15px] inline">
-									<Danger color="currentColor" size="15px" />
-								</Box>
-								Failed to upgrade
-							</Typography>
-						) : null}
-						<OutlinedBorderButton
-							onClick={performUpgradeAll}
-							icon={Flash}
-							filledIcon={Flash}
-							disabled={
-								isPending ||
-								isLoading ||
-								(data &&
-									data.filter(
-										(item: any) => item.status !== "AVAILABLE" && item.status !== "UPGRADED"
-									).length > 0)
-							}
-							padding="8px 16px"
-							fontSize="13px"
-						>
-							Upgrade all
-						</OutlinedBorderButton>
-					</Box>
+					<ClusterActions clusterType={clusterType} />
 				</Box>
 				<Box className="flex">
 					<Table

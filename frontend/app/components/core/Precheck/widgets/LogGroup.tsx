@@ -2,12 +2,11 @@ import { Box } from "@mui/material"
 import { useMutation } from "@tanstack/react-query"
 import { useMemo } from "react"
 import BreakingChangesLogs from "./BreakingChanges"
-import ClusterLogs from "./Cluster"
-import IndexLogs from "./Index"
-import NodesLogs from "./Nodes"
 import axiosJSON from "~/apis/http"
 import { useLocalStore } from "~/store/common"
 import { toast } from "sonner"
+import GroupedPrecheck from "~/components/core/Precheck/widgets/GroupedPrecheck"
+import Prechecks from "~/components/core/Precheck/widgets/Prechecks"
 
 function LogGroup({
 	dataFor,
@@ -20,43 +19,43 @@ function LogGroup({
 	isLoading: boolean
 	refetchData: any
 }) {
-	const clusterId = useLocalStore((state: any) => state.clusterId)
+	const clusterId = useLocalStore((state) => state.clusterId)
 
 	const { mutate: HandleRerun, isPending } = useMutation({
 		mutationKey: ["handle-rerun"],
-		mutationFn: async (payload: string) => {
-			await axiosJSON
-				.post(`/clusters/${clusterId}/prechecks/rerun`, payload)
-				.then((res: any) => {
-					console.log(res)
-					refetchData()
-				})
-				.catch((err: any) => console.log(err))
+		mutationFn: async (payload: any) => {
+			await axiosJSON.post(`/clusters/${clusterId}/prechecks/rerun`, payload)
+			refetchData()
 		},
 	})
 
-	const handlePrecheckSkip = async (id: string) => {
-		await axiosJSON.put(`/clusters/${clusterId}/prechecks/${id}/skip`).then(() => {
-			toast.success("Precheck skipped successfully")
-		})
+	const handlePrecheckSkip = async (id: string, skip: boolean) => {
+		await axiosJSON.put(`/clusters/${clusterId}/prechecks/${id}/skip?skip=${skip}`)
+		toast.success(`Precheck ${skip ? "skipped" : "unskipped"} successfully`)
 	}
 
 	const layout = useMemo(() => {
-		console.log(dataFor)
 		if (dataFor === "CLUSTER") {
 			return (
-				<ClusterLogs
-					data={data}
+				<Prechecks
+					prechecks={data.cluster as TPrecheck[]}
 					handleRerun={(payload) => HandleRerun(payload)}
 					handlePrecheckSkip={handlePrecheckSkip}
 					isPending={isPending}
 					isLoading={isLoading}
+					handleRerunAll={() => HandleRerun({ cluster: true })}
 				/>
 			)
 		} else if (dataFor === "NODES") {
 			return (
-				<NodesLogs
-					data={data}
+				<GroupedPrecheck
+					groupName={"Nodes"}
+					groups={data?.node as TGroupedPrecheck[]}
+					handleGroupRerun={(group) => {
+						HandleRerun({
+							nodeIds: [group.id],
+						})
+					}}
 					handleRerun={(payload) => HandleRerun(payload)}
 					handlePrecheckSkip={handlePrecheckSkip}
 					isPending={isPending}
@@ -65,8 +64,14 @@ function LogGroup({
 			)
 		} else if (dataFor === "INDEX") {
 			return (
-				<IndexLogs
-					data={data}
+				<GroupedPrecheck
+					groupName={"Indexes"}
+					groups={data?.index as TGroupedPrecheck[]}
+					handleGroupRerun={(group) => {
+						HandleRerun({
+							indexNames: [group.id],
+						})
+					}}
 					handleRerun={(payload) => HandleRerun(payload)}
 					handlePrecheckSkip={handlePrecheckSkip}
 					isPending={isPending}
@@ -74,7 +79,7 @@ function LogGroup({
 				/>
 			)
 		} else if (dataFor === "BREAKING_CHANGES") {
-			return <BreakingChangesLogs data={data} isLoading={isLoading} />
+			return <BreakingChangesLogs />
 		}
 	}, [dataFor, data])
 

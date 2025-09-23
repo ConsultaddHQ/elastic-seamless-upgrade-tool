@@ -16,15 +16,15 @@ import StepBox from "./widgets/StepBox"
 import { FiArrowUpRight } from "react-icons/fi"
 
 function UpgradeAssistant() {
-	const clusterId = useLocalStore((state: any) => state.clusterId)
-	const infraType = useLocalStore((state: any) => state.infraType)
-	const deploymentId = useLocalStore((state: any) => state.deploymentId)
-	const setDeploymentId = useLocalStore((state: any) => state.setDeploymentId)
+	const clusterId = useLocalStore((state) => state.clusterId)
+	const infraType = useLocalStore((state) => state.infraType)
+	const deploymentId = useLocalStore((state) => state.deploymentId)
+	const setDeploymentId = useLocalStore((state) => state.setDeploymentId)
 	const { remainingTime, startTimer, resetTimer } = useCountdownTimer()
-	const setDeprecationChangesAllowed = useSafeRouteStore((state: any) => state.setDeprecationChangesAllowed)
-	const setElasticNodeUpgradeAllowed = useSafeRouteStore((state: any) => state.setElasticNodeUpgradeAllowed)
-	const setKibanaNodeUpgradeAllowed = useSafeRouteStore((state: any) => state.setKibanaNodeUpgradeAllowed)
-	const setPrecheckAllowed = useSafeRouteStore((state: any) => state.setPrecheckAllowed)
+	const setDeprecationChangesAllowed = useSafeRouteStore((state) => state.setDeprecationChangesAllowed)
+	const setElasticNodeUpgradeAllowed = useSafeRouteStore((state) => state.setElasticNodeUpgradeAllowed)
+	const setKibanaNodeUpgradeAllowed = useSafeRouteStore((state) => state.setKibanaNodeUpgradeAllowed)
+	const setPrecheckAllowed = useSafeRouteStore((state) => state.setPrecheckAllowed)
 
 	// Format remaining time in HH:MM:SS
 	const formatTime = (milliseconds: number | null): string => {

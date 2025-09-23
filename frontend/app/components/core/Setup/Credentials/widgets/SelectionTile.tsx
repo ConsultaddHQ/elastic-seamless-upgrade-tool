@@ -67,15 +67,6 @@ function SelectionTile({ value, label, isSelected, onSelect, comingSoon = false 
 						{label}
 					</Typography>
 				)}
-				{/* <Typography
-					id="selection-label"
-					color={isSelected ? "#FFF" : "#A3A3A3"}
-					fontSize="14px"
-					fontWeight="400"
-					lineHeight="22px"
-				>
-					{label}
-				</Typography> */}
 			</Box>
 		</Box>
 	)

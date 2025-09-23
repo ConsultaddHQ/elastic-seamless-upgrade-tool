@@ -34,7 +34,7 @@ export function AppDropdown({ label, items, buttonClassName, iconOnly }: AppDrop
 					<IconButton
 						onClick={handleClick}
 						className={`!rounded-lg ${buttonClassName ?? ""}`}
-						style={{ width: "36px" , height:'36px'}}
+						style={{ width: "36px", height: "36px" }}
 					>
 						{label}
 					</IconButton>
@@ -55,11 +55,11 @@ export function AppDropdown({ label, items, buttonClassName, iconOnly }: AppDrop
 				anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
 				slotProps={{
 					paper: {
-						className: "!rounded-lg  !border-1 !border-[#292929] mt-1",
-						style: { width: "154px" },
+						className: "mt-1",
+						style: { width: "154px", background: "#212022", padding: "6px 8px",borderRadius: "6px", },
 					},
 					list: {
-						className: "!bg-[#212022]",
+						className: "bg-[#212022]",
 					},
 				}}
 			>
@@ -71,10 +71,24 @@ export function AppDropdown({ label, items, buttonClassName, iconOnly }: AppDrop
 							handleClose()
 						}}
 						disabled={item.disabled}
-						className="flex gap-1 items-center !text-[#898484]"
+						className="flex gap-1 items-center"
+						sx={{
+							color: "#898484",
+							fontFamily: "Manrope",
+							fontSize: "13px",
+							fontStyle: "normal",
+							fontWeight: 500,
+							lineHeight: "20px",
+							padding: "6px 8px",
+							borderRadius: "6px",
+							"&:hover": {
+								background:'#242424',
+								color: "#FFF",
+							},
+						}}
 					>
-						{item.icon}
-						{item.label}
+						<Box className="flex items-center gap-[4px]">{item.icon}
+							{item.label}</Box>
 					</MenuItem>
 				))}
 			</Menu>

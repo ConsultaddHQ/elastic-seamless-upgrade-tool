@@ -1,9 +1,9 @@
 package co.hyperflex.controllers;
 
-import co.hyperflex.dtos.settings.GetSettingResponse;
-import co.hyperflex.dtos.settings.UpdateSettingRequest;
-import co.hyperflex.dtos.settings.UpdateSettingResponse;
-import co.hyperflex.services.SettingService;
+import co.hyperflex.core.services.settings.SettingService;
+import co.hyperflex.core.services.settings.dtos.GetSettingResponse;
+import co.hyperflex.core.services.settings.dtos.UpdateSettingRequest;
+import co.hyperflex.core.services.settings.dtos.UpdateSettingResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;

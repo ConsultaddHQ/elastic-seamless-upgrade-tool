@@ -3,7 +3,7 @@ import { Box, Typography } from "@mui/material"
 import { TickCircle, Warning2 } from "iconsax-react"
 import { cn } from "~/lib/Utils"
 
-function StatusIcon({ status, severity }: { status: string; severity?: string }) {
+function StatusIcon({ status, severity }: { status: string; severity?: SEVERITY }) {
 	if (status === "PENDING" || status === "RUNNING") {
 		return <Spinner color="default" variant="simple" classNames={{ wrapper: "size-4 text-inherit" }} />
 	} else if (status === "COMPLETED") {
@@ -24,7 +24,7 @@ function NodeListItem({
 	severity,
 }: {
 	status?: "PENDING" | "COMPLETED" | "FAILED" | "RUNNING"
-	severity?: "ERROR" | "WARNING" | "INFO"
+	severity?: SEVERITY
 	name: string
 	isSelected: boolean
 	onClick: () => void

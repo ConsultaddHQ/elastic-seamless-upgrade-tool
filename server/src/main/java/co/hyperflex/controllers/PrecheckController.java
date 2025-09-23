@@ -1,20 +1,26 @@
 package co.hyperflex.controllers;
 
-import co.hyperflex.dtos.prechecks.GetGroupedPrecheckResponse;
-import co.hyperflex.dtos.prechecks.GetPrecheckSummaryResponse;
-import co.hyperflex.dtos.prechecks.PrecheckRerunRequest;
-import co.hyperflex.dtos.prechecks.PrecheckScheduleResponse;
-import co.hyperflex.dtos.prechecks.SkipPrecheckResponse;
-import co.hyperflex.prechecks.scheduler.PrecheckSchedulerService;
-import co.hyperflex.services.PrecheckReportService;
-import co.hyperflex.services.PrecheckRunService;
+import co.hyperflex.precheck.services.PrecheckReportService;
+import co.hyperflex.precheck.services.PrecheckRunService;
+import co.hyperflex.precheck.services.PrecheckSchedulerService;
+import co.hyperflex.precheck.services.dtos.GetBreakingChangeEntry;
+import co.hyperflex.precheck.services.dtos.GetGroupedPrecheckResponse;
+import co.hyperflex.precheck.services.dtos.GetIndexPrecheckGroup;
+import co.hyperflex.precheck.services.dtos.GetNodePrecheckGroup;
+import co.hyperflex.precheck.services.dtos.GetPrecheckEntry;
+import co.hyperflex.precheck.services.dtos.GetPrecheckSummaryResponse;
+import co.hyperflex.precheck.services.dtos.PrecheckRerunRequest;
+import co.hyperflex.precheck.services.dtos.PrecheckScheduleResponse;
+import co.hyperflex.precheck.services.dtos.SkipPrecheckResponse;
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -39,8 +45,8 @@ public class PrecheckController {
   }
 
   @PutMapping("/{id}/skip")
-  public SkipPrecheckResponse skip(@PathVariable String clusterId, @PathVariable String id) {
-    return precheckRunService.skipPrecheck(id);
+  public SkipPrecheckResponse skip(@PathVariable String clusterId, @PathVariable String id, @RequestParam boolean skip) {
+    return precheckRunService.skipPrecheck(id, skip);
   }
 
   @PostMapping("/rerun")
@@ -53,6 +59,26 @@ public class PrecheckController {
   @GetMapping()
   public GetGroupedPrecheckResponse getGroupedPrechecks(@PathVariable String clusterId) {
     return precheckRunService.getGroupedPrecheckByClusterId(clusterId);
+  }
+
+  @GetMapping("/node")
+  public List<GetNodePrecheckGroup> getNodePrecheckGroups(@PathVariable String clusterId) {
+    return precheckRunService.getNodePrecheckGroups(clusterId);
+  }
+
+  @GetMapping("/index")
+  public List<GetIndexPrecheckGroup> getIndexPrecheckGroups(@PathVariable String clusterId) {
+    return precheckRunService.getIndexPrecheckGroups(clusterId);
+  }
+
+  @GetMapping("/cluster")
+  public List<GetPrecheckEntry> getClusterPrecheckGroups(@PathVariable String clusterId) {
+    return precheckRunService.getClusterPrechecks(clusterId);
+  }
+
+  @GetMapping("/breaking-changes")
+  public List<GetBreakingChangeEntry> getBreakingChanges(@PathVariable String clusterId) {
+    return precheckRunService.getBreakingChanges(clusterId);
   }
 
   @GetMapping("/summary")
