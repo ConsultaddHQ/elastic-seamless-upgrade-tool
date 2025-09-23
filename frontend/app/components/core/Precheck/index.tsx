@@ -1,10 +1,8 @@
 import { Box, Typography } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { Folder, Refresh } from "iconsax-react"
-import { toast } from "sonner"
 import axiosJSON from "~/apis/http"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"
-import StringManager from "~/constants/StringManager"
 import { useLocalStore } from "~/store/common"
 import LogGroup from "./widgets/LogGroup"
 import { useRealtimeEventListener } from "~/lib/hooks/useRealtimeEventListener"
@@ -12,15 +10,13 @@ import { useRealtimeEventListener } from "~/lib/hooks/useRealtimeEventListener"
 const PrecheckNotTriggered = ({ refetch }: { refetch: () => void }) => {
 	const clusterId = useLocalStore((state) => state.clusterId)
 
-	const reReunPrecheck = async () => {
-		await axiosJSON
-			.post(`/clusters/${clusterId}/prechecks`)
-			.then(() => refetch())
+	const reRunPrecheck = async () => {
+		await axiosJSON.post(`/clusters/${clusterId}/prechecks`).then(() => refetch())
 	}
 
 	const { mutate: HandleRerun, isPending } = useMutation({
 		mutationKey: ["re-run-prechecks"],
-		mutationFn: reReunPrecheck,
+		mutationFn: reRunPrecheck,
 	})
 
 	return (
@@ -69,18 +65,13 @@ function Precheck({ selectedTab }: { selectedTab: TCheckTab }) {
 	const clusterId = useLocalStore((state) => state.clusterId)
 
 	const getPrecheck = async () => {
-		try {
-			const response = await axiosJSON.get<{
-				index: TIndexData[]
-				node: TNodeData[]
-				cluster: TPrecheck[]
-				breakingChanges: TPrecheck[]
-			}>(`/clusters/${clusterId}/prechecks`)
-			return response.data
-		} catch (err: any) {
-			toast.error(err?.response?.data?.message ?? StringManager.GENERIC_ERROR)
-			throw err
-		}
+		const response = await axiosJSON.get<{
+			index: TIndexData[]
+			node: TNodeData[]
+			cluster: TPrecheck[]
+			breakingChanges: TPrecheck[]
+		}>(`/clusters/${clusterId}/prechecks`)
+		return response.data
 	}
 
 	const { data, isLoading, refetch } = useQuery({
@@ -88,7 +79,7 @@ function Precheck({ selectedTab }: { selectedTab: TCheckTab }) {
 		queryFn: getPrecheck,
 		staleTime: 0,
 	})
-	useRealtimeEventListener("PRECHECK_PROGRESS_CHANGE", refetch, true);
+	useRealtimeEventListener("PRECHECK_PROGRESS_CHANGE", refetch, true)
 
 	return (
 		<>

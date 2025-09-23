@@ -8,9 +8,10 @@ import LogsList from "../LogsList"
 import NoData from "../NoData"
 import NodeListItem from "../NodeListItem"
 import Switch from "~/components/utilities/Switch"
+import useFilters from "~/lib/hooks/useFilter.ts"
 
 function Prechecks({
-	prechecks,
+	prechecks: allPrechecks,
 	handleRerun,
 	isPending = false,
 	isLoading = false,
@@ -25,6 +26,8 @@ function Prechecks({
 	handleRerunAll: () => void
 }) {
 	const [selectedPrecheck, setSelectedPrecheck] = useState<TPrecheck | null>(null)
+	const [{ severity }, _] = useFilters<{ severity?: SEVERITY }>({})
+	const [prechecks, setPrechecks] = useState<TPrecheck[]>([])
 
 	useEffect(() => {
 		if (selectedPrecheck !== null) {
@@ -33,6 +36,14 @@ function Prechecks({
 			setSelectedPrecheck(prechecks?.[0])
 		}
 	}, [prechecks])
+
+	useEffect(() => {
+		setPrechecks(
+			allPrechecks.filter(
+				(precheck) => !severity || (severity == precheck.severity && precheck.status == "FAILED")
+			)
+		)
+	}, [allPrechecks, severity])
 
 	const handlePrecheckRerun = () => {
 		selectedPrecheck &&
