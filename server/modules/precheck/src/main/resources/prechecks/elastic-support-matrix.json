@@ -1,0 +1,83 @@
+[
+  {
+    "os": "UBUNTU",
+    "version": "14.04",
+    "supports": [
+      {
+        "start": "5.0.x",
+        "end": "6.8.x",
+        "supported": true
+      },
+      {
+        "start": "7.0.x",
+        "end": null,
+        "supported": false
+      }
+    ]
+  },
+  {
+    "os": "UBUNTU",
+    "version": "16.04",
+    "supports": [
+      {
+        "start": "5.0.x",
+        "end": "7.17.x",
+        "supported": true
+      },
+      {
+        "start": "8.0.x",
+        "end": null,
+        "supported": false
+      }
+    ]
+  },
+  {
+    "os": "UBUNTU",
+    "version": "18.04",
+    "supports": [
+      {
+        "start": "6.5.x",
+        "end": "8.19.x",
+        "supported": true
+      },
+      {
+        "start": "9.0.x",
+        "end": null,
+        "supported": false
+      }
+    ]
+  },
+  {
+    "os": "UBUNTU",
+    "version": "20.04",
+    "supports": [
+      {
+        "start": "7.10.x",
+        "end": "9.1.x",
+        "supported": true
+      }
+    ]
+  },
+  {
+    "os": "UBUNTU",
+    "version": "22.04",
+    "supports": [
+      {
+        "start": "8.3.x",
+        "end": "9.1.x",
+        "supported": true
+      }
+    ]
+  },
+  {
+    "os": "UBUNTU",
+    "version": "24.04",
+    "supports": [
+      {
+        "start": "8.18.x",
+        "end": "9.1.x",
+        "supported": true
+      }
+    ]
+  }
+]
