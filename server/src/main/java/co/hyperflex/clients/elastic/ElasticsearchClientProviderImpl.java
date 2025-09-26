@@ -5,6 +5,7 @@ import co.hyperflex.common.client.ClientConnectionDetail;
 import co.hyperflex.common.client.ClientConnectionDetailProvider;
 import co.hyperflex.common.exceptions.NotFoundException;
 import co.hyperflex.core.repositories.ClusterRepository;
+import co.hyperflex.core.services.secret.SecretStoreService;
 import co.hyperflex.core.utils.ClusterAuthUtils;
 import jakarta.validation.constraints.NotNull;
 import java.net.Socket;
@@ -30,9 +31,11 @@ public class ElasticsearchClientProviderImpl implements ElasticsearchClientProvi
 
   private final Logger logger = LoggerFactory.getLogger(ElasticsearchClientProviderImpl.class);
   private final ClusterRepository clusterRepository;
+  private final SecretStoreService secretStoreService;
 
-  public ElasticsearchClientProviderImpl(ClusterRepository clusterRepository) {
+  public ElasticsearchClientProviderImpl(ClusterRepository clusterRepository, SecretStoreService secretStoreService) {
     this.clusterRepository = clusterRepository;
+    this.secretStoreService = secretStoreService;
   }
 
   @Cacheable(value = "elasticClientCache", key = "#p0")
@@ -46,14 +49,13 @@ public class ElasticsearchClientProviderImpl implements ElasticsearchClientProvi
   @Override
   public ElasticClient getClient(ClientConnectionDetail detail) {
     try {
-      var authHeader = detail.authHeader();
       HttpClient jdkHttpClient = HttpClient.newBuilder()
           .sslContext(getSSLContext())
           .build();
 
       RestClient genericClient = RestClient.builder()
           .baseUrl(detail.baseUrl())
-          .defaultHeader(authHeader.key(), authHeader.value())
+          .defaultHeader("Authorization", secretStoreService.getSecret(detail.secretKey()).orElseThrow().value())
           .defaultHeader("Content-Type", "application/json")
           .requestFactory(new JdkClientHttpRequestFactory(jdkHttpClient))
           .build();

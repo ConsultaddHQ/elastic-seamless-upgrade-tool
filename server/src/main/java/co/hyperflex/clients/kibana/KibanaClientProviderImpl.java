@@ -3,6 +3,7 @@ package co.hyperflex.clients.kibana;
 import co.hyperflex.common.client.ClientConnectionDetail;
 import co.hyperflex.common.exceptions.NotFoundException;
 import co.hyperflex.core.repositories.ClusterRepository;
+import co.hyperflex.core.services.secret.SecretStoreService;
 import co.hyperflex.core.utils.ClusterAuthUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -11,9 +12,12 @@ import org.springframework.web.client.RestClient;
 public class KibanaClientProviderImpl implements KibanaClientProvider {
 
   private final ClusterRepository clusterRepository;
+  private final SecretStoreService secretStoreService;
 
-  public KibanaClientProviderImpl(ClusterRepository clusterRepository) {
+  public KibanaClientProviderImpl(ClusterRepository clusterRepository,
+                                  SecretStoreService secretStoreService) {
     this.clusterRepository = clusterRepository;
+    this.secretStoreService = secretStoreService;
   }
 
   @Override
@@ -25,14 +29,12 @@ public class KibanaClientProviderImpl implements KibanaClientProvider {
 
   @Override
   public KibanaClient getClient(ClientConnectionDetail detail) {
-    var authHeader = detail.authHeader();
     RestClient client = RestClient.builder()
         .baseUrl(detail.baseUrl())
-        .defaultHeader(authHeader.key(), authHeader.value())
+        .defaultHeader("Authorization", secretStoreService.getSecret(detail.secretKey()).orElseThrow().value())
         .defaultHeader("Content-Type", "application/json")
         .defaultHeader("kbn-xsrf", "true")
         .build();
     return new KibanaClientImpl(client, detail.baseUrl());
   }
-
 }

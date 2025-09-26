@@ -16,17 +16,17 @@ import org.springframework.stereotype.Service;
 public class SshKeyService {
 
   private static final Logger logger = LoggerFactory.getLogger(SshKeyService.class);
-  private final String ansiblePlaybooksPath;
+  private final String outputDir;
 
   private Path sshKeysDir;
 
-  public SshKeyService(@Value("${seamless.output.dir}") String ansiblePlaybooksPath) {
-    this.ansiblePlaybooksPath = ansiblePlaybooksPath;
+  public SshKeyService(@Value("${seamless.output.dir}") String outputDir) {
+    this.outputDir = outputDir;
   }
 
   @PostConstruct
   public void init() {
-    this.sshKeysDir = Paths.get(ansiblePlaybooksPath, "ssh-keys");
+    this.sshKeysDir = Paths.get(outputDir, "ssh-keys");
     try {
       Files.createDirectories(sshKeysDir);
       logger.info("SSH key directory initialized at {}", sshKeysDir.toAbsolutePath());

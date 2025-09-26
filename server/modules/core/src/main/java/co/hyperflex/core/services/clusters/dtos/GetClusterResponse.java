@@ -15,9 +15,6 @@ public abstract class GetClusterResponse {
   private ClusterType type;
   private String elasticUrl;
   private String kibanaUrl;
-  private String username;
-  private String password;
-  private String apiKey;
 
   public String getId() {
     return id;
@@ -43,14 +40,6 @@ public abstract class GetClusterResponse {
     this.type = type;
   }
 
-  public String getApiKey() {
-    return apiKey;
-  }
-
-  public void setApiKey(String apiKey) {
-    this.apiKey = apiKey;
-  }
-
   public String getElasticUrl() {
     return elasticUrl;
   }
@@ -65,21 +54,5 @@ public abstract class GetClusterResponse {
 
   public void setKibanaUrl(String kibanaUrl) {
     this.kibanaUrl = kibanaUrl;
-  }
-
-  public String getUsername() {
-    return username;
-  }
-
-  public void setUsername(String username) {
-    this.username = username;
-  }
-
-  public String getPassword() {
-    return password;
-  }
-
-  public void setPassword(String password) {
-    this.password = password;
   }
 }
