@@ -26,7 +26,6 @@ const INITIAL_VALUES = {
 
 export function EditClusterCredential() {
 	const clusterId = useLocalStore((state) => state.clusterId)
-	const [isEditCredential, setEditCredential] = useState(false)
 	const [initialValues, setInitialValues] = useState<TClusterCredentialValues>(INITIAL_VALUES)
 	const [showPassword, setShowPassword] = useState<boolean>(false)
 
@@ -39,7 +38,7 @@ export function EditClusterCredential() {
 		},
 	})
 
-	const { mutate: HandleSubmit } = useMutation({
+	const { mutate: HandleSubmit, isPending } = useMutation({
 		mutationKey: ["update-cluster-credential", clusterId, formik.values],
 		mutationFn: async (values: TClusterCredentialValues) => {
 			await axiosJSON
@@ -49,7 +48,6 @@ export function EditClusterCredential() {
 					apiKey: values.apiKey,
 				})
 				.then(() => {
-					setEditCredential(false)
 					formik.resetForm()
 					toast.success("Credential updated successfully")
 				})
@@ -309,7 +307,7 @@ export function EditClusterCredential() {
 				</Box>
 			</Box>
 			<Box className="flex flex-row items-center justify-end gap-[6px]">
-				<OutlinedBorderButton type="submit" disabled={!formik.dirty || formik.isSubmitting}>
+				<OutlinedBorderButton type="submit" disabled={!formik.dirty || formik.isSubmitting || isPending}>
 					{formik.isSubmitting ? "Updating" : "Update"}
 				</OutlinedBorderButton>
 			</Box>

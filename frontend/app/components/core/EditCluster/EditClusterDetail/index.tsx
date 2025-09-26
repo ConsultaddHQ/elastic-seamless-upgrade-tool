@@ -328,7 +328,10 @@ function EditClusterDetail() {
 						)}
 					</Box>
 					<Box className="flex flex-row items-center justify-end gap-[6px] py-6">
-						<OutlinedBorderButton type="submit" disabled={!formik.dirty || formik.isSubmitting}>
+						<OutlinedBorderButton
+							type="submit"
+							disabled={!formik.dirty || formik.isSubmitting || isPending}
+						>
 							{formik.isSubmitting ? "Updating" : "Update"}
 						</OutlinedBorderButton>
 					</Box>
