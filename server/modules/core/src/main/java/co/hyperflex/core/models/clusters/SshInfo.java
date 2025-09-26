@@ -1,4 +1,4 @@
 package co.hyperflex.core.models.clusters;
 
-public record SshInfo(String username, String key, String keyPath, String becomeUser) {
+public record SshInfo(String username, String keyPath, String becomeUser) {
 }

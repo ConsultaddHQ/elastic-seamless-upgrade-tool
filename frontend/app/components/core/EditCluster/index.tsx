@@ -3,11 +3,11 @@ import { ArrowLeft } from "iconsax-react"
 import { useLocalStore } from "~/store/common"
 import { FullScreenDrawer } from "~/components/utilities/FullScreenDrawer"
 import AppBreadcrumb from "~/components/utilities/AppBreadcrumb"
-import { Tab, Tabs } from "@heroui/react"
 import React from "react"
 import EditClusterDetail from "./EditClusterDetail"
 import EditSshDetail from "./EditSshDetail"
 import { EditClusterCredential } from "./EditCredential"
+import EditSettingTabs from "./EditSettingTabs"
 
 function EditClusterBreadcrumb({ onBack }: { onBack: () => void }) {
 	return (
@@ -45,32 +45,11 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 				<Box className="flex flex-col gap-6 pt-6 rounded-2xl bg-[#0D0D0D] w-full h-full items-start">
 					<Box className="flex flex-col w-full gap-3 overflow-auto items-center" padding="0px 32px 24px 32px">
 						<Box className="flex flex-col max-w-[552px] w-full items-center gap-[8px]">
-							<Box
-								sx={{
-									background: "linear-gradient(167deg, #1D1D1D 6.95%, #6E687C 36.4%, #1D1D1D 92.32%)",
-								}}
-								className="flex h-fit w-full p-px rounded-lg"
-							>
-								<Tabs
-									size="sm"
-									style={{ width: "100%" }}
-									classNames={{
-										tabList: "bg-black rounded-[7px] w-full flex",
-										cursor: "!bg-white rounded-[6px]",
-										tabContent:
-											"group-data-[selected=true]:text-[#1B1D20] text-[12px] font-[500] leading-[18px]",
-										tab: "flex-1",
-									}}
-									selectedKey={selectedTab}
-									onSelectionChange={(e) => {
-										setSelectedTab(e as TabTypes)
-									}}
-								>
-									<Tab title="Cluster Details" key="CLUSTER_DETAIL" />
-									<Tab title="Credential" key="CREDENTIAL" />
-									{infraType == "SELF_MANAGED" && <Tab title="SSH details" key="SSH_DETAIL" />}
-								</Tabs>
-							</Box>
+							<EditSettingTabs
+								selectedTab={selectedTab}
+								setSelectedTab={(tab) => setSelectedTab(tab)}
+								infraType={infraType}
+							/>
 							<Box className="h-[40px]"></Box>
 							<Box className="w-full">
 								{selectedTab === "CLUSTER_DETAIL" && <EditClusterDetail />}

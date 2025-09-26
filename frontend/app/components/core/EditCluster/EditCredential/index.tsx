@@ -26,7 +26,7 @@ const INITIAL_VALUES = {
 
 export function EditClusterCredential() {
 	const clusterId = useLocalStore((state) => state.clusterId)
-	const [initialValues, setInitialValues] = useState<TClusterCredentialValues>(INITIAL_VALUES)
+	const [initialValues] = useState<TClusterCredentialValues>(INITIAL_VALUES)
 	const [showPassword, setShowPassword] = useState<boolean>(false)
 
 	const formik = useFormik({
