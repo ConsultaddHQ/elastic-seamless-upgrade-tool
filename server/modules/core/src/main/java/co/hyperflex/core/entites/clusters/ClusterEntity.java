@@ -19,9 +19,6 @@ public abstract class ClusterEntity {
   private String name;
   private String elasticUrl;
   private String kibanaUrl;
-  private String username;
-  private String password;
-  private String apiKey;
 
   private ClusterType type;
 
@@ -57,35 +54,11 @@ public abstract class ClusterEntity {
     this.kibanaUrl = kibanaUrl;
   }
 
-  public String getUsername() {
-    return username;
-  }
-
-  public void setUsername(String username) {
-    this.username = username;
-  }
-
-  public String getPassword() {
-    return password;
-  }
-
-  public void setPassword(String password) {
-    this.password = password;
-  }
-
   public ClusterType getType() {
     return type;
   }
 
   public void setType(ClusterType type) {
     this.type = type;
-  }
-
-  public String getApiKey() {
-    return apiKey;
-  }
-
-  public void setApiKey(String apiKey) {
-    this.apiKey = apiKey;
   }
 }
