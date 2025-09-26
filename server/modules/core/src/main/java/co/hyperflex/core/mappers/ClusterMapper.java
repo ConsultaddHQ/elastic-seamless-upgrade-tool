@@ -39,8 +39,7 @@ public class ClusterMapper {
         String file =
             sshKeyService.createSSHPrivateKeyFile(selfManagedRequest.getSshKey(), UUID.randomUUID().toString());
         selfManagedCluster.setSshInfo(new SshInfo(
-            selfManagedRequest.getSshUsername(),
-            selfManagedRequest.getSshKey(), file, "root"));
+            selfManagedRequest.getSshUsername(), file, "root"));
         yield selfManagedCluster;
       }
       case AddElasticCloudClusterRequest elasticCloudRequest -> {

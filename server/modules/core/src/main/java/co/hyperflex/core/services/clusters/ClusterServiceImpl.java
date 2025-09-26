@@ -152,8 +152,8 @@ public class ClusterServiceImpl implements ClusterService {
     ClusterEntity cluster = clusterRepository.findById(clusterId)
         .orElseThrow(() -> new NotFoundException("Cluster not found with id: " + clusterId));
     if (cluster instanceof SelfManagedClusterEntity selfManagedCluster) {
-      String file = sshKeyService.createSSHPrivateKeyFile(request.getSshKey(), selfManagedCluster.getId());
-      selfManagedCluster.setSshInfo(new SshInfo(request.getSshUsername(), request.getSshKey(), file, "root"));
+      String file = sshKeyService.createSSHPrivateKeyFile(request.sshKey(), selfManagedCluster.getId());
+      selfManagedCluster.setSshInfo(new SshInfo(request.sshUsername(), file, "root"));
     } else {
       throw new BadRequestException("Invalid request");
     }
