@@ -5,8 +5,7 @@ import java.util.List;
 
 public class GetSelfManagedClusterResponse extends GetClusterResponse {
   private List<GetClusterKibanaNodeResponse> kibanaNodes;
-  private String sshKey;
-  private String sshUsername;
+
 
   public GetSelfManagedClusterResponse() {
     setType(ClusterType.SELF_MANAGED);
@@ -20,19 +19,4 @@ public class GetSelfManagedClusterResponse extends GetClusterResponse {
     this.kibanaNodes = kibanaNodes;
   }
 
-  public String getSshUsername() {
-    return sshUsername;
-  }
-
-  public void setSshUsername(String sshUsername) {
-    this.sshUsername = sshUsername;
-  }
-
-  public String getSshKey() {
-    return sshKey;
-  }
-
-  public void setSshKey(String sshKey) {
-    this.sshKey = sshKey;
-  }
 }

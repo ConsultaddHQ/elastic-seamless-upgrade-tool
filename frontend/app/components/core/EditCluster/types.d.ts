@@ -1,16 +1,22 @@
-type TClusterValues = {
+type TEditClusterValues = {
 	type: string
 	name: string
 	deploymentId?: string
 	elasticUrl: string
 	kibanaUrl: string
+	kibanaConfigs: TKibanaConfigs[]
+}
+
+type TEditSshDetailValues = {
+	sshUser: string
+	pathToSSH: string
+}
+
+type TClusterCredentialValues = {
 	authPref: "U/P" | "API_KEY" | null
 	username: string
 	password: string
 	apiKey: string | null
-	sshUser: string
-	pathToSSH: string
-	kibanaConfigs: TKibanaConfigs[]
 	certFiles: File[] | TExistingFile[]
 }
 

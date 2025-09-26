@@ -36,10 +36,14 @@ import co.hyperflex.core.services.clusters.dtos.ClusterOverviewResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterKibanaNodeResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterNodeResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterResponse;
+import co.hyperflex.core.services.clusters.dtos.UpdateClusterCredentialRequest;
+import co.hyperflex.core.services.clusters.dtos.UpdateClusterCredentialResponse;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterResponse;
+import co.hyperflex.core.services.clusters.dtos.UpdateClusterSshDetailRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateElasticCloudClusterRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateSelfManagedClusterRequest;
+import co.hyperflex.core.services.secret.SecretStoreService;
 import co.hyperflex.core.services.ssh.SshKeyService;
 import co.hyperflex.core.utils.ClusterAuthUtils;
 import co.hyperflex.core.utils.NodeRoleRankerUtils;
@@ -49,7 +53,9 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
+import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
@@ -64,24 +70,32 @@ public class ClusterServiceImpl implements ClusterService {
   private final ElasticsearchClientProvider elasticsearchClientProvider;
   private final KibanaClientProvider kibanaClientProvider;
   private final SshKeyService sshKeyService;
+  private final SecretStoreService secretStoreService;
 
   public ClusterServiceImpl(ClusterRepository clusterRepository,
                             ClusterNodeRepository clusterNodeRepository,
                             ClusterMapper clusterMapper,
                             ElasticsearchClientProvider elasticsearchClientProvider,
                             KibanaClientProvider kibanaClientProvider,
-                            SshKeyService sshKeyService) {
+                            SshKeyService sshKeyService, SecretStoreService secretStoreService) {
     this.clusterRepository = clusterRepository;
     this.clusterNodeRepository = clusterNodeRepository;
     this.clusterMapper = clusterMapper;
     this.elasticsearchClientProvider = elasticsearchClientProvider;
     this.kibanaClientProvider = kibanaClientProvider;
     this.sshKeyService = sshKeyService;
+    this.secretStoreService = secretStoreService;
   }
 
   @Override
   public AddClusterResponse add(final AddClusterRequest request) {
     final ClusterEntity cluster = this.clusterMapper.toEntity(request);
+    cluster.setId(new ObjectId().toString());
+    secretStoreService.putSecret(cluster.getId(), ClusterAuthUtils.getAuthSecret(
+        request.getUsername(),
+        request.getPassword(),
+        request.getApiKey()
+    ));
     validateCluster(cluster);
     clusterRepository.save(cluster);
     syncElasticNodes(cluster);
@@ -95,7 +109,6 @@ public class ClusterServiceImpl implements ClusterService {
       syncKibanaNodes((SelfManagedClusterEntity) cluster, clusterNodes);
       clusterNodeRepository.saveAll(clusterNodes);
     }
-
     return new AddClusterResponse(cluster.getId());
   }
 
@@ -108,18 +121,10 @@ public class ClusterServiceImpl implements ClusterService {
     cluster.setName(request.getName());
     cluster.setElasticUrl(request.getElasticUrl());
     cluster.setKibanaUrl(request.getKibanaUrl());
-    cluster.setUsername(request.getUsername());
-    cluster.setApiKey(request.getApiKey());
-    cluster.setPassword(request.getPassword());
-
     validateCluster(cluster);
-
 
     if (request instanceof UpdateSelfManagedClusterRequest selfManagedRequest
         && cluster instanceof SelfManagedClusterEntity selfManagedCluster) {
-      String file = sshKeyService.createSSHPrivateKeyFile(selfManagedRequest.getSshKey(), selfManagedCluster.getId());
-      selfManagedCluster.setSshInfo(new SshInfo(selfManagedRequest.getSshUsername(), selfManagedRequest.getSshKey(), file, "root"));
-
       if (selfManagedRequest.getKibanaNodes() != null && !selfManagedRequest.getKibanaNodes().isEmpty()) {
         final List<KibanaNodeEntity> clusterNodes = selfManagedRequest.getKibanaNodes().stream().map(kibanaNodeRequest -> {
           KibanaNodeEntity node = clusterMapper.toNodeEntity(kibanaNodeRequest);
@@ -141,6 +146,41 @@ public class ClusterServiceImpl implements ClusterService {
     clusterRepository.save(cluster);
     syncElasticNodes(cluster);
     return new UpdateClusterResponse();
+  }
+
+  @Override
+  public UpdateClusterResponse updateClusterSshDetail(String clusterId, UpdateClusterSshDetailRequest request) {
+    ClusterEntity cluster = clusterRepository.findById(clusterId)
+        .orElseThrow(() -> new NotFoundException("Cluster not found with id: " + clusterId));
+    if (cluster instanceof SelfManagedClusterEntity selfManagedCluster) {
+      String file = sshKeyService.createSSHPrivateKeyFile(request.getSshKey(), selfManagedCluster.getId());
+      selfManagedCluster.setSshInfo(new SshInfo(request.getSshUsername(), request.getSshKey(), file, "root"));
+    } else {
+      throw new BadRequestException("Invalid request");
+    }
+    clusterRepository.save(cluster);
+    syncElasticNodes(cluster);
+    return new UpdateClusterResponse();
+  }
+
+  @CacheEvict(value = "elasticClientCache", key = "#p0")
+  @Override
+  public UpdateClusterCredentialResponse updateClusterCredential(String clusterId, UpdateClusterCredentialRequest request) {
+    var tempId = UUID.randomUUID().toString();
+    try {
+      var cluster = clusterRepository.findById(clusterId).orElseThrow();
+      var secret = ClusterAuthUtils.getAuthSecret(
+          request.getUsername(),
+          request.getPassword(),
+          request.getApiKey()
+      );
+      secretStoreService.putSecret(tempId, secret);
+      validateCluster(cluster, tempId);
+      secretStoreService.putSecret(clusterId, secret);
+      return new UpdateClusterCredentialResponse();
+    } finally {
+      secretStoreService.removeSecret(tempId);
+    }
   }
 
   @Override
@@ -268,7 +308,7 @@ public class ClusterServiceImpl implements ClusterService {
     List<KibanaNodeEntity> clusterNodes = clusterNodeRepository
         .findByClusterIdAndType(cluster.getId(), ClusterNodeType.KIBANA)
         .stream()
-        .map(node -> (KibanaNodeEntity) node)
+        .map(KibanaNodeEntity.class::cast)
         .toList();
     syncKibanaNodes(cluster, clusterNodes);
     clusterNodeRepository.saveAll(clusterNodes);
@@ -327,11 +367,16 @@ public class ClusterServiceImpl implements ClusterService {
     }
   }
 
+
   private void validateCluster(ClusterEntity cluster) {
+    validateCluster(cluster, cluster.getId());
+  }
+
+  private void validateCluster(ClusterEntity cluster, String secretKey) {
     cluster.setKibanaUrl(UrlUtils.validateAndCleanUrl(cluster.getKibanaUrl()));
     cluster.setElasticUrl(UrlUtils.validateAndCleanUrl(cluster.getElasticUrl()));
     try {
-      ElasticClient elasticClient = elasticsearchClientProvider.getClient(ClusterAuthUtils.getElasticConnectionDetail(cluster));
+      ElasticClient elasticClient = elasticsearchClientProvider.getClient(ClusterAuthUtils.getElasticConnectionDetail(cluster, secretKey));
       elasticClient.getHealthStatus();
     } catch (Exception e) {
       log.warn("Error validating cluster credentials", e);
@@ -339,7 +384,7 @@ public class ClusterServiceImpl implements ClusterService {
     }
 
     try {
-      KibanaClient kibanaClient = kibanaClientProvider.getClient(ClusterAuthUtils.getKibanaConnectionDetail(cluster));
+      KibanaClient kibanaClient = kibanaClientProvider.getClient(ClusterAuthUtils.getKibanaConnectionDetail(cluster, secretKey));
       kibanaClient.getKibanaVersion();
     } catch (Exception e) {
       log.warn("Error validating cluster credentials", e);

@@ -10,10 +10,6 @@ public class UpdateSelfManagedClusterRequest extends UpdateClusterRequest {
   @NotNull
   private List<AddClusterKibanaNodeRequest> kibanaNodes = Collections.emptyList();
 
-  @NotNull
-  private String sshUsername;
-  @NotNull
-  private String sshKey;
 
   public UpdateSelfManagedClusterRequest() {
     setType(ClusterType.SELF_MANAGED);
@@ -27,19 +23,4 @@ public class UpdateSelfManagedClusterRequest extends UpdateClusterRequest {
     this.kibanaNodes = kibanaNodes;
   }
 
-  public String getSshKey() {
-    return sshKey;
-  }
-
-  public void setSshKey(String sshKey) {
-    this.sshKey = sshKey;
-  }
-
-  public String getSshUsername() {
-    return sshUsername;
-  }
-
-  public void setSshUsername(String sshUsername) {
-    this.sshUsername = sshUsername;
-  }
 }

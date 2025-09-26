@@ -24,6 +24,7 @@ springdoc:
     path: /swagger-ui.html
 
 seamless:
+  encryption-key: changeit
   output:
     dir: "output"
 
