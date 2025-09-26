@@ -39,6 +39,7 @@ import co.hyperflex.core.services.clusters.dtos.UpdateClusterCredentialRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterCredentialResponse;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterResponse;
+import co.hyperflex.core.services.clusters.dtos.UpdateClusterSshDetailRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateElasticCloudClusterRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateSelfManagedClusterRequest;
 import co.hyperflex.core.services.secret.SecretStoreService;
@@ -120,17 +121,9 @@ public class ClusterServiceImpl implements ClusterService {
     cluster.setElasticUrl(request.getElasticUrl());
     cluster.setKibanaUrl(request.getKibanaUrl());
     validateCluster(cluster);
-    secretStoreService.putSecret(cluster.getId(), ClusterAuthUtils.getAuthSecret(
-        request.getUsername(),
-        request.getPassword(),
-        request.getApiKey()
-    ));
 
     if (request instanceof UpdateSelfManagedClusterRequest selfManagedRequest
         && cluster instanceof SelfManagedClusterEntity selfManagedCluster) {
-      String file = sshKeyService.createSSHPrivateKeyFile(selfManagedRequest.getSshKey(), selfManagedCluster.getId());
-      selfManagedCluster.setSshInfo(new SshInfo(selfManagedRequest.getSshUsername(), selfManagedRequest.getSshKey(), file, "root"));
-
       if (selfManagedRequest.getKibanaNodes() != null && !selfManagedRequest.getKibanaNodes().isEmpty()) {
         final List<KibanaNodeEntity> clusterNodes = selfManagedRequest.getKibanaNodes().stream().map(kibanaNodeRequest -> {
           KibanaNodeEntity node = clusterMapper.toNodeEntity(kibanaNodeRequest);
@@ -154,6 +147,22 @@ public class ClusterServiceImpl implements ClusterService {
     return new UpdateClusterResponse();
   }
 
+  @Override
+  public UpdateClusterResponse updateClusterSshDetail(String clusterId, UpdateClusterSshDetailRequest request) {
+    ClusterEntity cluster = clusterRepository.findById(clusterId)
+        .orElseThrow(() -> new NotFoundException("Cluster not found with id: " + clusterId));
+    if (cluster instanceof SelfManagedClusterEntity selfManagedCluster) {
+      String file = sshKeyService.createSSHPrivateKeyFile(request.getSshKey(), selfManagedCluster.getId());
+      selfManagedCluster.setSshInfo(new SshInfo(request.getSshUsername(), request.getSshKey(), file, "root"));
+    } else {
+      throw new BadRequestException("Invalid request");
+    }
+    clusterRepository.save(cluster);
+    syncElasticNodes(cluster);
+    return new UpdateClusterResponse();
+  }
+
+  @CacheEvict(value = "elasticClientCache", key = "#p0")
   @Override
   public UpdateClusterCredentialResponse updateClusterCredential(String clusterId, UpdateClusterCredentialRequest request) {
     var tempId = UUID.randomUUID().toString();

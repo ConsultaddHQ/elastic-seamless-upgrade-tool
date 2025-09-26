@@ -12,6 +12,7 @@ import co.hyperflex.core.services.clusters.dtos.UpdateClusterCredentialRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterCredentialResponse;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterResponse;
+import co.hyperflex.core.services.clusters.dtos.UpdateClusterSshDetailRequest;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
@@ -19,6 +20,8 @@ public interface ClusterService {
   AddClusterResponse add(AddClusterRequest request);
 
   UpdateClusterResponse updateCluster(String clusterId, UpdateClusterRequest request);
+
+  UpdateClusterResponse updateClusterSshDetail(String clusterId, UpdateClusterSshDetailRequest request);
 
   UpdateClusterCredentialResponse updateClusterCredential(String clusterId, UpdateClusterCredentialRequest request);
 

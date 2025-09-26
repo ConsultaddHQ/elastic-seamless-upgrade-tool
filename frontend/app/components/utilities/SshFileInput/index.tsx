@@ -1,4 +1,5 @@
 import { Box, IconButton, Typography } from "@mui/material"
+// @ts-ignore-block
 import Files from "react-files"
 import { DocumentText1, DocumentUpload, Trash } from "iconsax-react"
 import { useState } from "react"

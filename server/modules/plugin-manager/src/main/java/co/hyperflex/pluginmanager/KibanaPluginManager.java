@@ -14,5 +14,4 @@ public class KibanaPluginManager extends AbstractPluginManager {
   protected String getBaseCommand() {
     return "/usr/share/kibana/bin/kibana-plugin ";
   }
-
 }

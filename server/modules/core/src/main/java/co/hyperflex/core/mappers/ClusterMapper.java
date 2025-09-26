@@ -74,8 +74,6 @@ public class ClusterMapper {
         GetSelfManagedClusterResponse selfManagedClusterResponse =
             new GetSelfManagedClusterResponse();
         selfManagedClusterResponse.setKibanaNodes(kibanaNodes);
-        selfManagedClusterResponse.setSshKey(selfManagedCluster.getSshInfo().key());
-        selfManagedClusterResponse.setSshUsername(selfManagedCluster.getSshInfo().username());
         yield selfManagedClusterResponse;
       }
       case ElasticCloudClusterEntity elasticCloudCluster -> {

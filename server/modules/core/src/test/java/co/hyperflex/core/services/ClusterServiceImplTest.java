@@ -109,7 +109,6 @@ class ClusterServiceImplTest {
 
 
     when(clusterRepository.findById(clusterId)).thenReturn(Optional.of(cluster));
-    when(sshKeyService.createSSHPrivateKeyFile(any(), any())).thenReturn("path/to/key");
     when(elasticsearchClientProvider.getClient(any(ClientConnectionDetail.class))).thenReturn(esClient);
     when(kibanaClientProvider.getClient(any(ClientConnectionDetail.class))).thenReturn(kibanaClient);
     when(esClient.getNodesInfo()).thenReturn(nodesInfoResponse);
@@ -124,9 +123,6 @@ class ClusterServiceImplTest {
     request.setName("updated-cluster");
     request.setElasticUrl(MOCK_ELASTIC_SEARCH_URL);
     request.setKibanaUrl(MOCK_KIBANA_URL);
-    request.setApiKey(MOCK_API_KEY);
-    request.setSshKey("new-key");
-    request.setSshUsername("new-user");
     // Act
     UpdateClusterResponse response = clusterService.updateCluster(clusterId, request);
 

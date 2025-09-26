@@ -1,3 +1,17 @@
+type TEditClusterValues = {
+	type: string
+	name: string
+	deploymentId?: string
+	elasticUrl: string
+	kibanaUrl: string
+	kibanaConfigs: TKibanaConfigs[]
+}
+
+type TEditSshDetailValues = {
+	sshUser: string
+	pathToSSH: string
+}
+
 type TClusterValues = {
 	type: string
 	name: string
