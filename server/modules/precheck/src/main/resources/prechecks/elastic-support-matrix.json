@@ -10,6 +10,16 @@
       },
       {
         "start": "7.0.x",
+        "end": "7.11.x",
+        "supported": false
+      },
+      {
+        "start": "7.12.x",
+        "end": "7.17.x",
+        "supported": true
+      },
+      {
+        "start": "8.0.x",
         "end": null,
         "supported": false
       }
@@ -36,6 +46,11 @@
     "version": "18.04",
     "supports": [
       {
+        "start": "5.0.x",
+        "end": "6.4.x",
+        "supported": false
+      },
+      {
         "start": "6.5.x",
         "end": "8.19.x",
         "supported": true
@@ -52,6 +67,21 @@
     "version": "20.04",
     "supports": [
       {
+        "start": "5.0.x",
+        "end": "6.7.x",
+        "supported": false
+      },
+      {
+        "start": "6.8.x",
+        "end": "6.8.x",
+        "supported": true
+      },
+      {
+        "start": "7.0.x",
+        "end": "7.9.x",
+        "supported": false
+      },
+      {
         "start": "7.10.x",
         "end": "9.1.x",
         "supported": true
@@ -63,6 +93,21 @@
     "version": "22.04",
     "supports": [
       {
+        "start": "5.0.x",
+        "end": "7.17.4",
+        "supported": false
+      },
+      {
+        "start": "7.17.5",
+        "end": "7.17.x",
+        "supported": true
+      },
+      {
+        "start": "8.0.x",
+        "end": "8.2.x",
+        "supported": false
+      },
+      {
         "start": "8.3.x",
         "end": "9.1.x",
         "supported": true
@@ -73,6 +118,222 @@
     "os": "UBUNTU",
     "version": "24.04",
     "supports": [
+      {
+        "start": "5.0.x",
+        "end": "8.17.x",
+        "supported": false
+      },
+      {
+        "start": "8.18.x",
+        "end": "9.1.x",
+        "supported": true
+      }
+    ]
+  },
+  {
+    "os": "RHEL",
+    "version": "6",
+    "supports": [
+      {
+        "start": "5.0.x",
+        "end": "7.17.x",
+        "supported": true
+      },
+      {
+        "start": "8.0.x",
+        "end": null,
+        "supported": false
+      }
+    ]
+  },
+  {
+    "os": "RHEL",
+    "version": "7",
+    "supports": [
+      {
+        "start": "5.0.x",
+        "end": "8.19.x",
+        "supported": true
+      },
+      {
+        "start": "9.0.x",
+        "end": null,
+        "supported": false
+      }
+    ]
+  },
+  {
+    "os": "RHEL",
+    "version": "8",
+    "supports": [
+      {
+        "start": "5.0.x",
+        "end": "6.7.x",
+        "supported": false
+      },
+      {
+        "start": "6.8.x",
+        "end": "6.8.x",
+        "supported": true
+      },
+      {
+        "start": "7.0.x",
+        "end": "7.6.x",
+        "supported": false
+      },
+      {
+        "start": "7.7.x",
+        "end": "9.1.x",
+        "supported": true
+      }
+    ]
+  },
+  {
+    "os": "RHEL",
+    "version": "9",
+    "supports": [
+      {
+        "start": "5.0.x",
+        "end": "7.17.4",
+        "supported": false
+      },
+      {
+        "start": "7.17.5",
+        "end": "7.17.x",
+        "supported": true
+      },
+      {
+        "start": "8.3.x",
+        "end": "9.1.x",
+        "supported": false
+      }
+    ]
+  },
+  {
+    "os": "CentOS",
+    "version": "6",
+    "supports": [
+      {
+        "start": "5.0.x",
+        "end": "7.17.x",
+        "supported": true
+      },
+      {
+        "start": "8.0.x",
+        "end": null,
+        "supported": false
+      }
+    ]
+  },
+  {
+    "os": "CentOS",
+    "version": "7",
+    "supports": [
+      {
+        "start": "5.0.x",
+        "end": "8.19.x",
+        "supported": true
+      },
+      {
+        "start": "9.0.x",
+        "end": null,
+        "supported": false
+      }
+    ]
+  },
+  {
+    "os": "CentOS",
+    "version": "8",
+    "supports": [
+      {
+        "start": "5.0.x",
+        "end": "6.7.x",
+        "supported": false
+      },
+      {
+        "start": "6.8.x",
+        "end": "6.8.x",
+        "supported": true
+      },
+      {
+        "start": "7.0.x",
+        "end": "7.6.x",
+        "supported": false
+      },
+      {
+        "start": "7.7.x",
+        "end": "7.17.x",
+        "supported": true
+      }
+    ]
+  },
+  {
+    "os": "Oracle Linux",
+    "version": "6",
+    "supports": [
+      {
+        "start": "5.0.x",
+        "end": "7.17.x",
+        "supported": true
+      },
+      {
+        "start": "8.0.x",
+        "end": null,
+        "supported": false
+      }
+    ]
+  },
+  {
+    "os": "Oracle Linux",
+    "version": "7",
+    "supports": [
+      {
+        "start": "5.0.x",
+        "end": "8.19.x",
+        "supported": true
+      },
+      {
+        "start": "9.0.x",
+        "end": null,
+        "supported": false
+      }
+    ]
+  },
+  {
+    "os": "Oracle Linux",
+    "version": "8",
+    "supports": [
+      {
+        "start": "5.0.x",
+        "end": "6.7.x",
+        "supported": false
+      },
+      {
+        "start": "6.8.x",
+        "end": "6.8.x",
+        "supported": true
+      },
+      {
+        "start": "7.0.x",
+        "end": "7.10.x",
+        "supported": false
+      },
+      {
+        "start": "7.11.x",
+        "end": "9.1.x",
+        "supported": true
+      }
+    ]
+  },
+  {
+    "os": "Oracle Linux",
+    "version": "9",
+    "supports": [
+      {
+        "start": "5.0.x",
+        "end": "8.17.x",
+        "supported": false
+      },
       {
         "start": "8.18.x",
         "end": "9.1.x",
