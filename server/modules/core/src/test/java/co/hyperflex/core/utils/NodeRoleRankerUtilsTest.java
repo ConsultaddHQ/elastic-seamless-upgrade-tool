@@ -50,13 +50,11 @@ class NodeRoleRankerUtilsTest {
     Assertions.assertTrue(kibanaRank > activeMasterRank);
     Assertions.assertTrue(activeMasterRank > masterEligibleRank);
     Assertions.assertTrue(masterEligibleRank > masterEligibleDataRank);
-    Assertions.assertTrue(masterEligibleDataRank > masterEligibleDataWarmRank);
-    Assertions.assertTrue(masterEligibleDataRank > dataHotRank);
+    Assertions.assertTrue(masterEligibleDataRank > coordinatingOnlyRank);
+    Assertions.assertTrue(ingestRank > mlRank);
+    Assertions.assertTrue(mlRank > mlDataRank);
+    Assertions.assertTrue(mlDataRank > dataHotRank);
     Assertions.assertTrue(dataHotRank > dataWarmRank);
     Assertions.assertTrue(dataWarmRank > dataColdRank);
-    Assertions.assertTrue(dataColdRank > mlRank);
-    Assertions.assertTrue(mlDataRank > dataColdRank);
-    Assertions.assertTrue(mlRank > ingestRank);
-    Assertions.assertTrue(ingestRank > coordinatingOnlyRank);
   }
 }

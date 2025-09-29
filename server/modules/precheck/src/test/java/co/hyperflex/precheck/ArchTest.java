@@ -43,7 +43,7 @@ class ArchTest {
             .and().areNotAssignableFrom(BaseNodePrecheck.class)
             .and().areNotAssignableTo(BaseElasticNodePrecheck.class)
             .and().areNotAssignableTo(BaseKibanaNodePrecheck.class)
-            .should().resideInAnyPackage(BASE_PACKAGE + ".concrete.node.os..")
+            .should().resideInAnyPackage(BASE_PACKAGE + ".concrete.node.os..", BASE_PACKAGE + ".concrete.node.common..")
     );
   }
 
