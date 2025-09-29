@@ -44,6 +44,8 @@ public class ElasticSupportMatrixCheck extends BaseElasticNodePrecheck {
 
     boolean osMatched = false;
 
+    logger.info("Please visit https://www.elastic.co/support/matrix for details.");
+
     for (OsSupport osSupport : OsSupportLoaderUtils.loadElasticOsSupports()) {
       if (isSameOs(distro, osSupport) && isSameVersion(distro, osSupport)) {
         osMatched = true;
@@ -71,7 +73,6 @@ public class ElasticSupportMatrixCheck extends BaseElasticNodePrecheck {
           targetVersion, distro.name(), distro.version());
     }
 
-    logger.info("Please visit https://www.elastic.co/support/matrix for details.");
     throw new RuntimeException("Elasticsearch version support could not be verified");
   }
 
