@@ -65,7 +65,7 @@ class SupportMatrixCheckTest {
 
   static Stream<Arguments> should_pass_check_kibana_data() {
     return Stream.of(
-        Arguments.of("8.18.7", "Ubuntu 24.04.2 LTS")
+        Arguments.of("8.18.7", "Ubuntu-24.04")
     );
   }
 

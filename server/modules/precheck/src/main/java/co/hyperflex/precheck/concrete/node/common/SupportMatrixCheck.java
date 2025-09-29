@@ -49,7 +49,8 @@ public class SupportMatrixCheck extends BaseNodePrecheck {
     logger.info("Please visit https://www.elastic.co/support/matrix for details.");
 
     for (OsSupport osSupport : OsSupportLoaderUtils.loadOsSupports(context.getNode().getType())) {
-      if (isSameOs(distro, osSupport) && isSameVersion(distro, osSupport)) {
+      if (isSameOs(distro, osSupport) && isSameVersion(distro, osSupport,
+          node.getType() == ClusterNodeType.ELASTIC ? " " : "-")) {
         for (var support : osSupport.supports()) {
           if (VersionUtils.inRange(targetVersion, support.start(), support.end())) {
             if (support.supported()) {
@@ -73,8 +74,8 @@ public class SupportMatrixCheck extends BaseNodePrecheck {
     throw new PrecheckFailedException();
   }
 
-  private boolean isSameVersion(Distro distro, OsSupport osSupport) {
-    for (String s : distro.version().toLowerCase().split(" ")) {
+  private boolean isSameVersion(Distro distro, OsSupport osSupport, String splitter) {
+    for (String s : distro.version().toLowerCase().split(splitter)) {
       var va = s.split("\\.");
       var vb = osSupport.version().toLowerCase().split("\\.");
       var min = Math.min(va.length, vb.length);
