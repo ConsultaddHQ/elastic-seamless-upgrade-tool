@@ -43,7 +43,6 @@ public class ElasticSupportMatrixCheck extends BaseElasticNodePrecheck {
     var logger = context.getLogger();
 
     boolean osMatched = false;
-    boolean versionSupported = false;
 
     for (OsSupport osSupport : OsSupportLoaderUtils.loadElasticOsSupports()) {
       if (isSameOs(distro, osSupport) && isSameVersion(distro, osSupport)) {
@@ -67,7 +66,7 @@ public class ElasticSupportMatrixCheck extends BaseElasticNodePrecheck {
     if (!osMatched) {
       logger.error("Current node OS [{} {}] is not listed in the Elastic support matrix.",
           distro.name(), distro.version());
-    } else if (!versionSupported) {
+    } else {
       logger.error("Unable to verify support for Elasticsearch version {} on current node OS [{} {}].",
           targetVersion, distro.name(), distro.version());
     }
@@ -77,8 +76,18 @@ public class ElasticSupportMatrixCheck extends BaseElasticNodePrecheck {
   }
 
   private boolean isSameVersion(Distro distro, OsSupport osSupport) {
-    for (String s : distro.version().toLowerCase().split("//s+")) {
-      if (s.equals(osSupport.version().toLowerCase())) {
+    for (String s : distro.version().toLowerCase().split(" ")) {
+      var va = s.split("\\.");
+      var vb = osSupport.version().toLowerCase().split("\\.");
+      var min = Math.min(va.length, vb.length);
+      for (int i = 0; i < Math.min(va.length, vb.length); i++) {
+        if (va[i].equals(vb[i])) {
+          min--;
+        } else {
+          break;
+        }
+      }
+      if (min == 0) {
         return true;
       }
     }
@@ -86,7 +95,7 @@ public class ElasticSupportMatrixCheck extends BaseElasticNodePrecheck {
   }
 
   private boolean isSameOs(Distro distro, OsSupport osSupport) {
-    return distro.name().toLowerCase().contains(osSupport.os());
+    return distro.name().toLowerCase().contains(osSupport.os().toLowerCase());
   }
 
 }
