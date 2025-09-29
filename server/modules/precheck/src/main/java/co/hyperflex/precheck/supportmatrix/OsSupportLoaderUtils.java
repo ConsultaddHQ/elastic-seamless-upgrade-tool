@@ -1,5 +1,6 @@
 package co.hyperflex.precheck.supportmatrix;
 
+import co.hyperflex.core.models.enums.ClusterNodeType;
 import java.io.IOException;
 import java.util.List;
 import org.slf4j.Logger;
@@ -24,5 +25,11 @@ public class OsSupportLoaderUtils {
       LOG.error("Failed to load elastic support matrix.", e);
       throw new RuntimeException(e);
     }
+  }
+
+  public static List<OsSupport> loadOsSupports(ClusterNodeType clusterNodeType) {
+    return clusterNodeType == ClusterNodeType.ELASTIC
+        ? loadElasticOsSupports()
+        : loadKibanaOsSupports();
   }
 }
