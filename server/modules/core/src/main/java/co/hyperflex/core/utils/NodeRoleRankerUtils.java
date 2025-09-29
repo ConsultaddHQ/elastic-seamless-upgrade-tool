@@ -9,30 +9,25 @@ public class NodeRoleRankerUtils {
     final List<String> roles = nodeRoles.stream()
         .map(String::toLowerCase)
         .toList();
-
     boolean isMaster = roles.contains(NodeRoles.MASTER);
     boolean isIngest = roles.contains(NodeRoles.INGEST);
     boolean isML = roles.contains(NodeRoles.ML);
     boolean isTransform = roles.contains(NodeRoles.TRANSFORM);
     boolean isRemote = roles.contains(NodeRoles.REMOTE_CLUSTER_CLIENT);
     boolean isKibana = roles.contains(NodeRoles.KIBANA);
-
     boolean isDataFrozen = roles.contains(NodeRoles.DATA_FROZEN);
     boolean isDataCold = roles.contains(NodeRoles.DATA_COLD);
     boolean isDataWarm = roles.contains(NodeRoles.DATA_WARM);
     boolean isDataHot = roles.contains(NodeRoles.DATA_HOT);
     boolean isDataContent = roles.contains(NodeRoles.DATA_CONTENT);
     boolean isGeneralData = roles.contains(NodeRoles.DATA);
-
     boolean isAnyData = isDataFrozen || isDataCold || isDataWarm || isDataHot || isDataContent || isGeneralData;
-
     if (isKibana) {
       return 200;
     }
     if (isActiveMaster) {
       return 150;
     }
-
     int rank = 0;
 
     if (isAnyData) {
@@ -48,21 +43,19 @@ public class NodeRoleRankerUtils {
       } else if (isDataFrozen) {
         dataScore = 2;
       }
-      rank = 30 + dataScore;
+      rank = 10 + dataScore;
     } else if (isMaster) {
       rank = 80;
     } else if (isML || isTransform || isRemote) {
-      rank = 20;
+      rank = 25;
     } else if (isIngest) {
-      rank = 15;
+      rank = 30;
     } else {
-      rank = 10; // Coordinating-only
+      rank = 50; // Coordinating-only
     }
-
     if (isMaster && isAnyData) {
-      rank += 15;
+      rank += 35;
     }
-
     return rank;
   }
 }
