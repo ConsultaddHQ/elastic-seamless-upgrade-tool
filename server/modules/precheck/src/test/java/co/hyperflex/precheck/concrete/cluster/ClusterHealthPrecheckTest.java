@@ -18,8 +18,10 @@ class ClusterHealthPrecheckTest {
 
   @Mock
   private ClusterContext context;
+
   @Mock
   private ElasticClient elasticClient;
+
   @Mock
   private Logger logger;
 

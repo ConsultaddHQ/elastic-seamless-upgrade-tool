@@ -39,8 +39,7 @@ public class ClusterMapper {
         String file =
             sshKeyService.createSSHPrivateKeyFile(selfManagedRequest.getSshKey(), UUID.randomUUID().toString());
         selfManagedCluster.setSshInfo(new SshInfo(
-            selfManagedRequest.getSshUsername(),
-            selfManagedRequest.getSshKey(), file, "root"));
+            selfManagedRequest.getSshUsername(), file, "root"));
         yield selfManagedCluster;
       }
       case AddElasticCloudClusterRequest elasticCloudRequest -> {
@@ -53,9 +52,6 @@ public class ClusterMapper {
     cluster.setName(request.getName());
     cluster.setElasticUrl(request.getElasticUrl());
     cluster.setKibanaUrl(request.getKibanaUrl());
-    cluster.setUsername(request.getUsername());
-    cluster.setPassword(request.getPassword());
-    cluster.setApiKey(request.getApiKey());
 
     return cluster;
   }
@@ -77,8 +73,6 @@ public class ClusterMapper {
         GetSelfManagedClusterResponse selfManagedClusterResponse =
             new GetSelfManagedClusterResponse();
         selfManagedClusterResponse.setKibanaNodes(kibanaNodes);
-        selfManagedClusterResponse.setSshKey(selfManagedCluster.getSshInfo().key());
-        selfManagedClusterResponse.setSshUsername(selfManagedCluster.getSshInfo().username());
         yield selfManagedClusterResponse;
       }
       case ElasticCloudClusterEntity elasticCloudCluster -> {
@@ -94,10 +88,6 @@ public class ClusterMapper {
     response.setName(cluster.getName());
     response.setElasticUrl(cluster.getElasticUrl());
     response.setKibanaUrl(cluster.getKibanaUrl());
-    response.setUsername(cluster.getUsername());
-    response.setPassword(cluster.getPassword());
-    response.setApiKey(cluster.getApiKey());
-
     return response;
   }
 

@@ -1,4 +1,3 @@
-
 package co.hyperflex.precheck.concrete.cluster;
 
 import co.hyperflex.clients.elastic.ElasticClient;

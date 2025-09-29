@@ -15,8 +15,11 @@ import co.hyperflex.core.services.clusters.dtos.GetClusterNodeResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterResponse;
 import co.hyperflex.core.services.clusters.dtos.GetDeprecationsResponse;
 import co.hyperflex.core.services.clusters.dtos.GetNodeConfigurationResponse;
+import co.hyperflex.core.services.clusters.dtos.UpdateClusterCredentialRequest;
+import co.hyperflex.core.services.clusters.dtos.UpdateClusterCredentialResponse;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterResponse;
+import co.hyperflex.core.services.clusters.dtos.UpdateClusterSshDetailRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateNodeConfigurationRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateNodeConfigurationResponse;
 import co.hyperflex.core.services.clusters.dtos.UploadCertificateResponse;
@@ -66,6 +69,19 @@ public class ClusterController {
   @PutMapping("/{clusterId}")
   public UpdateClusterResponse updateCluster(@Valid @RequestBody UpdateClusterRequest request, @PathVariable String clusterId) {
     return clusterService.updateCluster(clusterId, request);
+  }
+
+  @PutMapping("/{clusterId}/ssh")
+  public UpdateClusterResponse updateClusterSshDetail(@Valid @RequestBody UpdateClusterSshDetailRequest request,
+                                                      @PathVariable String clusterId) {
+    return clusterService.updateClusterSshDetail(clusterId, request);
+  }
+
+  @PutMapping("/{clusterId}/credentials")
+  public UpdateClusterCredentialResponse updateClusterCredential(
+      @Valid @RequestBody UpdateClusterCredentialRequest request,
+      @PathVariable String clusterId) {
+    return clusterService.updateClusterCredential(clusterId, request);
   }
 
   @GetMapping("")

@@ -1,7 +1,5 @@
-
-
 # Stage 1: Build the JAR using Gradle
-FROM gradle:8.5-jdk21 as builder
+FROM gradle:8.5-jdk21 AS builder
 
 WORKDIR /app
 COPY . /app

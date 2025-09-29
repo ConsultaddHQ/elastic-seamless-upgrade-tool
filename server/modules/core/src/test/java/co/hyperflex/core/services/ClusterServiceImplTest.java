@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -26,6 +27,7 @@ import co.hyperflex.core.services.clusters.dtos.AddSelfManagedClusterRequest;
 import co.hyperflex.core.services.clusters.dtos.GetClusterResponse;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterResponse;
 import co.hyperflex.core.services.clusters.dtos.UpdateSelfManagedClusterRequest;
+import co.hyperflex.core.services.secret.SecretStoreService;
 import co.hyperflex.core.services.ssh.SshKeyService;
 import java.io.IOException;
 import java.util.Collections;
@@ -54,6 +56,8 @@ class ClusterServiceImplTest {
   private KibanaClientProvider kibanaClientProvider;
   @Mock
   private SshKeyService sshKeyService;
+  @Mock
+  private SecretStoreService secretStoreService;
 
   @InjectMocks
   private ClusterServiceImpl clusterService;
@@ -64,13 +68,12 @@ class ClusterServiceImplTest {
     // Arrange
     AddSelfManagedClusterRequest request = new AddSelfManagedClusterRequest();
     request.setName("test-cluster");
+    request.setApiKey(MOCK_API_KEY);
     SelfManagedClusterEntity cluster = new SelfManagedClusterEntity();
 
     cluster.setName("test-cluster");
     cluster.setElasticUrl(MOCK_ELASTIC_SEARCH_URL);
     cluster.setKibanaUrl(MOCK_KIBANA_URL);
-    cluster.setApiKey(MOCK_API_KEY);
-
     ElasticClient elasticClient = mock(ElasticClient.class);
     KibanaClient kibanaClient = mock(KibanaClient.class);
     NodesInfoResponse nodesInfoResponse = mock(NodesInfoResponse.class);
@@ -106,7 +109,6 @@ class ClusterServiceImplTest {
 
 
     when(clusterRepository.findById(clusterId)).thenReturn(Optional.of(cluster));
-    when(sshKeyService.createSSHPrivateKeyFile(any(), any())).thenReturn("path/to/key");
     when(elasticsearchClientProvider.getClient(any(ClientConnectionDetail.class))).thenReturn(esClient);
     when(kibanaClientProvider.getClient(any(ClientConnectionDetail.class))).thenReturn(kibanaClient);
     when(esClient.getNodesInfo()).thenReturn(nodesInfoResponse);
@@ -121,9 +123,6 @@ class ClusterServiceImplTest {
     request.setName("updated-cluster");
     request.setElasticUrl(MOCK_ELASTIC_SEARCH_URL);
     request.setKibanaUrl(MOCK_KIBANA_URL);
-    request.setApiKey(MOCK_API_KEY);
-    request.setSshKey("new-key");
-    request.setSshUsername("new-user");
     // Act
     UpdateClusterResponse response = clusterService.updateCluster(clusterId, request);
 
@@ -169,10 +168,12 @@ class ClusterServiceImplTest {
     SelfManagedClusterEntity cluster = new SelfManagedClusterEntity();
     cluster.setElasticUrl(MOCK_ELASTIC_SEARCH_URL);
     cluster.setKibanaUrl(MOCK_KIBANA_URL);
-    cluster.setApiKey(MOCK_API_KEY);
-    var connectionDetail = new ClientConnectionDetail(MOCK_ELASTIC_SEARCH_URL, null);
+
     AddSelfManagedClusterRequest request = new AddSelfManagedClusterRequest();
+    request.setApiKey(MOCK_API_KEY);
+    when(secretStoreService.getSecret(anyString())).thenReturn(Optional.empty());
     when(clusterMapper.toEntity(request)).thenReturn(cluster);
+    var connectionDetail = new ClientConnectionDetail(MOCK_ELASTIC_SEARCH_URL, null);
     when(elasticsearchClientProvider.getClient(connectionDetail)).thenThrow(new RuntimeException("Invalid credentials"));
 
     // Act & Assert
