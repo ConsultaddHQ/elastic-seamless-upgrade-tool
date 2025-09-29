@@ -77,11 +77,16 @@ public class ElasticSupportMatrixCheck extends BaseElasticNodePrecheck {
   }
 
   private boolean isSameVersion(Distro distro, OsSupport osSupport) {
-    return distro.version().toLowerCase().contains(osSupport.version().toLowerCase());
+    for (String s : distro.version().toLowerCase().split("//s+")) {
+      if (s.equals(osSupport.version().toLowerCase())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private boolean isSameOs(Distro distro, OsSupport osSupport) {
-    return distro.name().toLowerCase().contains(osSupport.os().toLowerCase());
+    return distro.name().toLowerCase().contains(osSupport.os());
   }
 
 }
