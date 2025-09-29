@@ -500,7 +500,7 @@
       {
         "start": "5.0.x",
         "end": "7.16.x",
-        "supported": true
+        "supported": false
       },
       {
         "start": "7.17.x",
