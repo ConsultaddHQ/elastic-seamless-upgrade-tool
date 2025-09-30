@@ -1,4 +1,6 @@
-type Context = {
-	precheckId?: string
-	clusterId: string
+
+type Message = {
+	role: "user" | "ai"
+	text: string
 }
+

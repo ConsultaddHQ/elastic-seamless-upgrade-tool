@@ -1,20 +1,19 @@
-import React, { type ChangeEvent, type KeyboardEvent, useEffect, useRef, useState } from "react"
+import React, { type ChangeEvent, createContext, type KeyboardEvent, useEffect, useRef, useState } from "react"
 import { Box, LinearProgress, Paper, Typography } from "@mui/material"
 import { CloseCircle, MagicStar } from "iconsax-react"
 import Input from "~/components/utilities/Input"
 import axiosJSON from "~/apis/http.ts"
 import ReactMarkdown from "react-markdown"
 import { useMutation } from "@tanstack/react-query"
+import type { Context } from "./AiAssistantProvider"
 
-type Message = {
-	role: "user" | "ai"
-	text: string
-}
-interface AiAssistantChatProps {
-	onClose: () => void
-	context: Context
-}
-const AiAssistantChat: React.FC<AiAssistantChatProps> = ({ onClose, context }) => {
+export const AiAssistantContext = createContext<Context>({} as Context)
+
+interface AiAssistantChatProps {}
+
+const AiAssistantChat: React.FC<AiAssistantChatProps> = () => {
+	const { setShowAssistant, clusterId, precheckId } = React.useContext(AiAssistantContext)
+
 	const [messages, setMessages] = useState<Message[]>([])
 	const [input, setInput] = useState<string>("")
 	const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -25,53 +24,40 @@ const AiAssistantChat: React.FC<AiAssistantChatProps> = ({ onClose, context }) =
 	}, [messages])
 
 	const { mutate: sendMessage, isPending } = useMutation({
-		mutationKey: ["get-all-clusters"],
-		mutationFn: async () => {
-			if (!input.trim()) return
-
-			setMessages((prev) => [...prev, { role: "user", text: input }])
-			setInput("")
-
+		mutationKey: ["ai-assistant-message"],
+		mutationFn: async (message: string) => {
 			const response = await axiosJSON.post(
 				"/ai-assistant/ask",
 				{
-					message: input,
-					context: context,
+					message,
+					context: {
+						clusterId,
+						precheckId,
+					},
 				},
-				{
-					timeout: 1000 * 60 * 60,
-				}
+				{ timeout: 1000 * 60 * 60 }
 			)
-			setMessages((prev) => [...prev, { role: "ai", text: response.data }])
+			return response.data
+		},
+		onSuccess: (data) => {
+			setMessages((prev) => [...prev, { role: "ai", text: data }])
 		},
 	})
 
 	const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => setInput(e.target.value)
 
-	const handleKeyDown = async (e: KeyboardEvent<HTMLInputElement>) => {
-		if (e.key === "Enter") sendMessage()
+	const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+		if (e.key === "Enter" && input.trim()) {
+			sendMessage(input)
+			setMessages((prev) => [...prev, { role: "user", text: input }])
+			setInput("")
+		}
 	}
 
 	return (
-		<Paper
-			elevation={3}
-			sx={{
-				position: "fixed",
-				bottom: 20,
-				right: 30,
-				height: "80%",
-				width: "450px",
-				display: "flex",
-				flexDirection: "column",
-				bgcolor: "#0A0A0A",
-				borderLeft: "1px solid #333",
-				borderRadius: "10px",
-				zIndex: 1000000000,
-			}}
-		>
+		<Box className="flex flex-col h-full rounded-2xl border border-[#3A3544]">
 			{/* Header */}
 			<Box className="flex items-center justify-between p-2 border-b border-gray-800">
-				{/* Left: Title + MagicStar */}
 				<div className="flex items-center gap-1">
 					<Typography variant="h6" className="text-white">
 						AI Assistant
@@ -79,19 +65,24 @@ const AiAssistantChat: React.FC<AiAssistantChatProps> = ({ onClose, context }) =
 					<MagicStar color="#BDA0FF" size="14px" />
 				</div>
 
-				{/* Right: Close button */}
-				<CloseCircle color="#BDA0FF" size={18} className="cursor-pointer" onClick={onClose} />
+				<CloseCircle
+					color="currentColor"
+					size={18}
+					className="cursor-pointer"
+					onClick={() => setShowAssistant(false)}
+				/>
 			</Box>
 
 			{/* Messages */}
 			<Box
 				sx={{
-					flex: 1,
-					p: 2,
-					overflowY: "auto",
+					flex: 1, // take remaining space
+					minHeight: 0, // allow proper shrinking in flex layouts
+					overflowY: "auto", // scroll when overflow
 					display: "flex",
 					flexDirection: "column",
 					gap: 1.5,
+					p: 2,
 				}}
 			>
 				{messages.map((msg, idx) => (
@@ -99,7 +90,7 @@ const AiAssistantChat: React.FC<AiAssistantChatProps> = ({ onClose, context }) =
 						key={idx}
 						sx={{
 							alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
-							bgcolor: msg.role === "user" ? "#303030" : "",
+							bgcolor: msg.role === "user" ? "#303030" : "transparent",
 							color: "white",
 							p: 1.5,
 							borderRadius: 2,
@@ -112,7 +103,10 @@ const AiAssistantChat: React.FC<AiAssistantChatProps> = ({ onClose, context }) =
 				))}
 				<div ref={messagesEndRef} />
 			</Box>
-			{isPending && <LinearProgress sx={{background:'#BDA0FF'}}  />}
+
+			{isPending && <LinearProgress sx={{ background: "#BDA0FF" }} />}
+
+			{/* Input */}
 			<Box className="flex flex-row items-center gap-[6px] px-2 py-2">
 				<Input
 					fullWidth
@@ -124,7 +118,7 @@ const AiAssistantChat: React.FC<AiAssistantChatProps> = ({ onClose, context }) =
 					variant="outlined"
 				/>
 			</Box>
-		</Paper>
+		</Box>
 	)
 }
 

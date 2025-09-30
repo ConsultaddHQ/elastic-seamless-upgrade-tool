@@ -1,6 +1,6 @@
 import { Skeleton } from "@heroui/react"
 import { Box, Typography } from "@mui/material"
-import { useEffect, useState } from "react"
+import { useContext, useEffect, useState } from "react"
 import ListLoader from "../../loading/ListLoader"
 import LogsList from "../LogsList"
 import NoData from "../NoData"
@@ -11,6 +11,7 @@ import StringManager from "~/constants/StringManager"
 import { useQuery } from "@tanstack/react-query"
 import { useLocalStore } from "~/store/common"
 import ChatLauncher from "~/components/core/AiAssistantChat/ChatLauncher.tsx"
+import { AiAssistantContext } from "~/components/core/AiAssistantChat"
 
 function useBreakingChanges() {
 	const clusterId = useLocalStore((state) => state.clusterId)
@@ -34,8 +35,14 @@ function useBreakingChanges() {
 
 function BreakingChangesLogs() {
 	const { data: breakingChanges, isLoading } = useBreakingChanges()
-	const clusterId = useLocalStore(state => state.clusterId)
 	const [selectedCheck, setSelectedCheck] = useState<TPrecheck | null>(null)
+	const { setPrecheckId } = useContext(AiAssistantContext)
+
+	useEffect(() => {
+		if (selectedCheck?.id) {
+			setPrecheckId(selectedCheck.id)
+		}
+	}, [selectedCheck])
 
 	useEffect(() => {
 		if (!breakingChanges) return
@@ -145,7 +152,7 @@ function BreakingChangesLogs() {
 						<LogsList logs={selectedCheck?.logs ?? []} isLoading={isLoading} />
 
 						<Box className="absolute bottom-2 right-2 z-20">
-							<ChatLauncher context={{ precheckId: selectedCheck?.id, clusterId }} />
+							<ChatLauncher />
 						</Box>
 					</Box>
 				</Box>

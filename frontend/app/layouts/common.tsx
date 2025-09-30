@@ -11,6 +11,7 @@ import AssetsManager from "~/constants/AssetsManager"
 import { useRealtimeEventListener } from "~/lib/hooks/useRealtimeEventListener"
 import { cn } from "~/lib/Utils"
 import { useSocketStore } from "~/store/socket"
+import AiAssistantLayout from "./AiAssistantLayout"
 
 function Common() {
 	const { connect, disconnect } = useSocketStore()
@@ -139,4 +140,10 @@ function Common() {
 	)
 }
 
-export default Common
+export default function Layout(){
+	return (
+		<AiAssistantLayout>
+			<Common />
+		</AiAssistantLayout>
+	)
+}

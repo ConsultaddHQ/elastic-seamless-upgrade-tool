@@ -1,19 +1,17 @@
-import React, { useState } from "react"
+import React, { useContext } from "react"
 import { Box, Fab } from "@mui/material"
-import AiAssistantChat from "./"
+import { AiAssistantContext } from "./"
 import { Magicpen } from "iconsax-react"
 
-interface AiAssistantChatProps {
-	context: Context
-}
-const AiChatLauncher: React.FC<AiAssistantChatProps> = ({ context }) => {
-	const [open, setOpen] = useState(false)
-
+interface AiAssistantChatProps {}
+const AiChatLauncher: React.FC<AiAssistantChatProps> = () => {
+	const { setShowAssistant, showAssistant } = useContext(AiAssistantContext)
+	if (showAssistant) return null
 	return (
 		<Box sx={{ position: "relative" }}>
 			{/* Floating button */}
 			<Fab
-				onClick={() => setOpen((prev) => !prev)}
+				onClick={() => setShowAssistant(!showAssistant)}
 				size="small"
 				sx={{
 					position: "absolute",
@@ -27,22 +25,6 @@ const AiChatLauncher: React.FC<AiAssistantChatProps> = ({ context }) => {
 					<Magicpen color="#BDA0FF" size="24px" />
 				</Box>
 			</Fab>
-
-			{/* Chat panel */}
-			{open && (
-				<Box
-					sx={{
-						position: "absolute",
-						bottom: 56, // above the button
-						right: 0,
-						width: 320,
-						height: 400,
-						zIndex: 30,
-					}}
-				>
-					<AiAssistantChat context={context} onClose={() => setOpen(false)} />
-				</Box>
-			)}
 		</Box>
 	)
 }
