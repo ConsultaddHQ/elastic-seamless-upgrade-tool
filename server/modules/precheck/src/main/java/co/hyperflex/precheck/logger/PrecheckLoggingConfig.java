@@ -1,5 +1,6 @@
 package co.hyperflex.precheck.logger;
 
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import co.hyperflex.precheck.core.Precheck;
@@ -23,6 +24,7 @@ public class PrecheckLoggingConfig {
     precheckContextAwareAppender.start();
 
     Logger rootLogger = context.getLogger(Precheck.class);
+    rootLogger.setLevel(Level.TRACE);
     rootLogger.addAppender(precheckContextAwareAppender);
   }
 }
