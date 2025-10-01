@@ -15,6 +15,7 @@ import co.hyperflex.precheck.contexts.ClusterContext;
 import co.hyperflex.precheck.contexts.IndexContext;
 import co.hyperflex.precheck.contexts.NodeContext;
 import co.hyperflex.precheck.contexts.PrecheckContext;
+import co.hyperflex.precheck.core.Precheck;
 import co.hyperflex.precheck.entities.ClusterPrecheckRunEntity;
 import co.hyperflex.precheck.entities.IndexPrecheckRunEntity;
 import co.hyperflex.precheck.entities.NodePrecheckRunEntity;
@@ -25,7 +26,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class PrecheckContextResolver {
-  private static final Logger LOG = LoggerFactory.getLogger(PrecheckContextResolver.class);
   private final ClusterRepository clusterRepository;
   private final ElasticsearchClientProvider elasticsearchClientProvider;
   private final KibanaClientProvider kibanaClientProvider;
@@ -47,6 +47,7 @@ public class PrecheckContextResolver {
 
 
   public PrecheckContext resolveContext(PrecheckRunEntity precheckRun) {
+    Logger logger = LoggerFactory.getLogger(Precheck.class);
     String clusterId = precheckRun.getClusterId();
     ClusterUpgradeJobEntity clusterUpgradeJob =
         clusterUpgradeJobService.getActiveJobByClusterId(clusterId);
@@ -67,7 +68,7 @@ public class PrecheckContextResolver {
             kibanaClient,
             indexPrecheckRun.getIndex().getName(),
             clusterUpgradeJob,
-            LOG
+            logger
         );
       }
       case NodePrecheckRunEntity nodePrecheckRun -> {
@@ -80,7 +81,7 @@ public class PrecheckContextResolver {
             kibanaClient,
             clusterNode,
             clusterUpgradeJob,
-            LOG
+            logger
         );
       }
       case ClusterPrecheckRunEntity clusterPrecheckRun -> {
@@ -89,7 +90,7 @@ public class PrecheckContextResolver {
             elasticClient,
             kibanaClient,
             clusterUpgradeJob,
-            LOG
+            logger
         );
       }
       default -> throw new IllegalArgumentException("Unknown precheck type: " + precheckRun.getType());
