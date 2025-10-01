@@ -3,13 +3,12 @@ import { Box, Breadcrumbs, Tooltip, Typography } from "@mui/material"
 import { useMutation } from "@tanstack/react-query"
 import { ArrowRight2, Convertshape2, ExportCurve, Refresh } from "iconsax-react"
 import { useEffect, useState } from "react"
-import { Link } from "react-router"
+import { Link, useParams } from "react-router"
 import { toast } from "sonner"
 import axiosJSON from "~/apis/http"
 import Precheck from "~/components/core/Precheck"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"
 import StringManager from "~/constants/StringManager"
-import { useLocalStore } from "~/store/common"
 import type { Route } from "../+types/root"
 import useFilters from "~/lib/hooks/useFilter"
 import { PrecheckSummary } from "~/components/core/Precheck/summary"
@@ -19,7 +18,7 @@ export function meta({}: Route.MetaArgs) {
 }
 
 function PreCheckPage() {
-	const clusterId = useLocalStore((state) => state.clusterId)
+	const { clusterId } = useParams()
 	const [isExportPending, setIsExportPending] = useState(false)
 	const reRunPrecheck = async () => {
 		await axiosJSON.post(`/clusters/${clusterId}/prechecks/rerun`, {}).catch((err) => {
@@ -70,7 +69,7 @@ function PreCheckPage() {
 					padding="6px 10px 8px 10px"
 				>
 					<Breadcrumbs separator={<ArrowRight2 color="#ADADAD" size="14px" />}>
-						<Link to="/upgrade-assistant">
+						<Link to={`/${clusterId}/upgrade-assistant`}>
 							<Typography
 								className="flex items-center gap-[6px]"
 								color="#ADADAD"

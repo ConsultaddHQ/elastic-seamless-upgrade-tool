@@ -14,10 +14,8 @@ import { useQuery } from "@tanstack/react-query"
 import { Alarm, SearchNormal1 } from "iconsax-react"
 import { type Key, useCallback, useState } from "react"
 import { FiAlertTriangle } from "react-icons/fi"
-import { toast } from "sonner"
+import { useParams } from "react-router"
 import axiosJSON from "~/apis/http"
-import StringManager from "~/constants/StringManager"
-import { useLocalStore } from "~/store/common"
 
 const columns: TDeprecationColumn = [
 	{
@@ -47,7 +45,7 @@ const columns: TDeprecationColumn = [
 ]
 
 function DeprecationLogs({ clusterType }: { clusterType: "ELASTIC" | "KIBANA" }) {
-	const clusterId = useLocalStore((state) => state.clusterId)
+	const { clusterId } = useParams()
 	const [search, setSearch] = useState<string>("")
 
 	const getLogs = async () => {

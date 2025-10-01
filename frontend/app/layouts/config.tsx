@@ -1,14 +1,17 @@
 import { Box, Typography } from "@mui/material"
 import { ArrowRight2, Convertshape2, HambergerMenu, Share } from "iconsax-react"
-import { Link, Outlet, useLocation, useNavigate } from "react-router"
+import { Link, Outlet, useLocation, useNavigate, useParams } from "react-router"
 import { toast } from "sonner"
 import { cn } from "~/lib/Utils"
 import useSafeRouteStore from "~/store/safeRoutes"
 import AppBreadcrumb from "~/components/utilities/AppBreadcrumb"
 
-const PATH_META_DATA: { [key: string]: { label: string; pos: number } } = {
-	"/cluster-overview": { label: "CLUSTER_OVERVIEW", pos: 1 },
-	"/upgrade-assistant": { label: "UPGRADE_ASSISTANT", pos: 2 },
+const getPathMetaData = (path?: string) => {
+	if (path?.includes("/cluster-overview")) {
+		return { label: "CLUSTER_OVERVIEW", pos: 1 }
+	} else if (path?.includes("/upgrade-assistant")) {
+		return { label: "UPGRADE_ASSISTANT", pos: 2 }
+	}
 }
 
 const CENTER_ARROW_MIDDLE_GRADIENT = "linear-gradient(90deg, #52D97F 30%, #6B46C5 99%)"
@@ -16,6 +19,7 @@ const CENTER_ARROW_COMPLETE_GRADIENT = "linear-gradient(90deg, #52D97F 30%, #52D
 
 function ConfigLayout() {
 	const { pathname } = useLocation()
+	const { clusterId } = useParams()
 	const navigate = useNavigate()
 	const upgradeAllowed = useSafeRouteStore((state) => state.upgradeAssistAllowed)
 
@@ -125,20 +129,20 @@ function ConfigLayout() {
 				/>
 				<Box className="flex relative bg-[#0A0A0A]">
 					<GradientBox
-						to="/cluster-overview"
+						to={`/${clusterId}/cluster-overview`}
 						icon={Share}
 						title="Cluster overview"
 						zIndex="z-[1]"
-						isActive={PATH_META_DATA[pathname].label === "CLUSTER_OVERVIEW"}
-						isCompleted={PATH_META_DATA[pathname].pos > 1}
+						isActive={getPathMetaData(pathname)?.label === "CLUSTER_OVERVIEW"}
+						isCompleted={(getPathMetaData(pathname)?.pos ?? 0) > 1}
 					/>
 					<Box
 						className="flex absolute z-10 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full p-px"
 						sx={{
 							background:
-								PATH_META_DATA[pathname].pos === 1
+								getPathMetaData(pathname)?.pos === 1
 									? "#292929"
-									: PATH_META_DATA[pathname].pos === 2
+									: getPathMetaData(pathname)?.pos === 2
 									? CENTER_ARROW_MIDDLE_GRADIENT
 									: CENTER_ARROW_COMPLETE_GRADIENT,
 						}}
@@ -148,13 +152,13 @@ function ConfigLayout() {
 						</Box>
 					</Box>
 					<GradientBox
-						to="/upgrade-assistant"
+						to={`/${clusterId}/upgrade-assistant`}
 						icon={Convertshape2}
 						title="Upgrade assistant"
 						borderRadius="rounded-r-[10px]"
 						zIndex="z-0"
-						isActive={PATH_META_DATA[pathname].label === "UPGRADE_ASSISTANT"}
-						isCompleted={PATH_META_DATA[pathname].pos > 2}
+						isActive={getPathMetaData(pathname)?.label === "UPGRADE_ASSISTANT"}
+						isCompleted={(getPathMetaData(pathname)?.pos ?? 0) > 2}
 						isDisabled={!upgradeAllowed}
 						disabledClickEvent={() => toast.info("Please select update available to access the page.")}
 					/>

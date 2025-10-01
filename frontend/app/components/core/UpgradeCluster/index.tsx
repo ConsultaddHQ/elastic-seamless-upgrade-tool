@@ -6,7 +6,6 @@ import { type Key, useCallback, useState } from "react"
 import { toast } from "sonner"
 import axiosJSON from "~/apis/http"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"
-import { useLocalStore } from "~/store/common"
 import ProgressBar from "./widgets/progress"
 import { cn } from "~/lib/Utils"
 import { useRealtimeEventListener } from "~/lib/hooks/useRealtimeEventListener"
@@ -14,6 +13,7 @@ import UpgradeLogs from "../UpgradeLogs"
 import { AppDropdown, type DropdownItem } from "~/components/utilities/AppDropdown"
 import { ClusterActions } from "~/components/core/UpgradeCluster/widgets/ClusterActions"
 import NodeConfiguration from "~/components/core/NodeConfiguration"
+import { useParams } from "react-router"
 
 const UPGRADE_ENUM = {
 	completed: (
@@ -86,7 +86,7 @@ const columns: TColumn = [
 ]
 
 function UpgradeCluster({ clusterType }: TUpgradeCluster) {
-	const clusterId = useLocalStore((state) => state.clusterId)
+	const { clusterId } = useParams()
 	const [showNodeLogs, setShowNodeLogs] = useState<TUpgradeRow | undefined>()
 	const [showNodeConfig, setShowNodeConfig] = useState<TUpgradeRow | undefined>()
 
