@@ -1,6 +1,6 @@
 import { Box, Breadcrumbs, Typography } from "@mui/material"
 import { ArrowRight2, Convertshape2 } from "iconsax-react"
-import { Link } from "react-router"
+import { Link, useParams } from "react-router"
 import type { Route } from "../+types/root"
 import UpgradeCluster from "~/components/core/UpgradeCluster"
 
@@ -9,6 +9,7 @@ export function meta({}: Route.MetaArgs) {
 }
 
 function KibanaUpgrades() {
+	const { clusterId } = useParams()
 	return (
 		<Box className="flex flex-col w-full gap-[10px]" padding="0px 32px">
 			<Box
@@ -16,7 +17,7 @@ function KibanaUpgrades() {
 				padding="6px 10px 8px 10px"
 			>
 				<Breadcrumbs separator={<ArrowRight2 color="#ADADAD" size="14px" />}>
-					<Link to="/upgrade-assistant">
+					<Link to={`/${clusterId}/upgrade-assistant`}>
 						<Typography
 							className="flex items-center gap-[6px]"
 							color="#ADADAD"

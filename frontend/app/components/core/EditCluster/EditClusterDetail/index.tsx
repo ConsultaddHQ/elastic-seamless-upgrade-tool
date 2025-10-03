@@ -10,10 +10,9 @@ import Input from "~/components/utilities/Input"
 import { cn } from "~/lib/Utils"
 // @ts-ignore-block
 import Files from "react-files"
-import { useLocation } from "react-router"
+import { useLocation, useParams } from "react-router"
 import axiosJSON from "~/apis/http"
 import { OneLineSkeleton } from "~/components/utilities/Skeletons"
-import { useLocalStore } from "~/store/common"
 import useRefreshStore from "~/store/refresh"
 import useSafeRouteStore from "~/store/safeRoutes"
 import { editClusterDetailSchema } from "./validation"
@@ -32,8 +31,7 @@ const INITIAL_VALUES = {
 function EditClusterDetail() {
 	const refresh = useRefreshStore((state) => state.refresh)
 	const resetForEditCluster = useSafeRouteStore((state) => state.resetForEditCluster)
-	const clusterId = useLocalStore((state) => state.clusterId)
-	const infraType = useLocalStore((state) => state.infraType)
+	const { clusterId } = useParams()
 	const { pathname } = useLocation()
 	const [initialValues, setInitialValues] = useState<TEditClusterValues>(INITIAL_VALUES)
 
@@ -172,7 +170,7 @@ function EditClusterDetail() {
 								/>
 							</Box>
 						</Box>
-						{infraType == "SELF_MANAGED" && (
+						{formik.values.type == "SELF_MANAGED" && (
 							<>
 								<Box className="flex flex-col gap-[6px]">
 									<Box

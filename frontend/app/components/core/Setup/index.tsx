@@ -7,21 +7,16 @@ import Stepper from "~/components/utilities/Stepper"
 import Certificates from "./Certificates"
 import Credentials from "./Credentials"
 import Infrastructure from "./Infrastructure"
-import { useLocalStore, useSessionStore } from "~/store/common"
-import useSafeRouteStore from "~/store/safeRoutes"
+import { useSessionStore } from "~/store/common"
 
 function Setup() {
 	const navigate = useNavigate()
 
-	const setClusterAdded = useSafeRouteStore((state) => state.setClusterAdded)
-	const infraType = useLocalStore((state) => state.infraType)
-	const setInfraType = useLocalStore((state) => state.setInfraType)
-	const setClusterId = useLocalStore((state) => state.setClusterId)
 	const step = useSessionStore((state) => state.setupStep)
 	const setStep = useSessionStore((state) => state.setSetupStep)
 
 	const [creds, setCreds] = useState<TCreds>({
-		type: infraType,
+		type: "",
 		name: "",
 		elasticUrl: "",
 		kibanaUrl: "",
@@ -46,7 +41,6 @@ function Setup() {
 
 	const handleStepInfraSubmit = (value: string | null) => {
 		if (value) {
-			setInfraType(value)
 			setCreds({ ...creds, type: value })
 			handleNextStep()
 		}
@@ -83,17 +77,15 @@ function Setup() {
 					username: creds.username,
 					password: creds.password,
 					certificateIds: certIds,
-					type: infraType,
+					type: creds.type,
 					sshUsername: creds.sshUser,
 					sshKey: creds.pathToSSH ?? "",
 					apiKey: creds.apiKey,
 					kibanaNodes: creds.kibanaConfigs,
 					deploymentId: creds.deploymentId,
 				})
-				.then((res) => {
-					setClusterAdded(true)
+				.then(() => {
 					setStep(1)
-					setClusterId(res?.data?.id)
 					navigate("/")
 				})
 		},

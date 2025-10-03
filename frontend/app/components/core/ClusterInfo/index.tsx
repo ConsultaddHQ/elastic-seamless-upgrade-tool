@@ -3,13 +3,13 @@ import { useQuery } from "@tanstack/react-query"
 import _ from "lodash"
 import { useEffect, useState } from "react"
 import axiosJSON from "~/apis/http"
-import { useLocalStore } from "~/store/common"
 import useRefreshStore from "~/store/refresh"
 import DetailBox from "./widgets/DetailBox"
 import { useRealtimeEventListener } from "~/lib/hooks/useRealtimeEventListener"
 import TargetVersionDropdown from "~/components/utilities/TargetVersionDropdown"
 import AllocationExplain from "~/components/core/AllocationExplain"
 import { InfoCircle } from "iconsax-react"
+import { useParams } from "react-router"
 
 const CLUSTER_STATUS_COLOR: { [key: string]: string } = {
 	yellow: "#E0B517",
@@ -18,8 +18,7 @@ const CLUSTER_STATUS_COLOR: { [key: string]: string } = {
 }
 
 function ClusterInfo() {
-	const clusterId = useLocalStore((state) => state.clusterId)
-	const infraType = useLocalStore((state) => state.infraType)
+	const { clusterId } = useParams()
 	const refresh = useRefreshStore((state) => state.refreshToggle)
 	const [showAllocation, setShowAllocation] = useState(false)
 
@@ -80,7 +79,7 @@ function ClusterInfo() {
 							<DetailBox
 								title="Infrastructure type"
 								description={
-									error ? "--" : _.capitalize(data?.infrastructureType ?? infraType ?? "placeholder")
+									error ? "--" : data?.infrastructureType
 								}
 								isLoading={isLoading || isRefetching}
 							/>

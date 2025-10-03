@@ -6,4 +6,3 @@ spring:
 logging:
   level:
     root: WARN
-    co.hyperflex.precheck.core.Precheck: TRACE

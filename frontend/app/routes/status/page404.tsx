@@ -13,8 +13,8 @@ function Page404() {
 			<Typography color="#FFF" fontSize="52px" fontWeight="600" lineHeight="normal">
 				Page 404
 			</Typography>
-			<OutlinedBorderButton component={Link} to="/cluster-overview">
-				Back to cluster overview
+			<OutlinedBorderButton component={Link} to="/">
+				Back to home page
 			</OutlinedBorderButton>
 		</Box>
 	)

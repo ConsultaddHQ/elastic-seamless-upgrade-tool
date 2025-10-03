@@ -4,11 +4,11 @@ import { FullScreenDrawer } from "~/components/utilities/FullScreenDrawer"
 import AppBreadcrumb from "~/components/utilities/AppBreadcrumb"
 import { ArrowLeft } from "iconsax-react"
 import YamlEditor from "~/components/utilities/YamlEditor"
-import { useLocalStore } from "~/store/common"
 import axiosJSON from "~/apis/http"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"
 import { toast } from "sonner"
+import { useParams } from "react-router"
 
 function NodeConfigurationBreadcrumb({ onBack }: { onBack: () => void }) {
 	return (
@@ -29,7 +29,7 @@ function NodeConfigurationBreadcrumb({ onBack }: { onBack: () => void }) {
 }
 
 function useNodeConfiguration(nodeId: string) {
-	const clusterId = useLocalStore((state) => state.clusterId)
+	const { clusterId } = useParams()
 	const [updatedConfig, setUpdatedConfig] = React.useState<string | undefined>()
 
 	const fetchNodeConfig = async () => {
