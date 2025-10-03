@@ -8,12 +8,10 @@ import Certificates from "./Certificates"
 import Credentials from "./Credentials"
 import Infrastructure from "./Infrastructure"
 import { useSessionStore } from "~/store/common"
-import useSafeRouteStore from "~/store/safeRoutes"
 
 function Setup() {
 	const navigate = useNavigate()
 
-	const setClusterAdded = useSafeRouteStore((state) => state.setClusterAdded)
 	const step = useSessionStore((state) => state.setupStep)
 	const setStep = useSessionStore((state) => state.setSetupStep)
 
@@ -87,7 +85,6 @@ function Setup() {
 					deploymentId: creds.deploymentId,
 				})
 				.then(() => {
-					setClusterAdded(true)
 					setStep(1)
 					navigate("/")
 				})

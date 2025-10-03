@@ -5,19 +5,17 @@ export default [
 	layout("layouts/common.tsx", [
 		index("routes/clusterListing.tsx"),
 		route("plugins", "routes/pluginListing.tsx"),
-		layout("safeRoutes/clusterNotAdded.tsx", [
-			layout("layouts/config.tsx", [
-				route(":clusterId/cluster-overview", "routes/clusterOverview.tsx"),
-				route(":clusterId/upgrade-assistant", "routes/upgradeAssist.tsx"),
-			]),
-			layout("safeRoutes/deprecation.tsx", [
-				route(":clusterId/elastic/deprecation-logs", "routes/elasticDeprecationLogs.tsx"),
-				route(":clusterId/kibana/deprecation-logs", "routes/kibanaDeprecationLogs.tsx"),
-			]),
-			layout("safeRoutes/precheck.tsx", [route(":clusterId/prechecks", "routes/preCheck.tsx")]),
-			layout("safeRoutes/elasticUpgrade.tsx", [route(":clusterId/elastic/upgrade", "routes/clusterUpgrade.tsx")]),
-			layout("safeRoutes/kibanaUpgrade.tsx", [route(":clusterId/kibana/upgrade", "routes/kibanaUpgrade.tsx")]),
+		layout("layouts/config.tsx", [
+			route(":clusterId/cluster-overview", "routes/clusterOverview.tsx"),
+			route(":clusterId/upgrade-assistant", "routes/upgradeAssist.tsx"),
 		]),
+		layout("safeRoutes/deprecation.tsx", [
+			route(":clusterId/elastic/deprecation-logs", "routes/elasticDeprecationLogs.tsx"),
+			route(":clusterId/kibana/deprecation-logs", "routes/kibanaDeprecationLogs.tsx"),
+		]),
+		layout("safeRoutes/precheck.tsx", [route(":clusterId/prechecks", "routes/preCheck.tsx")]),
+		layout("safeRoutes/elasticUpgrade.tsx", [route(":clusterId/elastic/upgrade", "routes/clusterUpgrade.tsx")]),
+		layout("safeRoutes/kibanaUpgrade.tsx", [route(":clusterId/kibana/upgrade", "routes/kibanaUpgrade.tsx")]),
 	]),
 	route("*", "routes/status/page404.tsx"),
 ] satisfies RouteConfig

@@ -251,7 +251,7 @@ public class ClusterServiceImpl implements ClusterService {
       Boolean adaptiveReplicaEnabled = elasticClient.isAdaptiveReplicaEnabled();
       String healthStatus = elasticClient.getHealthStatus();
       var counts = elasticClient.getEntitiesCounts();
-      return new ClusterOverviewResponse(info.getClusterName(), info.getClusterUuid(), healthStatus, info.getVersion().getNumber(), false,
+      return new ClusterOverviewResponse(cluster.getName(), info.getClusterUuid(), healthStatus, info.getVersion().getNumber(), false,
           counts.dataNodes(), counts.totalNodes(), activeMasters.size(),
           activeMasters.stream().map(MasterRecord::getId).collect(Collectors.joining(",")), adaptiveReplicaEnabled, indicesCount,
           counts.activePrimaryShards(), counts.activeShards(), counts.unassignedShards(), counts.initializingShards(),
