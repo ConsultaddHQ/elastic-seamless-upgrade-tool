@@ -9,10 +9,10 @@ import axiosJSON from "~/apis/http"
 import { toast } from "sonner"
 import StringManager from "~/constants/StringManager"
 import { useQuery } from "@tanstack/react-query"
-import { useLocalStore } from "~/store/common"
+import { useParams } from "react-router"
 
 function useBreakingChanges() {
-	const clusterId = useLocalStore((state) => state.clusterId)
+	const { clusterId } = useParams()
 	const getBreakingChanges = async () => {
 		try {
 			const response = await axiosJSON.get<TPrecheck[]>(`/clusters/${clusterId}/prechecks/breaking-changes`)

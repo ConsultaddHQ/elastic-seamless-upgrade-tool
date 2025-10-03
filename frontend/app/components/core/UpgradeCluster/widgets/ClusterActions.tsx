@@ -1,14 +1,14 @@
 import { Box, Typography } from "@mui/material"
 import axiosJSON from "~/apis/http"
-import { useLocalStore } from "~/store/common"
 import { toast } from "sonner"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"
 import { Danger, Flash, Slash } from "iconsax-react"
 import { useQuery } from "@tanstack/react-query"
 import { useRealtimeEventListener } from "~/lib/hooks/useRealtimeEventListener"
+import { useParams } from "react-router"
 
 export const ClusterActions = ({ clusterType }: { clusterType: string }) => {
-	const clusterId = useLocalStore((state) => state.clusterId)
+	const { clusterId } = useParams()
 
 	const performUpgradeAll = async () => {
 		await axiosJSON.post(`/clusters/${clusterId}/upgrades?nodeType=${clusterType}`)

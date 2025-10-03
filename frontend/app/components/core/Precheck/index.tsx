@@ -3,12 +3,12 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 import { Folder, Refresh } from "iconsax-react"
 import axiosJSON from "~/apis/http"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"
-import { useLocalStore } from "~/store/common"
 import LogGroup from "./widgets/LogGroup"
 import { useRealtimeEventListener } from "~/lib/hooks/useRealtimeEventListener"
+import { useParams } from "react-router"
 
 const PrecheckNotTriggered = ({ refetch }: { refetch: () => void }) => {
-	const clusterId = useLocalStore((state) => state.clusterId)
+	const { clusterId } = useParams()
 
 	const reRunPrecheck = async () => {
 		await axiosJSON.post(`/clusters/${clusterId}/prechecks`).then(() => refetch())
@@ -62,7 +62,7 @@ const PrecheckNotTriggered = ({ refetch }: { refetch: () => void }) => {
 }
 
 function Precheck({ selectedTab }: { selectedTab: TCheckTab }) {
-	const clusterId = useLocalStore((state) => state.clusterId)
+	const { clusterId } = useParams()
 
 	const getPrecheck = async () => {
 		const response = await axiosJSON.get<{

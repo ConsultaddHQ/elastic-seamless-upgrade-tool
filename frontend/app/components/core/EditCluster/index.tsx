@@ -1,13 +1,14 @@
 import { Box } from "@mui/material"
 import { ArrowLeft } from "iconsax-react"
-import { useLocalStore } from "~/store/common"
 import { FullScreenDrawer } from "~/components/utilities/FullScreenDrawer"
 import AppBreadcrumb from "~/components/utilities/AppBreadcrumb"
-import React from "react"
+import React, { useEffect } from "react"
 import EditClusterDetail from "./EditClusterDetail"
 import EditSshDetail from "./EditSshDetail"
 import { EditClusterCredential } from "./EditCredential"
 import EditSettingTabs from "./EditSettingTabs"
+import { useParams } from "react-router"
+import axiosJSON from "~/apis/http"
 
 function EditClusterBreadcrumb({ onBack }: { onBack: () => void }) {
 	return (
@@ -30,7 +31,15 @@ function EditClusterBreadcrumb({ onBack }: { onBack: () => void }) {
 type TabTypes = "CLUSTER_DETAIL" | "CREDENTIAL" | "SSH_DETAIL"
 
 function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: () => void }) {
-	const infraType = useLocalStore((state) => state.infraType)
+	const { clusterId } = useParams()
+	const [infraType, setInfraType] = React.useState<string>("")
+	useEffect(() => {
+		if (clusterId) {
+			axiosJSON.get(`/clusters/${clusterId}`).then((res) => {
+				setInfraType(res.data.type)
+			});
+		}
+	}, [clusterId])
 	const [selectedTab, setSelectedTab] = React.useState<TabTypes>("CLUSTER_DETAIL")
 	return (
 		<FullScreenDrawer isOpen={isOpen} onOpenChange={onOpenChange}>

@@ -4,7 +4,6 @@ import { toast } from "sonner"
 import Input from "~/components/utilities/Input"
 import SelectionTile from "../../Setup/Credentials/widgets/SelectionTile"
 import axiosJSON from "~/apis/http"
-import { useLocalStore } from "~/store/common"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"
 import { useMutation } from "@tanstack/react-query"
 import { useFormik } from "formik"
@@ -15,6 +14,7 @@ import { useState } from "react"
 import Files from "react-files"
 import StringManager from "~/constants/StringManager"
 import { credentialSchema } from "./validation"
+import { useParams } from "react-router"
 
 const INITIAL_VALUES = {
 	authPref: null,
@@ -25,7 +25,7 @@ const INITIAL_VALUES = {
 }
 
 export function EditClusterCredential() {
-	const clusterId = useLocalStore((state) => state.clusterId)
+	const { clusterId } = useParams()
 	const [initialValues] = useState<TClusterCredentialValues>(INITIAL_VALUES)
 	const [showPassword, setShowPassword] = useState<boolean>(false)
 

@@ -5,10 +5,9 @@ import { OutlinedBorderButton } from "~/components/utilities/Buttons"
 import { OneLineSkeleton } from "~/components/utilities/Skeletons"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import axiosJSON from "~/apis/http"
-import { useLocalStore } from "~/store/common"
 import useSafeRouteStore from "~/store/safeRoutes"
 import { useEffect } from "react"
-import { useNavigate } from "react-router"
+import { useNavigate, useParams } from "react-router"
 
 const STYLES = {
 	MENU_ITEMS: {
@@ -38,7 +37,7 @@ const STYLES = {
 }
 
 function TargetVersionDropdown() {
-	const clusterId = useLocalStore((state) => state.clusterId)
+	const { clusterId } = useParams()
 	const setUpgradeAssistAllowed = useSafeRouteStore((state) => state.setUpgradeAssistAllowed)
 	const navigate = useNavigate()
 
@@ -58,7 +57,7 @@ function TargetVersionDropdown() {
 		const response = await axiosJSON.post(`/clusters/${clusterId}/upgrades/jobs`, { targetVersion: ver })
 		const data = response.data
 		setUpgradeAssistAllowed(data?.targetVersion)
-		navigate("/upgrade-assistant")
+		navigate(`/${clusterId}/upgrade-assistant`)
 	}
 
 	const { mutate: HandleVersion, isPending } = useMutation({
