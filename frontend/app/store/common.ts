@@ -3,13 +3,7 @@ import { persist } from "zustand/middleware"
 import { localStorageConfig, sessionStorageConfig } from "~/lib/Utils"
 
 interface LocalStoreState {
-	clusterId: string
-	infraType: string
 	sessionName: string
-	deploymentId: string
-	setDeploymentId: (id: string) => void
-	setClusterId: (id: string) => void
-	setInfraType: (type: string) => void
 	setSessionName: (name: string) => void
 	reset: () => void
 }
@@ -17,13 +11,7 @@ interface LocalStoreState {
 export const useLocalStore = create<LocalStoreState>()(
 	persist(
 		(set) => ({
-			clusterId: "",
-			infraType: "",
 			sessionName: "",
-			deploymentId: "",
-			setDeploymentId: (id: string) => set(() => ({ deploymentId: id })),
-			setClusterId: (id: string) => set(() => ({ clusterId: id })),
-			setInfraType: (type: string) => set(() => ({ infraType: type })),
 			setSessionName: (name: string) => set(() => ({ sessionName: name })),
 			reset: () =>
 				set(() => ({

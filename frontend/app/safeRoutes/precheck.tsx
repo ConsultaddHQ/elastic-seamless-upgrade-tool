@@ -1,10 +1,10 @@
-import { Navigate, Outlet } from "react-router"
+import { Navigate, Outlet, useParams } from "react-router"
 import useSafeRouteStore from "~/store/safeRoutes"
 
 function PrecheckSafeRoute() {
 	const canAccess = useSafeRouteStore((state) => state.precheckAllowed)
-
-	return canAccess ? <Outlet /> : <Navigate to="/upgrade-assistant" />
+	const { clusterId } = useParams()
+	return canAccess ? <Outlet /> : <Navigate to={`/${clusterId}/upgrade-assistant`} />
 }
 
 export default PrecheckSafeRoute

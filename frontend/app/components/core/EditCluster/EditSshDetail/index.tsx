@@ -2,14 +2,12 @@ import { Box, Typography } from "@mui/material"
 import { useMutation } from "@tanstack/react-query"
 import { useFormik } from "formik"
 import _ from "lodash"
-import { useState } from "react"
 import { toast } from "sonner"
 import Input from "~/components/utilities/Input"
 // @ts-ignore-block
 import Files from "react-files"
-import { useLocation } from "react-router"
+import { useLocation, useParams } from "react-router"
 import axiosJSON from "~/apis/http"
-import { useLocalStore } from "~/store/common"
 import useRefreshStore from "~/store/refresh"
 import useSafeRouteStore from "~/store/safeRoutes"
 import SshFileInput from "~/components/utilities/SshFileInput"
@@ -25,7 +23,7 @@ const INITIAL_VALUES = {
 function EditSshDetail() {
 	const refresh = useRefreshStore((state) => state.refresh)
 	const resetForEditCluster = useSafeRouteStore((state) => state.resetForEditCluster)
-	const clusterId = useLocalStore((state) => state.clusterId)
+	const { clusterId } = useParams()
 	const { pathname } = useLocation()
 
 	const formik = useFormik({

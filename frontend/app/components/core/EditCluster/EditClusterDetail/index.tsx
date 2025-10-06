@@ -10,10 +10,9 @@ import Input from "~/components/utilities/Input"
 import { cn } from "~/lib/Utils"
 // @ts-ignore-block
 import Files from "react-files"
-import { useLocation } from "react-router"
+import { useLocation, useParams } from "react-router"
 import axiosJSON from "~/apis/http"
 import { OneLineSkeleton } from "~/components/utilities/Skeletons"
-import { useLocalStore } from "~/store/common"
 import useRefreshStore from "~/store/refresh"
 import useSafeRouteStore from "~/store/safeRoutes"
 import { editClusterDetailSchema } from "./validation"
@@ -32,8 +31,7 @@ const INITIAL_VALUES = {
 function EditClusterDetail() {
 	const refresh = useRefreshStore((state) => state.refresh)
 	const resetForEditCluster = useSafeRouteStore((state) => state.resetForEditCluster)
-	const clusterId = useLocalStore((state) => state.clusterId)
-	const infraType = useLocalStore((state) => state.infraType)
+	const { clusterId } = useParams()
 	const { pathname } = useLocation()
 	const [initialValues, setInitialValues] = useState<TEditClusterValues>(INITIAL_VALUES)
 
@@ -127,52 +125,56 @@ function EditClusterDetail() {
 						</Box>
 						<Box className="flex flex-col gap-[6px] ">
 							<Typography color="#ABA9B1" fontSize="14px" fontWeight="400" lineHeight="20px">
-								URLs
+								Elastic URL
 							</Typography>
-							<Box className="flex flex-col gap-2 w-full">
-								<OneLineSkeleton
-									show={isLoading || isRefetching}
-									component={
-										<Input
-											fullWidth
-											id="elasticUrl"
-											name="elasticUrl"
-											type="text"
-											placeholder="Enter Elastic URL"
-											variant="outlined"
-											value={formik.values.elasticUrl}
-											onChange={formik.handleChange}
-											onBlur={formik.handleBlur}
-											error={formik.touched.elasticUrl && Boolean(formik.errors.elasticUrl)}
-											helperText={formik.touched.elasticUrl && formik.errors.elasticUrl}
-										/>
-									}
-									height="52px"
-									className="w-full rounded-[10px]"
-								/>
-								<OneLineSkeleton
-									show={isLoading || isRefetching}
-									component={
-										<Input
-											fullWidth
-											id="kibanaUrl"
-											name="kibanaUrl"
-											type="text"
-											placeholder="Enter Kibana URL"
-											variant="outlined"
-											value={formik.values.kibanaUrl}
-											onChange={formik.handleChange}
-											onBlur={formik.handleBlur}
-											error={formik.touched.kibanaUrl && Boolean(formik.errors.kibanaUrl)}
-											helperText={formik.touched.kibanaUrl && formik.errors.kibanaUrl}
-										/>
-									}
-									height="52px"
-									className="w-full rounded-[10px]"
-								/>
-							</Box>
+							<OneLineSkeleton
+								show={isLoading || isRefetching}
+								component={
+									<Input
+										fullWidth
+										id="elasticUrl"
+										name="elasticUrl"
+										type="text"
+										placeholder="Enter Elastic URL"
+										variant="outlined"
+										value={formik.values.elasticUrl}
+										onChange={formik.handleChange}
+										onBlur={formik.handleBlur}
+										error={formik.touched.elasticUrl && Boolean(formik.errors.elasticUrl)}
+										helperText={formik.touched.elasticUrl && formik.errors.elasticUrl}
+									/>
+								}
+								height="52px"
+								className="w-full rounded-[10px]"
+							/>
 						</Box>
-						{infraType == "SELF_MANAGED" && (
+						<Box className="flex flex-col gap-[6px] ">
+							<Typography color="#ABA9B1" fontSize="14px" fontWeight="400" lineHeight="20px">
+								Kibana URL
+							</Typography>
+
+							<OneLineSkeleton
+								show={isLoading || isRefetching}
+								component={
+									<Input
+										fullWidth
+										id="kibanaUrl"
+										name="kibanaUrl"
+										type="text"
+										placeholder="Enter Kibana URL"
+										variant="outlined"
+										value={formik.values.kibanaUrl}
+										onChange={formik.handleChange}
+										onBlur={formik.handleBlur}
+										error={formik.touched.kibanaUrl && Boolean(formik.errors.kibanaUrl)}
+										helperText={formik.touched.kibanaUrl && formik.errors.kibanaUrl}
+									/>
+								}
+								height="52px"
+								className="w-full rounded-[10px]"
+							/>
+						</Box>
+						{formik.values.type == "SELF_MANAGED" && (
 							<>
 								<Box className="flex flex-col gap-[6px]">
 									<Box
