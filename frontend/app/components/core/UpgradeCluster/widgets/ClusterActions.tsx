@@ -1,21 +1,21 @@
 import { Box, Typography } from "@mui/material"
-import axiosJSON from "~/apis/http"
 import { toast } from "sonner"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"
 import { Danger, Flash, Slash } from "iconsax-react"
 import { useQuery } from "@tanstack/react-query"
 import { useRealtimeEventListener } from "~/lib/hooks/useRealtimeEventListener"
 import { useParams } from "react-router"
+import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
 
 export const ClusterActions = ({ clusterType }: { clusterType: string }) => {
 	const { clusterId } = useParams()
 
 	const performUpgradeAll = async () => {
-		await axiosJSON.post(`/clusters/${clusterId}/upgrades?nodeType=${clusterType}`)
+		await clusterUpgradeApi.upgradeAllNodes(clusterId!, clusterType)
 		toast.success("Upgrade started")
 	}
 	const performStopUpgrade = async () => {
-		await axiosJSON.put(`/clusters/${clusterId}/upgrades/jobs/stop`)
+		await clusterUpgradeApi.stopUpgrade(clusterId!)
 		toast.success(
 			"Cluster upgrade stop request submitted successfully. The current node will continue upgrading before the stop takes effect."
 		)
@@ -24,11 +24,7 @@ export const ClusterActions = ({ clusterType }: { clusterType: string }) => {
 	const { data, isLoading, refetch, isPending } = useQuery({
 		queryKey: ["get-upgrade-job-status"],
 		queryFn: async () => {
-			const response = await axiosJSON.get<{
-				isStopping: true
-				status: string
-			}>(`/clusters/${clusterId}/upgrades/jobs/status`)
-			return response.data
+			return await clusterUpgradeApi.getUpgradeJobStatus(clusterId!)
 		},
 		staleTime: 0,
 	})

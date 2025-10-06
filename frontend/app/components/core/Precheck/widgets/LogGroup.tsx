@@ -2,11 +2,11 @@ import { Box } from "@mui/material"
 import { useMutation } from "@tanstack/react-query"
 import { useMemo } from "react"
 import BreakingChangesLogs from "./BreakingChanges"
-import axiosJSON from "~/apis/http"
 import { toast } from "sonner"
 import GroupedPrecheck from "~/components/core/Precheck/widgets/GroupedPrecheck"
 import Prechecks from "~/components/core/Precheck/widgets/Prechecks"
 import { useParams } from "react-router"
+import { precheckApi } from "~/apis/PrecheckApi"
 
 function LogGroup({
 	dataFor,
@@ -24,13 +24,13 @@ function LogGroup({
 	const { mutate: HandleRerun, isPending } = useMutation({
 		mutationKey: ["handle-rerun"],
 		mutationFn: async (payload: any) => {
-			await axiosJSON.post(`/clusters/${clusterId}/prechecks/rerun`, payload)
+			await precheckApi.rerunPrechecks(clusterId!, payload)
 			refetchData()
 		},
 	})
 
 	const handlePrecheckSkip = async (id: string, skip: boolean) => {
-		await axiosJSON.put(`/clusters/${clusterId}/prechecks/${id}/skip?skip=${skip}`)
+		await precheckApi.skipPrecheck(clusterId!, id, skip)
 		toast.success(`Precheck ${skip ? "skipped" : "unskipped"} successfully`)
 	}
 

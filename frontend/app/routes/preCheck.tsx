@@ -5,13 +5,13 @@ import { ArrowRight2, Convertshape2, ExportCurve, Refresh } from "iconsax-react"
 import { useEffect, useState } from "react"
 import { Link, useParams } from "react-router"
 import { toast } from "sonner"
-import axiosJSON from "~/apis/http"
 import Precheck from "~/components/core/Precheck"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"
-import StringManager from "~/constants/StringManager"
 import type { Route } from "../+types/root"
 import useFilters from "~/lib/hooks/useFilter"
 import { PrecheckSummary } from "~/components/core/Precheck/summary"
+import { clusterApi } from "~/apis/ClusterApi"
+import { precheckApi } from "~/apis/PrecheckApi"
 
 export function meta({}: Route.MetaArgs) {
 	return [{ title: "Pre-check" }, { name: "description", content: "Welcome to Hyperflex" }]
@@ -21,9 +21,7 @@ function PreCheckPage() {
 	const { clusterId } = useParams()
 	const [isExportPending, setIsExportPending] = useState(false)
 	const reRunPrecheck = async () => {
-		await axiosJSON.post(`/clusters/${clusterId}/prechecks/rerun`, {}).catch((err) => {
-			toast.error(err?.response?.data.error ?? StringManager.GENERIC_ERROR)
-		})
+		await precheckApi.rerunPrechecks(clusterId!, {})
 	}
 
 	const [selectedTab, setSelectedTab] = useState<TCheckTab>("CLUSTER")
@@ -43,9 +41,7 @@ function PreCheckPage() {
 	const handleExport = async () => {
 		setIsExportPending(true)
 		try {
-			const response = await axiosJSON.get(`/clusters/${clusterId}/prechecks/report`, {
-				responseType: "blob",
-			})
+			const response = await clusterApi.getPrecheckReport(clusterId!)
 			const blob = new Blob([response.data], { type: "text/markdown" })
 			const url = URL.createObjectURL(blob)
 			const a = document.createElement("a")

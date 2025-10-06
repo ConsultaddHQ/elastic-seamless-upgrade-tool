@@ -5,27 +5,15 @@ import ListLoader from "../../loading/ListLoader"
 import LogsList from "../LogsList"
 import NoData from "../NoData"
 import NodeListItem from "../NodeListItem"
-import axiosJSON from "~/apis/http"
-import { toast } from "sonner"
-import StringManager from "~/constants/StringManager"
 import { useQuery } from "@tanstack/react-query"
 import { useParams } from "react-router"
+import { precheckApi } from "~/apis/PrecheckApi"
 
 function useBreakingChanges() {
 	const { clusterId } = useParams()
-	const getBreakingChanges = async () => {
-		try {
-			const response = await axiosJSON.get<TPrecheck[]>(`/clusters/${clusterId}/prechecks/breaking-changes`)
-			return response.data
-		} catch (err: any) {
-			toast.error(err?.response?.data?.message ?? StringManager.GENERIC_ERROR)
-			throw err
-		}
-	}
-
 	const { data, isLoading } = useQuery({
 		queryKey: ["get-breaking-changes"],
-		queryFn: getBreakingChanges,
+		queryFn: ()=> precheckApi.getBreakingChanges(clusterId!),
 		staleTime: 0,
 	})
 	return { data: data ?? [], isLoading }

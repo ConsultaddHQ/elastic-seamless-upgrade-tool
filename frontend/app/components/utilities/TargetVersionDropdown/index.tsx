@@ -4,10 +4,10 @@ import PopupState, { bindMenu, bindTrigger } from "material-ui-popup-state"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"
 import { OneLineSkeleton } from "~/components/utilities/Skeletons"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import axiosJSON from "~/apis/http"
 import useSafeRouteStore from "~/store/safeRoutes"
 import { useEffect } from "react"
 import { useNavigate, useParams } from "react-router"
+import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
 
 const STYLES = {
 	MENU_ITEMS: {
@@ -41,11 +41,10 @@ function TargetVersionDropdown() {
 	const setUpgradeAssistAllowed = useSafeRouteStore((state) => state.setUpgradeAssistAllowed)
 	const navigate = useNavigate()
 
-	const { data, isLoading, isRefetching , refetch} = useQuery({
+	const { data, isLoading, isRefetching, refetch } = useQuery({
 		queryKey: ["get-target-version-info"],
 		queryFn: async () => {
-			const response = await axiosJSON.get(`/clusters/${clusterId}/upgrades/jobs/target-version`)
-			const data = response.data
+			const data = await clusterUpgradeApi.getTargetVersionInfo(clusterId!)
 			setUpgradeAssistAllowed(data?.targetVersion)
 			return data
 		},
@@ -54,8 +53,7 @@ function TargetVersionDropdown() {
 	})
 
 	const handleVersionSelect = async (ver: string) => {
-		const response = await axiosJSON.post(`/clusters/${clusterId}/upgrades/jobs`, { targetVersion: ver })
-		const data = response.data
+		const data = await clusterUpgradeApi.setTargetVersion(clusterId!, ver)
 		setUpgradeAssistAllowed(data?.targetVersion)
 		navigate(`/${clusterId}/upgrade-assistant`)
 	}

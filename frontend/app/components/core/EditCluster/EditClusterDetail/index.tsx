@@ -10,12 +10,11 @@ import Input from "~/components/utilities/Input"
 import { cn } from "~/lib/Utils"
 // @ts-ignore-block
 import Files from "react-files"
-import { useLocation, useParams } from "react-router"
-import axiosJSON from "~/apis/http"
+import { useParams } from "react-router"
 import { OneLineSkeleton } from "~/components/utilities/Skeletons"
-import useRefreshStore from "~/store/refresh"
 import useSafeRouteStore from "~/store/safeRoutes"
 import { editClusterDetailSchema } from "./validation"
+import { clusterApi } from "~/apis/ClusterApi"
 
 const INITIAL_VALUES = {
 	type: "",
@@ -29,10 +28,8 @@ const INITIAL_VALUES = {
 }
 
 function EditClusterDetail() {
-	const refresh = useRefreshStore((state) => state.refresh)
 	const resetForEditCluster = useSafeRouteStore((state) => state.resetForEditCluster)
 	const { clusterId } = useParams()
-	const { pathname } = useLocation()
 	const [initialValues, setInitialValues] = useState<TEditClusterValues>(INITIAL_VALUES)
 
 	const formik = useFormik({
@@ -46,8 +43,7 @@ function EditClusterDetail() {
 
 	const getCluster = async () => {
 		if (!clusterId) return null
-		const response = await axiosJSON.get(`/clusters/${clusterId}`)
-		const cluster = response.data
+		const cluster = await clusterApi.getCluster(clusterId)
 		cluster &&
 			setInitialValues({
 				name: cluster.name,
@@ -69,10 +65,10 @@ function EditClusterDetail() {
 	})
 
 	const { mutate: HandleSubmit, isPending } = useMutation({
-		mutationKey: ["add-cluster"],
+		mutationKey: ["edit-cluster"],
 		mutationFn: async (values: any) => {
-			await axiosJSON
-				.put("clusters/" + clusterId, {
+			await clusterApi
+				.updateClusterDetail(clusterId!, {
 					type: values.type,
 					name: values.name,
 					deploymentId: values.deploymentId,
@@ -83,9 +79,6 @@ function EditClusterDetail() {
 				.then(() => {
 					refetch()
 					resetForEditCluster()
-					if (pathname === "/cluster-overview") {
-						refresh()
-					}
 					toast.success("Cluster updated successfully")
 				})
 		},
