@@ -36,9 +36,7 @@ const sidebars: SidebarsConfig = {
             type: "category",
             label: "Release Notes",
             items: [
-                "releases/2025-08",
-                "releases/2025-07",
-                "releases/archive",
+                "releases/v0.0.12",
             ],
         },
     ],
