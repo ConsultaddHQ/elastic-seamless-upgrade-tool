@@ -2,14 +2,13 @@
 
 ## Overview
 
-The **Seamless Upgrade Tool** is a containerized **Node.js + React** application designed to facilitate **seamless upgrades of on-premise Elasticsearch clusters**. It provides a user-friendly interface for monitoring cluster status, triggering upgrades, and tracking real-time progress.
+The **Seamless Upgrade Tool** is a containerized **Java + React** application designed to facilitate **seamless upgrades of on-premise Elasticsearch clusters**. It provides a user-friendly interface for monitoring cluster status, triggering upgrades, and tracking real-time progress.
 
 ### Key Features
 
 -   **Cluster Overview**: Displays **node count, health status, shard information**, and more.
 -   **Upgrade Management**: Users can **trigger node upgrades** with a single click.
 -   **Real-Time Monitoring**: Progress tracking and status updates during the upgrade process.
--   **Ansible Integration**: Uses **Ansible playbooks** to perform upgrades efficiently.
 -   **Failure Handling**: Automatic **rollback playbook** (coming soon) for failed upgrades.
 
 ---
