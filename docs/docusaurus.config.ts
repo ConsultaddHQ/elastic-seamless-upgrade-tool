@@ -3,8 +3,8 @@ import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 
 const config: Config = {
-  title: "Elastic Seamless Upgrade",
-  tagline: "Elastic seamless upgrade tool",
+  title: "Elastic Seamless Upgrade Tool",
+  tagline: "Elastic Upgrades Made Easy.",
   favicon: "img/favicon.ico",
 
   future: {
@@ -53,7 +53,7 @@ const config: Config = {
     // Replace with your project's social card
     image: "img/docusaurus-social-card.jpg",
     navbar: {
-      title: "Seamless Upgrade",
+      title: "Elastic Seamless Upgrade Tool",
       logo: {
         alt: "Hyperflex logo",
         src: "img/img.png",
@@ -67,7 +67,7 @@ const config: Config = {
         },
         { to: "/blog", label: "Blog", position: "left" },
         {
-          href: "https://github.com/facebook/docusaurus",
+          href: "https://github.com/ConsultaddHQ/elastic-seamless-upgrade-tool",
           label: "GitHub",
           position: "right",
         },
@@ -95,6 +95,10 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
+    },
+    colorMode: {
+      defaultMode: "dark", // always start in dark mode
+      respectPrefersColorScheme: false, // ignore user OS/browser color preference
     },
   } satisfies Preset.ThemeConfig,
 };
