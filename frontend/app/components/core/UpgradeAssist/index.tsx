@@ -3,24 +3,29 @@ import { Box, Typography } from "@mui/material"
 import { useQuery } from "@tanstack/react-query"
 import { Camera, Flash } from "iconsax-react"
 import moment from "moment"
-import { useState } from "react"
-import { Link } from "react-router"
+import { useEffect, useState } from "react"
+import { Link, useParams } from "react-router"
 import axiosJSON from "~/apis/http"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"
 import useCountdownTimer from "~/lib/hooks/useTimer"
 import { getStepIndicatorData } from "~/lib/Utils"
-import { useLocalStore } from "~/store/common"
 import useSafeRouteStore from "~/store/safeRoutes"
 import DeprectedSettings from "./widgets/DeprectedSettings"
 import StepBox from "./widgets/StepBox"
 import { FiArrowUpRight } from "react-icons/fi"
 
 function UpgradeAssistant() {
-	const clusterId = useLocalStore((state) => state.clusterId)
-	const infraType = useLocalStore((state) => state.infraType)
-	const deploymentId = useLocalStore((state) => state.deploymentId)
-	const setDeploymentId = useLocalStore((state) => state.setDeploymentId)
-	const { remainingTime, startTimer, resetTimer } = useCountdownTimer()
+	const { clusterId } = useParams()
+	const [infraType, setInfraType] = useState<string>("")
+	useEffect(() => {
+		if (clusterId) {
+			axiosJSON.get(`/clusters/${clusterId}`).then((res) => {
+				setInfraType(res.data.type)
+			})
+		}
+	}, [clusterId])
+	const { remainingTime, startTimer } = useCountdownTimer()
+	const [deploymentId, setDeploymentId] = useState("")
 	const setDeprecationChangesAllowed = useSafeRouteStore((state) => state.setDeprecationChangesAllowed)
 	const setElasticNodeUpgradeAllowed = useSafeRouteStore((state) => state.setElasticNodeUpgradeAllowed)
 	const setKibanaNodeUpgradeAllowed = useSafeRouteStore((state) => state.setKibanaNodeUpgradeAllowed)
@@ -58,76 +63,70 @@ function UpgradeAssistant() {
 
 	const getUpgradeInfo = async () => {
 		let response: any = []
-		await axiosJSON
-			.get(`/clusters/${clusterId}/upgrades/info`)
-			.then((res) => {
-				response = res.data
-				if (response?.elastic?.snapshot?.snapshot) {
-					startTimer(moment.utc(response?.elastic?.snapshot?.snapshot.createdAt).local().valueOf())
-				}
-				const { elastic, kibana, precheck } = response ?? {}
-				const step1Status = elastic?.snapshot?.snapshot ? "COMPLETED" : "PENDING"
+		await axiosJSON.get(`/clusters/${clusterId}/upgrades/info`).then((res) => {
+			response = res.data
+			if (response?.elastic?.snapshot?.snapshot) {
+				startTimer(moment.utc(response?.elastic?.snapshot?.snapshot.createdAt).local().valueOf())
+			}
+			const { elastic, kibana, precheck } = response ?? {}
+			const step1Status = elastic?.snapshot?.snapshot ? "COMPLETED" : "PENDING"
 
-				const step2Status =
-					step1Status !== "COMPLETED"
-						? "NOTVISITED"
-						: precheck?.status === "COMPLETED"
-						? "COMPLETED"
-						: "PENDING"
+			const step2Status =
+				step1Status !== "COMPLETED" ? "NOTVISITED" : precheck?.status === "COMPLETED" ? "COMPLETED" : "PENDING"
 
-				// Helper function to sum deprecations safely
-				const sumDeprecations = (type: string) =>
-					(elastic?.deprecationCounts?.[type] ?? 1) + (kibana?.deprecationCounts?.[type] ?? 1)
+			// Helper function to sum deprecations safely
+			const sumDeprecations = (type: string) =>
+				(elastic?.deprecationCounts?.[type] ?? 1) + (kibana?.deprecationCounts?.[type] ?? 1)
 
-				// Step 2 calculations
-				const criticalDeprecations = sumDeprecations("critical")
-				const warningDeprecations = sumDeprecations("warning")
+			// Step 2 calculations
+			const criticalDeprecations = sumDeprecations("critical")
+			const warningDeprecations = sumDeprecations("warning")
 
-				const step3Status =
-					step2Status !== "COMPLETED"
-						? "NOTVISITED"
-						: criticalDeprecations > 0
-						? "PENDING"
-						: warningDeprecations > 0
-						? "INPROGRESS"
-						: "COMPLETED"
+			const step3Status =
+				step2Status !== "COMPLETED"
+					? "NOTVISITED"
+					: criticalDeprecations > 0
+					? "PENDING"
+					: warningDeprecations > 0
+					? "INPROGRESS"
+					: "COMPLETED"
 
-				// Helper for subsequent steps
-				const getNextStepStatus = (prevStatus: string, isUpgradable: boolean) =>
-					prevStatus === "PENDING" || prevStatus === "NOTVISITED"
-						? "NOTVISITED"
-						: isUpgradable
-						? "PENDING"
-						: "COMPLETED"
+			// Helper for subsequent steps
+			const getNextStepStatus = (prevStatus: string, isUpgradable: boolean) =>
+				prevStatus === "PENDING" || prevStatus === "NOTVISITED"
+					? "NOTVISITED"
+					: isUpgradable
+					? "PENDING"
+					: "COMPLETED"
 
-				const step4Status = getNextStepStatus(step3Status, elastic?.isUpgradable)
-				const step5Status = getNextStepStatus(step4Status, kibana?.isUpgradable)
-				// const step5Status = "NOTVISITED"
+			const step4Status = getNextStepStatus(step3Status, elastic?.isUpgradable)
+			const step5Status = getNextStepStatus(step4Status, kibana?.isUpgradable)
+			// const step5Status = "NOTVISITED"
 
-				setStepStatus({
-					"1": step1Status,
-					"2": step2Status,
-					"3": step3Status,
-					"4": step4Status,
-					"5": step5Status,
-				})
-
-				// if(step1Status === "COMPLETED"){
-				// 	Toast({varient: "SUCCESS", msg:"done"})
-				// }
-
-				if (step2Status !== "NOTVISITED") {
-					setPrecheckAllowed(true)
-				}
-				handleRoutingStates(step3Status, setDeprecationChangesAllowed)
-				handleRoutingStates(step4Status, setElasticNodeUpgradeAllowed)
-				handleRoutingStates(step5Status, setKibanaNodeUpgradeAllowed)
-				setDeploymentId(response?.deploymentId ?? "")
+			setStepStatus({
+				"1": step1Status,
+				"2": step2Status,
+				"3": step3Status,
+				"4": step4Status,
+				"5": step5Status,
 			})
+
+			// if(step1Status === "COMPLETED"){
+			// 	Toast({varient: "SUCCESS", msg:"done"})
+			// }
+
+			if (step2Status !== "NOTVISITED") {
+				setPrecheckAllowed(true)
+			}
+			handleRoutingStates(step3Status, setDeprecationChangesAllowed)
+			handleRoutingStates(step4Status, setElasticNodeUpgradeAllowed)
+			handleRoutingStates(step5Status, setKibanaNodeUpgradeAllowed)
+			setDeploymentId(response?.deploymentId ?? "")
+		})
 		return response
 	}
 
-	const { data, isLoading, refetch, isRefetching } = useQuery({
+	const { data, isLoading, isRefetching } = useQuery({
 		queryKey: ["cluster-info"],
 		queryFn: getUpgradeInfo,
 		staleTime: Infinity,
@@ -268,7 +267,7 @@ function UpgradeAssistant() {
 				<Box className="flex items-start">
 					<OutlinedBorderButton
 						component={Link}
-						to="/prechecks"
+						to={`/${clusterId}/prechecks`}
 						disabled={stepStatus["2"] === "NOTVISITED"}
 						borderRadius="50%"
 						sx={{ minWidth: "38px !important", minHeight: "38px !important", padding: "0px" }}
@@ -311,14 +310,14 @@ function UpgradeAssistant() {
 							criticalValue={data?.elastic?.deprecationCounts.critical ?? "NaN"}
 							warningValue={data?.elastic?.deprecationCounts.warning ?? "NaN"}
 							isDisabled={step3Data?.isDisabled}
-							to="/elastic/deprecation-logs"
+							to={`/${clusterId}/elastic/deprecation-logs`}
 						/>
 						<DeprectedSettings
 							title="Kibana"
 							criticalValue={data?.kibana?.deprecationCounts.critical ?? "NaN"}
 							warningValue={data?.kibana?.deprecationCounts.warning ?? "NaN"}
 							isDisabled={step3Data?.isDisabled}
-							to="/kibana/deprecation-logs"
+							to={`/${clusterId}/kibana/deprecation-logs`}
 						/>
 					</Box>
 				</Box>
@@ -368,7 +367,7 @@ function UpgradeAssistant() {
 					) : (
 						<OutlinedBorderButton
 							component={Link}
-							to="/elastic/upgrade"
+							to={`/${clusterId}/elastic/upgrade`}
 							disabled={step4Data?.isDisabled}
 							icon={Flash}
 							filledIcon={Flash}
@@ -406,7 +405,7 @@ function UpgradeAssistant() {
 						</Box>
 						<OutlinedBorderButton
 							component={Link}
-							to="/kibana/upgrade"
+							to={`/${clusterId}/kibana/upgrade`}
 							disabled={step5Data?.isDisabled}
 							icon={Flash}
 							filledIcon={Flash}

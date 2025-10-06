@@ -6,8 +6,6 @@ import { useCallback, type Key } from "react"
 import { useNavigate } from "react-router"
 import axiosJSON from "~/apis/http"
 import { cn } from "~/lib/Utils"
-import { useLocalStore } from "~/store/common"
-import useSafeRouteStore from "~/store/safeRoutes"
 
 const columns: TColumn = [
 	{
@@ -38,9 +36,6 @@ const columns: TColumn = [
 
 function ClusterList() {
 	const navigate = useNavigate()
-	const setClusterAdded = useSafeRouteStore((state) => state.setClusterAdded)
-	const setClusterId = useLocalStore((state) => state.setClusterId)
-	const setInfraType = useLocalStore((state) => state.setInfraType)
 
 	const getClustersData = async () => {
 		const response = await axiosJSON.get("/clusters")
@@ -99,10 +94,7 @@ function ClusterList() {
 	const handleClusterSelect = (clusterId: Key) => {
 		const selectedCluster = data?.filter((item: any) => item.id === clusterId)[0]
 		if (selectedCluster.length !== 0) {
-			setClusterId(clusterId)
-			setInfraType(selectedCluster.type)
-			setClusterAdded(true)
-			navigate("/cluster-overview")
+			navigate("/"+clusterId+"/cluster-overview")
 		}
 	}
 

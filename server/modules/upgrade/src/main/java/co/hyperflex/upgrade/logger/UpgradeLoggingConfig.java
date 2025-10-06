@@ -1,5 +1,6 @@
 package co.hyperflex.upgrade.logger;
 
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import co.hyperflex.upgrade.services.UpgradeLogService;
@@ -23,6 +24,7 @@ public class UpgradeLoggingConfig {
     updateContextAwareAppender.start();
 
     Logger rootLogger = context.getLogger(UpgradeLogService.class.getName());
+    rootLogger.setLevel(Level.TRACE);
     rootLogger.addAppender(updateContextAwareAppender);
   }
 }

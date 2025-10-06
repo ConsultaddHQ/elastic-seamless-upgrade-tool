@@ -1,7 +1,7 @@
 import { Box, Breadcrumbs, Typography } from "@mui/material"
 import type { Route } from "../+types/root"
 import { ArrowRight2, Convertshape2 } from "iconsax-react"
-import { Link } from "react-router"
+import { Link, useParams } from "react-router"
 import DeprecationLogs from "../components/core/DeprecationLogs"
 
 export function meta({}: Route.MetaArgs) {
@@ -9,6 +9,7 @@ export function meta({}: Route.MetaArgs) {
 }
 
 function ElasticDeprecationLogs() {
+	const { clusterId } = useParams()
 	return (
 		<Box className="flex flex-col w-full gap-[10px]" padding="0px 32px">
 			<Box
@@ -16,7 +17,7 @@ function ElasticDeprecationLogs() {
 				padding="6px 10px 8px 10px"
 			>
 				<Breadcrumbs separator={<ArrowRight2 color="#ADADAD" size="14px" />}>
-					<Link to="/upgrade-assistant">
+					<Link to={`/${clusterId}/upgrade-assistant`}>
 						<Typography
 							className="flex items-center gap-[6px]"
 							color="#ADADAD"

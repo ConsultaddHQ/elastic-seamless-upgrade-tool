@@ -1,8 +1,9 @@
 package co.hyperflex.precheck.logger;
 
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
-import co.hyperflex.precheck.contexts.resolver.PrecheckContextResolver;
+import co.hyperflex.precheck.core.Precheck;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
@@ -22,7 +23,8 @@ public class PrecheckLoggingConfig {
     precheckContextAwareAppender.setContext(context);
     precheckContextAwareAppender.start();
 
-    Logger rootLogger = context.getLogger(PrecheckContextResolver.class.getName());
+    Logger rootLogger = context.getLogger(Precheck.class);
+    rootLogger.setLevel(Level.TRACE);
     rootLogger.addAppender(precheckContextAwareAppender);
   }
 }

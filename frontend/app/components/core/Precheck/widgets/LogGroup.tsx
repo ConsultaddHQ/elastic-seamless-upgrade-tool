@@ -3,10 +3,10 @@ import { useMutation } from "@tanstack/react-query"
 import { useMemo } from "react"
 import BreakingChangesLogs from "./BreakingChanges"
 import axiosJSON from "~/apis/http"
-import { useLocalStore } from "~/store/common"
 import { toast } from "sonner"
 import GroupedPrecheck from "~/components/core/Precheck/widgets/GroupedPrecheck"
 import Prechecks from "~/components/core/Precheck/widgets/Prechecks"
+import { useParams } from "react-router"
 
 function LogGroup({
 	dataFor,
@@ -19,7 +19,7 @@ function LogGroup({
 	isLoading: boolean
 	refetchData: any
 }) {
-	const clusterId = useLocalStore((state) => state.clusterId)
+	const { clusterId } = useParams()
 
 	const { mutate: HandleRerun, isPending } = useMutation({
 		mutationKey: ["handle-rerun"],

@@ -5,7 +5,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 public class ReactSpaController {
-  @RequestMapping(value = {"/{path:^(?!ws$)[^\\.]*}", "/elastic/**", "/kibana/**", "/plugins"})
+  @RequestMapping(value = {"/{path:^(?!ws$)[^\\.]*}",
+      "/{clusterId}/elastic/**",
+      "/{clusterId}/upgrade-assistant",
+      "/{clusterId}/cluster-overview",
+      "/{clusterId}/kibana/**",
+      "/{clusterId}/prechecks/**",
+      "/plugins"}
+  )
   public String redirect() {
     return "forward:/index.html";
   }

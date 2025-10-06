@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query"
 import axiosJSON from "~/apis/http"
-import { useLocalStore } from "~/store/common"
 import { useRealtimeEventListener } from "./useRealtimeEventListener"
+import { useParams } from "react-router"
 
 export function usePrecheckSummary() {
-	const clusterId = useLocalStore((state) => state.clusterId)
+	const { clusterId } = useParams()
 	const fetchPrecheckSummary = async () => {
 		const res = await axiosJSON.get(`/clusters/${clusterId}/prechecks/summary`)
 		return res.data

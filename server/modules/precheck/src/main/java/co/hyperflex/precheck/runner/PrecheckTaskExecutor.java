@@ -12,6 +12,7 @@ import co.hyperflex.precheck.core.BaseClusterPrecheck;
 import co.hyperflex.precheck.core.BaseIndexPrecheck;
 import co.hyperflex.precheck.core.BaseNodePrecheck;
 import co.hyperflex.precheck.core.Precheck;
+import co.hyperflex.precheck.core.PrecheckFailedException;
 import co.hyperflex.precheck.core.enums.PrecheckStatus;
 import co.hyperflex.precheck.entities.PrecheckRunEntity;
 import co.hyperflex.precheck.registry.PrecheckRegistry;
@@ -44,10 +45,10 @@ public class PrecheckTaskExecutor {
 
   @Async("precheckAsyncExecutor")
   public CompletableFuture<Void> executeOne(PrecheckRunEntity record) {
+    PrecheckContext context = precheckContextResolver.resolveContext(record);
     try {
       MDC.put("precheckRunId", record.getId());
       precheckRunService.updatePrecheckStatus(record.getId(), PrecheckStatus.RUNNING);
-      PrecheckContext context = precheckContextResolver.resolveContext(record);
       Precheck<?> precheck = precheckRegistry.getById(record.getPrecheckId())
           .orElseThrow(() -> new NotFoundException("Precheck not found: " + record.getPrecheckId()));
 
@@ -60,6 +61,9 @@ public class PrecheckTaskExecutor {
       precheckRunService.updatePrecheckStatus(record.getId(), PrecheckStatus.COMPLETED);
 
     } catch (Exception e) {
+      if (e instanceof PrecheckFailedException) {
+        context.getLogger().error(e.getMessage());
+      }
       LOG.error("Error executing precheck: {}", record.getId(), e);
       precheckRunService.updatePrecheckStatus(record.getId(), PrecheckStatus.FAILED);
     } finally {
