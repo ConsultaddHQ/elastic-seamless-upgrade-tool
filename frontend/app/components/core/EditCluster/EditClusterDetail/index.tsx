@@ -125,50 +125,54 @@ function EditClusterDetail() {
 						</Box>
 						<Box className="flex flex-col gap-[6px] ">
 							<Typography color="#ABA9B1" fontSize="14px" fontWeight="400" lineHeight="20px">
-								URLs
+								Elastic URL
 							</Typography>
-							<Box className="flex flex-col gap-2 w-full">
-								<OneLineSkeleton
-									show={isLoading || isRefetching}
-									component={
-										<Input
-											fullWidth
-											id="elasticUrl"
-											name="elasticUrl"
-											type="text"
-											placeholder="Enter Elastic URL"
-											variant="outlined"
-											value={formik.values.elasticUrl}
-											onChange={formik.handleChange}
-											onBlur={formik.handleBlur}
-											error={formik.touched.elasticUrl && Boolean(formik.errors.elasticUrl)}
-											helperText={formik.touched.elasticUrl && formik.errors.elasticUrl}
-										/>
-									}
-									height="52px"
-									className="w-full rounded-[10px]"
-								/>
-								<OneLineSkeleton
-									show={isLoading || isRefetching}
-									component={
-										<Input
-											fullWidth
-											id="kibanaUrl"
-											name="kibanaUrl"
-											type="text"
-											placeholder="Enter Kibana URL"
-											variant="outlined"
-											value={formik.values.kibanaUrl}
-											onChange={formik.handleChange}
-											onBlur={formik.handleBlur}
-											error={formik.touched.kibanaUrl && Boolean(formik.errors.kibanaUrl)}
-											helperText={formik.touched.kibanaUrl && formik.errors.kibanaUrl}
-										/>
-									}
-									height="52px"
-									className="w-full rounded-[10px]"
-								/>
-							</Box>
+							<OneLineSkeleton
+								show={isLoading || isRefetching}
+								component={
+									<Input
+										fullWidth
+										id="elasticUrl"
+										name="elasticUrl"
+										type="text"
+										placeholder="Enter Elastic URL"
+										variant="outlined"
+										value={formik.values.elasticUrl}
+										onChange={formik.handleChange}
+										onBlur={formik.handleBlur}
+										error={formik.touched.elasticUrl && Boolean(formik.errors.elasticUrl)}
+										helperText={formik.touched.elasticUrl && formik.errors.elasticUrl}
+									/>
+								}
+								height="52px"
+								className="w-full rounded-[10px]"
+							/>
+						</Box>
+						<Box className="flex flex-col gap-[6px] ">
+							<Typography color="#ABA9B1" fontSize="14px" fontWeight="400" lineHeight="20px">
+								Kibana URL
+							</Typography>
+
+							<OneLineSkeleton
+								show={isLoading || isRefetching}
+								component={
+									<Input
+										fullWidth
+										id="kibanaUrl"
+										name="kibanaUrl"
+										type="text"
+										placeholder="Enter Kibana URL"
+										variant="outlined"
+										value={formik.values.kibanaUrl}
+										onChange={formik.handleChange}
+										onBlur={formik.handleBlur}
+										error={formik.touched.kibanaUrl && Boolean(formik.errors.kibanaUrl)}
+										helperText={formik.touched.kibanaUrl && formik.errors.kibanaUrl}
+									/>
+								}
+								height="52px"
+								className="w-full rounded-[10px]"
+							/>
 						</Box>
 						{formik.values.type == "SELF_MANAGED" && (
 							<>

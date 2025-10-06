@@ -150,4 +150,9 @@ public class ClusterController {
   public List<GetAllocationExplanationResponse> getAllocationExplanation(@PathVariable String clusterId) {
     return clusterService.getAllocationExplanation(clusterId);
   }
+
+  @GetMapping("/name")
+  public String getThreadName() {
+    return Thread.currentThread().toString();
+  }
 }
