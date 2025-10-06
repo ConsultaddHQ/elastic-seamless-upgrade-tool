@@ -15,7 +15,7 @@ import { Alarm, SearchNormal1 } from "iconsax-react"
 import { type Key, useCallback, useState } from "react"
 import { FiAlertTriangle } from "react-icons/fi"
 import { useParams } from "react-router"
-import axiosJSON from "~/apis/http"
+import { clusterApi } from "~/apis/ClusterApi"
 
 const columns: TDeprecationColumn = [
 	{
@@ -49,10 +49,7 @@ function DeprecationLogs({ clusterType }: { clusterType: "ELASTIC" | "KIBANA" })
 	const [search, setSearch] = useState<string>("")
 
 	const getLogs = async () => {
-		const response = await axiosJSON.get(
-			`/clusters/${clusterId}/deprecations/${clusterType === "ELASTIC" ? "elastic-search" : "kibana"}`
-		)
-		const deprecations = response.data
+		const deprecations = await clusterApi.getDeprecationLogs(clusterId!, clusterType)
 		return deprecations?.map((item: any, index: number): TDeprecationRow => {
 			return {
 				key: String(index),
@@ -64,7 +61,7 @@ function DeprecationLogs({ clusterType }: { clusterType: "ELASTIC" | "KIBANA" })
 		})
 	}
 
-	const { data, isLoading, isRefetching, refetch } = useQuery({
+	const { data, isLoading, isRefetching } = useQuery({
 		queryKey: ["get-deprecation-logs"],
 		queryFn: getLogs,
 		staleTime: Infinity,

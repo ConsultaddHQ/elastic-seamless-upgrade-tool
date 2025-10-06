@@ -8,7 +8,7 @@ import EditSshDetail from "./EditSshDetail"
 import { EditClusterCredential } from "./EditCredential"
 import EditSettingTabs from "./EditSettingTabs"
 import { useParams } from "react-router"
-import axiosJSON from "~/apis/http"
+import { clusterApi } from "~/apis/ClusterApi"
 
 function EditClusterBreadcrumb({ onBack }: { onBack: () => void }) {
 	return (
@@ -35,9 +35,9 @@ function EditCluster({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: 
 	const [infraType, setInfraType] = React.useState<string>("")
 	useEffect(() => {
 		if (clusterId) {
-			axiosJSON.get(`/clusters/${clusterId}`).then((res) => {
-				setInfraType(res.data.type)
-			});
+			clusterApi.getCluster(clusterId).then((cluster) => {
+				setInfraType(cluster.type)
+			})
 		}
 	}, [clusterId])
 	const [selectedTab, setSelectedTab] = React.useState<TabTypes>("CLUSTER_DETAIL")

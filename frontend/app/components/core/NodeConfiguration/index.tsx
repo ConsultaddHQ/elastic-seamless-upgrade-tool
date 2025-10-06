@@ -4,11 +4,11 @@ import { FullScreenDrawer } from "~/components/utilities/FullScreenDrawer"
 import AppBreadcrumb from "~/components/utilities/AppBreadcrumb"
 import { ArrowLeft } from "iconsax-react"
 import YamlEditor from "~/components/utilities/YamlEditor"
-import axiosJSON from "~/apis/http"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"
 import { toast } from "sonner"
 import { useParams } from "react-router"
+import { clusterApi } from "~/apis/ClusterApi"
 
 function NodeConfigurationBreadcrumb({ onBack }: { onBack: () => void }) {
 	return (
@@ -32,27 +32,15 @@ function useNodeConfiguration(nodeId: string) {
 	const { clusterId } = useParams()
 	const [updatedConfig, setUpdatedConfig] = React.useState<string | undefined>()
 
-	const fetchNodeConfig = async () => {
-		const res = await axiosJSON.get(`/clusters/${clusterId}/nodes/${nodeId}/configuration`)
-		return res.data.config ?? ""
-	}
-
-	const updateNodeConfig = async (config: string) => {
-		const res = await axiosJSON.put(`/clusters/${clusterId}/nodes/${nodeId}/configuration`, {
-			config,
-		})
-		return res.data
-	}
-
 	const { refetch, data, isLoading } = useQuery({
 		queryKey: ["getNodeYamlConfig", clusterId, nodeId],
-		queryFn: fetchNodeConfig,
+		queryFn: () => clusterApi.getNodeConfig(clusterId!, nodeId),
 		staleTime: 0,
 	})
 
 	const { mutate, isPending } = useMutation({
 		mutationKey: ["updateNodeYamlConfig", clusterId, nodeId],
-		mutationFn: updateNodeConfig,
+		mutationFn: (config: string) => clusterApi.updateNodeConfig({ clusterId: clusterId!, nodeId, config }),
 		onSuccess: (data) => {
 			toast.success(data.message)
 			setUpdatedConfig(undefined)

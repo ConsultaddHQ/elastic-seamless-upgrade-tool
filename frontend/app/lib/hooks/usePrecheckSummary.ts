@@ -1,17 +1,13 @@
 import { useQuery } from "@tanstack/react-query"
-import axiosJSON from "~/apis/http"
 import { useRealtimeEventListener } from "./useRealtimeEventListener"
 import { useParams } from "react-router"
+import { clusterApi } from "~/apis/ClusterApi"
 
 export function usePrecheckSummary() {
 	const { clusterId } = useParams()
-	const fetchPrecheckSummary = async () => {
-		const res = await axiosJSON.get(`/clusters/${clusterId}/prechecks/summary`)
-		return res.data
-	}
 	const { refetch, data } = useQuery({
 		queryKey: ["getPrecheckSummary", clusterId],
-		queryFn: fetchPrecheckSummary,
+		queryFn: () => clusterApi.getClusterPrecheckSummary(clusterId!),
 		staleTime: 0,
 	})
 	useRealtimeEventListener("PRECHECK_PROGRESS_CHANGE", () => refetch(), true)
