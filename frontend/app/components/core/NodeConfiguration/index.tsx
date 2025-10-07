@@ -9,6 +9,7 @@ import { OutlinedBorderButton } from "~/components/utilities/Buttons"
 import { toast } from "sonner"
 import { useParams } from "react-router"
 import { clusterApi } from "~/apis/ClusterApi"
+import { useConfirmationModal } from "~/components/utilities/ConfirmationModal"
 
 function NodeConfigurationBreadcrumb({ onBack }: { onBack: () => void }) {
 	return (
@@ -61,6 +62,7 @@ function useNodeConfiguration(nodeId: string) {
 
 function NodeConfiguration({ onOpenChange, node }: { node: TUpgradeRow; onOpenChange: () => void }) {
 	const { config, isLoading, isUpdating, onConfigChange, updateConfig, updatedConfig } = useNodeConfiguration(node.id)
+	const { ConfirmationModal, openConfirmation } = useConfirmationModal()
 	return (
 		<FullScreenDrawer isOpen={true} onOpenChange={onOpenChange}>
 			<Box minHeight="58px" />
@@ -68,7 +70,14 @@ function NodeConfiguration({ onOpenChange, node }: { node: TUpgradeRow; onOpenCh
 				<NodeConfigurationBreadcrumb onBack={onOpenChange} />
 				<OutlinedBorderButton
 					disabled={isUpdating || isLoading || !updatedConfig}
-					onClick={() => updateConfig()}
+					onClick={() => {
+						openConfirmation({
+							title: "Update Configuration",
+							message: `Are you sure you want to update the configuration for node ${node.node_name}?`,
+							confirmText: "Update",
+							onConfirm: () => updateConfig(),
+						})
+					}}
 				>
 					{isUpdating ? "Updating" : "Update"}
 				</OutlinedBorderButton>
@@ -104,6 +113,7 @@ function NodeConfiguration({ onOpenChange, node }: { node: TUpgradeRow; onOpenCh
 					</Box>
 				</Box>
 			</Box>
+			{ConfirmationModal}
 		</FullScreenDrawer>
 	)
 }

@@ -89,7 +89,7 @@ function ClusterList() {
 	const handleClusterSelect = (clusterId: Key) => {
 		const selectedCluster = data?.filter((item: any) => item.id === clusterId)[0]
 		if (selectedCluster) {
-			navigate("/"+clusterId+"/cluster-overview")
+			navigate(`${clusterId}/cluster-overview`)
 		}
 	}
 
