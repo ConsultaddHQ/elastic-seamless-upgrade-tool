@@ -6,8 +6,15 @@ import { useQuery } from "@tanstack/react-query"
 import { useRealtimeEventListener } from "~/lib/hooks/useRealtimeEventListener"
 import { useParams } from "react-router"
 import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
+import type { OpenConfirmationOptions } from "~/components/utilities/ConfirmationModal/useConfirmationModal"
 
-export const ClusterActions = ({ clusterType }: { clusterType: string }) => {
+export const ClusterActions = ({
+	clusterType,
+	openConfirmation,
+}: {
+	clusterType: string
+	openConfirmation: (options: OpenConfirmationOptions) => void
+}) => {
 	const { clusterId } = useParams()
 
 	const performUpgradeAll = async () => {
@@ -39,7 +46,15 @@ export const ClusterActions = ({ clusterType }: { clusterType: string }) => {
 		if (isUpgradingStopped) {
 			return (
 				<OutlinedBorderButton
-					onClick={performUpgradeAll}
+					onClick={() => {
+						openConfirmation({
+							title: "Resume Cluster Upgrade",
+							message: `Do you want to resume the upgrade for cluster?`,
+							confirmText: "Resume",
+							onConfirm: performUpgradeAll,
+							Icon: Flash,
+						})
+					}}
 					icon={Flash}
 					filledIcon={Flash}
 					disabled={isPending || isLoading || isUpgrading}
@@ -65,7 +80,15 @@ export const ClusterActions = ({ clusterType }: { clusterType: string }) => {
 		} else {
 			return (
 				<OutlinedBorderButton
-					onClick={performUpgradeAll}
+					onClick={() => {
+						openConfirmation({
+							title: "Confirm Cluster Upgrade",
+							message: `Do you want to proceed with upgrading cluster?`,
+							confirmText: "Confirm",
+							onConfirm: performUpgradeAll,
+							Icon: Flash,
+						})
+					}}
 					icon={Flash}
 					filledIcon={Flash}
 					disabled={isPending || isLoading || isUpgrading}

@@ -15,6 +15,7 @@ import NodeConfiguration from "~/components/core/NodeConfiguration"
 import { useParams } from "react-router"
 import { clusterApi } from "~/apis/ClusterApi"
 import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
+import { useConfirmationModal } from "~/components/utilities/ConfirmationModal"
 
 const UPGRADE_ENUM = {
 	completed: (
@@ -90,6 +91,7 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 	const { clusterId } = useParams()
 	const [showNodeLogs, setShowNodeLogs] = useState<TUpgradeRow | undefined>()
 	const [showNodeConfig, setShowNodeConfig] = useState<TUpgradeRow | undefined>()
+	const { ConfirmationModal, openConfirmation } = useConfirmationModal()
 
 	useRealtimeEventListener("UPGRADE_PROGRESS_CHANGE", () => refetch(), true)
 
@@ -158,7 +160,12 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 				<Box className="flex justify-end">
 					<OutlinedBorderButton
 						onClick={() => {
-							PerformUpgrade(row.key)
+							openConfirmation({
+								title: "Confirm Node Upgrade",
+								message: `Do you want to proceed with upgrading node ${row.node_name}?`,
+								confirmText: "Confirm",
+								onConfirm: () => PerformUpgrade(row.key),
+							})
 						}}
 						icon={Flash}
 						filledIcon={Flash}
@@ -177,7 +184,12 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 				<Box className="flex justify-end">
 					<OutlinedBorderButton
 						onClick={() => {
-							PerformUpgrade(row.key)
+							openConfirmation({
+								title: "Retry Upgrade",
+								message: `Are you sure you want to retry upgrade for node ${row.node_name}?`,
+								confirmText: "Retry",
+								onConfirm: () => PerformUpgrade(row.key),
+							})
 						}}
 						icon={Refresh}
 						filledIcon={Refresh}
@@ -290,7 +302,7 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 					<Typography color="#FFF" fontSize="14px" fontWeight="600" lineHeight="22px">
 						Node Details
 					</Typography>
-					<ClusterActions clusterType={clusterType} />
+					<ClusterActions clusterType={clusterType} openConfirmation={openConfirmation} />
 				</Box>
 				<Box className="flex">
 					<Table
@@ -327,6 +339,7 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 					</Table>
 				</Box>
 			</Box>
+			{ConfirmationModal}
 		</Box>
 	)
 }
