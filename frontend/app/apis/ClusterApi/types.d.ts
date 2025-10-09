@@ -7,3 +7,9 @@ interface Cluster {
 	version: string
 	status: string
 }
+
+interface IAllocationExplain {
+	index: string
+	shard: string
+	explanation: string
+}

@@ -1,7 +1,7 @@
 import { Box, Typography } from "@mui/material"
 import { useQuery } from "@tanstack/react-query"
 import _ from "lodash"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import DetailBox from "./widgets/DetailBox"
 import { useRealtimeEventListener } from "~/lib/hooks/useRealtimeEventListener"
 import TargetVersionDropdown from "~/components/utilities/TargetVersionDropdown"
@@ -27,6 +27,9 @@ function ClusterInfo() {
 		enabled: false,
 	})
 	useRealtimeEventListener("CLUSTER_INFO_CHANGE", () => refetch())
+	useEffect(() => {
+		refetch()
+	}, [clusterId])
 
 	return (
 		<Box

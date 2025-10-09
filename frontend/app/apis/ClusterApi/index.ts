@@ -53,6 +53,11 @@ class ClusterApi {
 		const res = await axiosJSON.put(`/clusters/${clusterId}`, data)
 		return res.data
 	}
+
+	async getAllocationExplain(clusterId: string) {
+		const res = await axiosJSON.get<IAllocationExplain[]>(`/clusters/${clusterId}/allocation-explanations`)
+		return res.data ?? []
+	}
 }
 
 export const clusterApi = new ClusterApi()

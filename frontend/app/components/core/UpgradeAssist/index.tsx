@@ -110,10 +110,6 @@ function UpgradeAssistant() {
 			"5": step5Status,
 		})
 
-		// if(step1Status === "COMPLETED"){
-		// 	Toast({varient: "SUCCESS", msg:"done"})
-		// }
-
 		if (step2Status !== "NOTVISITED") {
 			setPrecheckAllowed(true)
 		}
