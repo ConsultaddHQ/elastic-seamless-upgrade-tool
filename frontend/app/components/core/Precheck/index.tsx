@@ -6,6 +6,7 @@ import { OutlinedBorderButton } from "~/components/utilities/Buttons"
 import LogGroup from "./widgets/LogGroup"
 import { useRealtimeEventListener } from "~/lib/hooks/useRealtimeEventListener"
 import { useParams } from "react-router"
+import { precheckApi } from "~/apis/PrecheckApi"
 
 const PrecheckNotTriggered = ({ refetch }: { refetch: () => void }) => {
 	const { clusterId } = useParams()
@@ -63,20 +64,9 @@ const PrecheckNotTriggered = ({ refetch }: { refetch: () => void }) => {
 
 function Precheck({ selectedTab }: { selectedTab: TCheckTab }) {
 	const { clusterId } = useParams()
-
-	const getPrecheck = async () => {
-		const response = await axiosJSON.get<{
-			index: TIndexData[]
-			node: TNodeData[]
-			cluster: TPrecheck[]
-			breakingChanges: TPrecheck[]
-		}>(`/clusters/${clusterId}/prechecks`)
-		return response.data
-	}
-
 	const { data, isLoading, refetch } = useQuery({
 		queryKey: ["get-prechecks"],
-		queryFn: getPrecheck,
+		queryFn: () => precheckApi.getPrechecks(clusterId!),
 		staleTime: 0,
 	})
 	useRealtimeEventListener("PRECHECK_PROGRESS_CHANGE", refetch, true)

@@ -22,7 +22,7 @@ public class PrecheckRunner {
 
   @Scheduled(fixedDelay = 5000)
   public void runNextBatch() {
-    List<PrecheckRunEntity> pending = precheckRunService.getPendingPrechecks();
+    List<PrecheckRunEntity> pending = precheckRunService.getPendingPrechecks(150);
     if (pending.isEmpty()) {
       LOG.debug("No pending precheck runs found");
       return;

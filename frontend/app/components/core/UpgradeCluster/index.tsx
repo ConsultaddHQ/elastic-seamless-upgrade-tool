@@ -4,7 +4,6 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 import { CloseCircle, DocumentText, Flash, More, Refresh, TickCircle, Warning2 } from "iconsax-react"
 import { type Key, useCallback, useState } from "react"
 import { toast } from "sonner"
-import axiosJSON from "~/apis/http"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"
 import ProgressBar from "./widgets/progress"
 import { cn } from "~/lib/Utils"
@@ -14,6 +13,9 @@ import { AppDropdown, type DropdownItem } from "~/components/utilities/AppDropdo
 import { ClusterActions } from "~/components/core/UpgradeCluster/widgets/ClusterActions"
 import NodeConfiguration from "~/components/core/NodeConfiguration"
 import { useParams } from "react-router"
+import { clusterApi } from "~/apis/ClusterApi"
+import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
+import { useConfirmationModal } from "~/components/utilities/ConfirmationModal"
 
 const UPGRADE_ENUM = {
 	completed: (
@@ -89,13 +91,14 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 	const { clusterId } = useParams()
 	const [showNodeLogs, setShowNodeLogs] = useState<TUpgradeRow | undefined>()
 	const [showNodeConfig, setShowNodeConfig] = useState<TUpgradeRow | undefined>()
+	const { ConfirmationModal, openConfirmation } = useConfirmationModal()
 
 	useRealtimeEventListener("UPGRADE_PROGRESS_CHANGE", () => refetch(), true)
 
 	const getNodesInfo = async () => {
 		let response: any = []
-		await axiosJSON.get(`/clusters/${clusterId}/nodes?type=${clusterType}`).then((res) => {
-			response = res.data.map((item: any) => ({
+		await clusterApi.getNodes(clusterId!, clusterType).then((data) => {
+			response = data.map((item: any) => ({
 				key: item.id,
 				ip: item.ip,
 				node_name: item.name,
@@ -109,14 +112,13 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 				id: item.id,
 			}))
 		})
-
 		return response
 	}
 
 	const performUpgrade = async (nodeId: string) => {
 		console.log("triggered")
-		await axiosJSON
-			.post(`/clusters/${clusterId}/upgrades/nodes/${nodeId}`)
+		await clusterUpgradeApi
+			.upgradeNode(clusterId!, nodeId)
 			.then(() => {
 				refetch()
 				toast.success("Upgrade started")
@@ -158,7 +160,12 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 				<Box className="flex justify-end">
 					<OutlinedBorderButton
 						onClick={() => {
-							PerformUpgrade(row.key)
+							openConfirmation({
+								title: "Confirm Node Upgrade",
+								message: `Do you want to proceed with upgrading node ${row.node_name}?`,
+								confirmText: "Confirm",
+								onConfirm: () => PerformUpgrade(row.key),
+							})
 						}}
 						icon={Flash}
 						filledIcon={Flash}
@@ -177,7 +184,12 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 				<Box className="flex justify-end">
 					<OutlinedBorderButton
 						onClick={() => {
-							PerformUpgrade(row.key)
+							openConfirmation({
+								title: "Retry Upgrade",
+								message: `Are you sure you want to retry upgrade for node ${row.node_name}?`,
+								confirmText: "Retry",
+								onConfirm: () => PerformUpgrade(row.key),
+							})
 						}}
 						icon={Refresh}
 						filledIcon={Refresh}
@@ -290,7 +302,7 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 					<Typography color="#FFF" fontSize="14px" fontWeight="600" lineHeight="22px">
 						Node Details
 					</Typography>
-					<ClusterActions clusterType={clusterType} />
+					<ClusterActions clusterType={clusterType} openConfirmation={openConfirmation} />
 				</Box>
 				<Box className="flex">
 					<Table
@@ -327,6 +339,7 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 					</Table>
 				</Box>
 			</Box>
+			{ConfirmationModal}
 		</Box>
 	)
 }

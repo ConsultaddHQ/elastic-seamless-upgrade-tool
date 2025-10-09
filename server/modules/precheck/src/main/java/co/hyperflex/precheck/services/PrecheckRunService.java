@@ -257,8 +257,8 @@ public class PrecheckRunService {
     precheckRunRepository.addLog(precheckRunId, message);
   }
 
-  public List<PrecheckRunEntity> getPendingPrechecks() {
-    return precheckRunRepository.getPendingPrechecks();
+  public List<PrecheckRunEntity> getPendingPrechecks(int batchSize) {
+    return precheckRunRepository.getPendingPrechecks(batchSize);
   }
 
   public void updatePrecheckStatus(String id, PrecheckStatus precheckStatus) {

@@ -1,0 +1,10 @@
+vijaypatidar:
+  name: Vijay Patidar
+  title: Software engineer
+  image_url: https://github.com/vijaypatidar.png
+  page:
+    permalink: '/vijaypatidar'
+  socials:
+    x: vijaypatidar
+    linkedin: vijaypatidar31
+    github: vijaypatidar

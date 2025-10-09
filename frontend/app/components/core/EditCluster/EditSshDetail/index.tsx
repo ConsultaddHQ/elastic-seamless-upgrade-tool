@@ -6,9 +6,8 @@ import { toast } from "sonner"
 import Input from "~/components/utilities/Input"
 // @ts-ignore-block
 import Files from "react-files"
-import { useLocation, useParams } from "react-router"
+import { useParams } from "react-router"
 import axiosJSON from "~/apis/http"
-import useRefreshStore from "~/store/refresh"
 import useSafeRouteStore from "~/store/safeRoutes"
 import SshFileInput from "~/components/utilities/SshFileInput"
 import { shhEditSchema } from "./validation"
@@ -21,10 +20,8 @@ const INITIAL_VALUES = {
 }
 
 function EditSshDetail() {
-	const refresh = useRefreshStore((state) => state.refresh)
 	const resetForEditCluster = useSafeRouteStore((state) => state.resetForEditCluster)
 	const { clusterId } = useParams()
-	const { pathname } = useLocation()
 
 	const formik = useFormik({
 		initialValues: INITIAL_VALUES,
@@ -40,15 +37,12 @@ function EditSshDetail() {
 		mutationFn: async (values: any) => {
 			await axiosJSON
 				.put(`clusters/${clusterId}/ssh`, {
-					sshUsername: values.sshUser,
-					sshKey: values.pathToSSH ?? "",
+					username: values.sshUser,
+					key: values.pathToSSH ?? "",
 				})
 				.then(() => {
 					resetForEditCluster()
 					formik.resetForm()
-					if (pathname === "/cluster-overview") {
-						refresh()
-					}
 					toast.success("Cluster updated successfully")
 				})
 		},

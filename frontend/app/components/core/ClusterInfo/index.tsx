@@ -2,14 +2,13 @@ import { Box, Typography } from "@mui/material"
 import { useQuery } from "@tanstack/react-query"
 import _ from "lodash"
 import { useEffect, useState } from "react"
-import axiosJSON from "~/apis/http"
-import useRefreshStore from "~/store/refresh"
 import DetailBox from "./widgets/DetailBox"
 import { useRealtimeEventListener } from "~/lib/hooks/useRealtimeEventListener"
 import TargetVersionDropdown from "~/components/utilities/TargetVersionDropdown"
 import AllocationExplain from "~/components/core/AllocationExplain"
 import { InfoCircle } from "iconsax-react"
 import { useParams } from "react-router"
+import { clusterApi } from "~/apis/ClusterApi"
 
 const CLUSTER_STATUS_COLOR: { [key: string]: string } = {
 	yellow: "#E0B517",
@@ -19,25 +18,18 @@ const CLUSTER_STATUS_COLOR: { [key: string]: string } = {
 
 function ClusterInfo() {
 	const { clusterId } = useParams()
-	const refresh = useRefreshStore((state) => state.refreshToggle)
 	const [showAllocation, setShowAllocation] = useState(false)
-
-	const getClusterInfo = async () => {
-		const response = await axiosJSON.get(`/clusters/${clusterId}/overview`)
-		return response.data
-	}
 
 	const { data, isLoading, refetch, isRefetching, error } = useQuery({
 		queryKey: ["cluster-info"],
-		queryFn: getClusterInfo,
+		queryFn: () => clusterApi.getClusterOveriview(clusterId!),
 		staleTime: Infinity,
 		enabled: false,
 	})
 	useRealtimeEventListener("CLUSTER_INFO_CHANGE", () => refetch())
-
 	useEffect(() => {
 		refetch()
-	}, [refresh])
+	}, [clusterId])
 
 	return (
 		<Box
@@ -78,9 +70,7 @@ function ClusterInfo() {
 							/>
 							<DetailBox
 								title="Infrastructure type"
-								description={
-									error ? "--" : data?.infrastructureType
-								}
+								description={error ? "--" : data?.infrastructureType}
 								isLoading={isLoading || isRefetching}
 							/>
 						</Box>
