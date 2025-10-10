@@ -2,11 +2,13 @@ import { Box } from "@mui/material"
 import { useMutation } from "@tanstack/react-query"
 import { useMemo } from "react"
 import BreakingChangesLogs from "./BreakingChanges"
-import axiosJSON from "~/apis/http"
 import { toast } from "sonner"
 import GroupedPrecheck from "~/components/core/Precheck/widgets/GroupedPrecheck"
 import Prechecks from "~/components/core/Precheck/widgets/Prechecks"
 import { useParams } from "react-router"
+import { precheckApi } from "~/apis/PrecheckApi"
+import { useConfirmationModal } from "~/components/utilities/ConfirmationModal"
+import { ArrowRight } from "iconsax-react"
 
 function LogGroup({
 	dataFor,
@@ -20,18 +22,32 @@ function LogGroup({
 	refetchData: any
 }) {
 	const { clusterId } = useParams()
+	const { openConfirmation, ConfirmationModal } = useConfirmationModal()
 
 	const { mutate: HandleRerun, isPending } = useMutation({
 		mutationKey: ["handle-rerun"],
 		mutationFn: async (payload: any) => {
-			await axiosJSON.post(`/clusters/${clusterId}/prechecks/rerun`, payload)
+			await precheckApi.rerunPrechecks(clusterId!, payload)
 			refetchData()
 		},
 	})
 
 	const handlePrecheckSkip = async (id: string, skip: boolean) => {
-		await axiosJSON.put(`/clusters/${clusterId}/prechecks/${id}/skip?skip=${skip}`)
-		toast.success(`Precheck ${skip ? "skipped" : "unskipped"} successfully`)
+		const onConfrimSkip = async () => {
+			await precheckApi.skipPrecheck(clusterId!, id, skip)
+			toast.success(`Precheck ${skip ? "skipped" : "unskipped"} successfully`)
+		}
+		if (!skip) {
+			onConfrimSkip()
+			return
+		}
+		openConfirmation({
+			title: "Skip Precheck",
+			message: `Are you sure you want to skip this precheck?`,
+			confirmText: "Skip",
+			onConfirm: onConfrimSkip,
+			Icon: ArrowRight,
+		})
 	}
 
 	const layout = useMemo(() => {
@@ -83,7 +99,12 @@ function LogGroup({
 		}
 	}, [dataFor, data])
 
-	return <Box className="flex flex-row gap-[10px] w-full h-[calc(var(--window-height)-185px)]">{layout}</Box>
+	return (
+		<Box className="flex flex-row gap-[10px] w-full h-[calc(var(--window-height)-185px)]">
+			{layout}
+			{ConfirmationModal}
+		</Box>
+	)
 }
 
 export default LogGroup

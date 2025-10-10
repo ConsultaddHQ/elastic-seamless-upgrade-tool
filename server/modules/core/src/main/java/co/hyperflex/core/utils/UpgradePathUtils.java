@@ -64,7 +64,9 @@ public class UpgradePathUtils {
       Map.entry("8.14", List.of("8.15.5", "8.16.4", "8.17.2")),
       Map.entry("8.15", List.of("8.16.4", "8.17.2")),
       Map.entry("8.16", List.of("8.17.2", "8.17.3", "8.17.4", "8.17.5", "8.17.6", "8.17.7", "8.17.8", "8.17.9", "8.18.2", "8.19.0")),
-      Map.entry("8.17", List.of("8.17.2", "8.17.3", "8.17.4", "8.17.5", "8.17.6", "8.17.7", "8.17.8", "8.17.9", "8.18.2", "8.19.0"))
+      Map.entry("8.17", List.of("8.18.2", "8.19.0")),
+      Map.entry("8.18", List.of("8.19.0")),
+      Map.entry("8.19", List.of("9.0.0"))
   );
   // Pre-sort keys once, descending for quick lookup
   private static final List<String> SORTED_KEYS_DESC = POSSIBLE_UPGRADES.keySet().stream()

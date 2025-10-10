@@ -50,7 +50,6 @@ function ClusterList() {
 
 	const renderCell = useCallback(
 		(row: TPlugin, columnKey: Key) => {
-			const cellValue = row[columnKey as keyof TPlugin]
 			switch (columnKey) {
 				case "name":
 					return <span className="text-[#ADADAD]">{row.name}</span>

@@ -24,10 +24,10 @@ public class PrecheckRunRepository extends AbstractMongoRepository<PrecheckRunEn
     super(mongoTemplate, PrecheckRunEntity.class);
   }
 
-  public List<PrecheckRunEntity> getPendingPrechecks() {
+  public List<PrecheckRunEntity> getPendingPrechecks(int batchSize) {
     Query query = new Query();
     query.addCriteria(Criteria.where(STATUS).is(PrecheckStatus.PENDING));
-    query.limit(40);
+    query.limit(batchSize);
     return mongoTemplate.find(query, PrecheckRunEntity.class, collectionName);
   }
 

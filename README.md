@@ -1,5 +1,7 @@
 # Seamless Upgrade Tool
 
+[![Build Elastic Seamless Upgrade Tool](https://github.com/ConsultaddHQ/elastic-seamless-upgrade-tool/actions/workflows/deploy-docker.yml/badge.svg)](https://github.com/ConsultaddHQ/elastic-seamless-upgrade-tool/actions/workflows/deploy-docker.yml)
+
 ## Overview
 
 The **Seamless Upgrade Tool** is a containerized **Java + React** application designed to facilitate **seamless upgrades of on-premise Elasticsearch clusters**. It provides a user-friendly interface for monitoring cluster status, triggering upgrades, and tracking real-time progress.

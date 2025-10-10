@@ -1,5 +1,4 @@
 import { Box, styled, Switch, type SwitchProps, Typography } from "@mui/material"
-import { useEffect, useState } from "react"
 
 const AppSwitch = styled((props: SwitchProps) => (
 	<Switch focusVisibleClassName=".Mui-focusVisible" disableRipple {...props} />
@@ -65,15 +64,10 @@ interface AppSwitchProps {
 	label: string
 	disabled?: boolean
 }
-export default function ({ checked: enabled, onChange, label, disabled }: AppSwitchProps) {
-	const [checked, setChecked] = useState(enabled)
+export default function ({ checked, onChange, label, disabled }: AppSwitchProps) {
 	function handleSwitchClick(value: boolean) {
 		onChange(value)
-		setChecked(value)
 	}
-	useEffect(() => {
-		setChecked(enabled)
-	}, [enabled])
 
 	return (
 		<Box className="flex items-center gap-[6px]">

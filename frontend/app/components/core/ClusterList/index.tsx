@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query"
 import { Folder } from "iconsax-react"
 import { useCallback, type Key } from "react"
 import { useNavigate } from "react-router"
-import axiosJSON from "~/apis/http"
+import { clusterApi } from "~/apis/ClusterApi"
 import { cn } from "~/lib/Utils"
 
 const columns: TColumn = [
@@ -37,14 +37,9 @@ const columns: TColumn = [
 function ClusterList() {
 	const navigate = useNavigate()
 
-	const getClustersData = async () => {
-		const response = await axiosJSON.get("/clusters")
-		return response.data
-	}
-
 	const { data, isLoading, isRefetching } = useQuery({
 		queryKey: ["get-all-clusters"],
-		queryFn: getClustersData,
+		queryFn: clusterApi.getClusters,
 		staleTime: 0,
 	})
 
@@ -93,8 +88,8 @@ function ClusterList() {
 
 	const handleClusterSelect = (clusterId: Key) => {
 		const selectedCluster = data?.filter((item: any) => item.id === clusterId)[0]
-		if (selectedCluster.length !== 0) {
-			navigate("/"+clusterId+"/cluster-overview")
+		if (selectedCluster) {
+			navigate(`${clusterId}/cluster-overview`)
 		}
 	}
 

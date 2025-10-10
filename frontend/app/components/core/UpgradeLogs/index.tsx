@@ -1,6 +1,5 @@
 import { Box, Typography } from "@mui/material"
 import { useQuery } from "@tanstack/react-query"
-import axiosJSON from "~/apis/http"
 import { useRealtimeEventListener } from "~/lib/hooks/useRealtimeEventListener"
 import { FullScreenDrawer } from "~/components/utilities/FullScreenDrawer"
 import AppBreadcrumb from "~/components/utilities/AppBreadcrumb"
@@ -8,6 +7,7 @@ import { ArrowLeft } from "iconsax-react"
 import NoData from "~/components/core/Precheck/widgets/NoData"
 import { Skeleton } from "@heroui/react"
 import { useParams } from "react-router"
+import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
 
 function LogsBreadcrumb({ onBack }: { onBack: () => void }) {
 	return (
@@ -29,17 +29,13 @@ function LogsBreadcrumb({ onBack }: { onBack: () => void }) {
 
 function useUpgradeLogs(nodeId: string) {
 	const { clusterId } = useParams()
-	const fetchUpgradeLogs = async () => {
-		const res = await axiosJSON.get(`/clusters/${clusterId}/upgrades/nodes/${nodeId}/logs`)
-		return res.data.logs ?? []
-	}
 	const {
 		refetch,
 		data: logs,
 		isLoading,
 	} = useQuery({
 		queryKey: ["getUpgradeLogs", clusterId, nodeId],
-		queryFn: fetchUpgradeLogs,
+		queryFn: ()=> clusterUpgradeApi.getUpgradeLogs(clusterId!, nodeId),
 		staleTime: 0,
 	})
 

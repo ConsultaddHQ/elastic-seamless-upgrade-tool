@@ -1,14 +1,13 @@
 import { Box, Typography } from "@mui/material"
 import { useQuery } from "@tanstack/react-query"
-import axiosJSON from "~/apis/http"
 import { useRealtimeEventListener } from "~/lib/hooks/useRealtimeEventListener"
 import { FullScreenDrawer } from "~/components/utilities/FullScreenDrawer"
 import AppBreadcrumb from "~/components/utilities/AppBreadcrumb"
 import { ArrowLeft } from "iconsax-react"
 import NoData from "~/components/core/Precheck/widgets/NoData"
 import { Skeleton, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react"
-import type { IAllocationExplain } from "./types"
 import { useParams } from "react-router"
+import { clusterApi } from "~/apis/ClusterApi"
 
 function AllocationExplainBreadcrumb({ onBack }: { onBack: () => void }) {
 	return (
@@ -30,13 +29,9 @@ function AllocationExplainBreadcrumb({ onBack }: { onBack: () => void }) {
 
 function useAllocationExplain() {
 	const { clusterId } = useParams()
-	const fetchAllocationExplain = async () => {
-		const res = await axiosJSON.get<IAllocationExplain[]>(`/clusters/${clusterId}/allocation-explanations`)
-		return res.data ?? []
-	}
 	const { refetch, data, isLoading } = useQuery({
 		queryKey: ["getAllocationExplain", clusterId],
-		queryFn: fetchAllocationExplain,
+		queryFn: () => clusterApi.getAllocationExplain(clusterId!),
 		staleTime: 0,
 	})
 
