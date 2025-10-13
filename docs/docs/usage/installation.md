@@ -12,6 +12,7 @@ Before setting up the Elastic Seamless Upgrade Tool, make sure you have:
 - **Network Access**: The VM should be in the same VPC as your Elasticsearch cluster so the tool can reach nodes via private IPs.
 - **Cluster Access**: Ensure your cluster allows traffic from the VM.
 - **Container Runtime**: Docker or Podman installed on the machine.
+- **SSH:** Ensure SSH access using a user and key pair, with passwordless sudo privileges enabled.
 ---
 
 ## Running the Tool Locally
