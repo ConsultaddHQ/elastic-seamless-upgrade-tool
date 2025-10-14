@@ -34,7 +34,7 @@ services:
       - seamless-upgrade-mongodb-data:/data/db
 
   seamless-upgrade-tool:
-    image: elastic-seamless-upgrade-tool:$DOCKER_TAG
+    image: hyperflex/elastic-seamless-upgrade-tool:$DOCKER_TAG
     container_name: tool
     pull_policy: always
     ports:
