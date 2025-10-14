@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eu
 # Get the docker tag from the first argument, default to 'latest'
 DOCKER_TAG="${1:-latest}"
 
