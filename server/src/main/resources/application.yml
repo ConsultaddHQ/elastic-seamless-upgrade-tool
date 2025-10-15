@@ -46,3 +46,7 @@ server:
     key-alias: ${SEAMLESS_UPGRADE_TOOL_TLS_KEY_ALIAS:hyperflex}
     protocol: TLS
     enabled-protocols: TLSv1.2
+security:
+  jwt:
+    secret-key: ${SEAMLESS_UPGRADE_TOOL_JWT_SECRET:47d07cf9cba03db39b196e0bd2cd805dfd2951b7309c9ddb}
+    expiration-time: 3600000
