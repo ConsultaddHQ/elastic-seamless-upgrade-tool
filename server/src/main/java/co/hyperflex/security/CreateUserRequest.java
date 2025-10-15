@@ -1,6 +1,8 @@
 package co.hyperflex.security;
 
+import jakarta.validation.constraints.NotEmpty;
+
 public record CreateUserRequest(
-    String username, String password
+    @NotEmpty String username, @NotEmpty String password
 ) {
 }
