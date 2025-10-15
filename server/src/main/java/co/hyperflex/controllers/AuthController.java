@@ -1,5 +1,6 @@
 package co.hyperflex.controllers;
 
+import co.hyperflex.common.exceptions.BadRequestException;
 import co.hyperflex.security.AuthResponse;
 import co.hyperflex.security.CreateUserRequest;
 import co.hyperflex.security.JwtService;
@@ -43,10 +44,14 @@ public class AuthController {
   public AuthResponse login(
       @Valid @RequestBody UsernamePasswordAuthRequest authRequest
   ) {
-    var authenticate =
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequest.username(), authRequest.password()));
-    var token = jwtService.generateToken((UserDetails) authenticate.getPrincipal());
-    return new AuthResponse(token);
+    try {
+      var authenticate =
+          authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequest.username(), authRequest.password()));
+      var token = jwtService.generateToken((UserDetails) authenticate.getPrincipal());
+      return new AuthResponse(token);
+    } catch (Exception e) {
+      throw new BadRequestException("Invalid username or password");
+    }
   }
 
   @PostMapping("/signup")
