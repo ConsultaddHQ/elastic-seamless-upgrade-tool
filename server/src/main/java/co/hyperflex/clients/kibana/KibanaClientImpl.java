@@ -13,15 +13,17 @@ public class KibanaClientImpl extends RestApiClient implements KibanaClient {
 
   private static final Logger logger = LoggerFactory.getLogger(KibanaClientImpl.class);
   private final String kibanaUrl;
+  private final String protocol;
 
   public KibanaClientImpl(RestClient restClient, String kibanaUrl) {
     super(restClient);
     this.kibanaUrl = kibanaUrl;
+    this.protocol = kibanaUrl.startsWith("https://") ? "https://" : "http://";
   }
 
   @Override
   public boolean isKibanaReady(String host) {
-    String url = "http://" + host + ":5601/api/kibana/settings";
+    String url = protocol + host + ":5601/api/kibana/settings";
     try {
       restClient.get().uri(url).retrieve().toBodilessEntity();
       return true;
@@ -44,7 +46,7 @@ public class KibanaClientImpl extends RestApiClient implements KibanaClient {
   @Override
   public GetKibanaStatusResponse getKibanaNodeDetails(String nodeIp) {
     String url =
-        Optional.ofNullable(nodeIp).map(ip -> String.format("http://%s:5601/api/status", ip))
+        Optional.ofNullable(nodeIp).map(ip -> String.format(protocol + "%s:5601/api/status", ip))
             .orElse(kibanaUrl + "/api/status");
     try {
       return restClient.get().uri(url).retrieve().body(GetKibanaStatusResponse.class);
