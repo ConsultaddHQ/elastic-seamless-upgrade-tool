@@ -1,7 +1,7 @@
 import { index, layout, route, type RouteConfig } from "@react-router/dev/routes"
 
 export default [
-	layout("layouts/data.tsx", [route("add-cluster", "routes/setup.tsx")]),
+	layout("layouts/data.tsx", [route("add-cluster", "routes/setup.tsx"), route("/login", "routes/login.tsx")]),
 	layout("layouts/common.tsx", [
 		index("routes/clusterListing.tsx"),
 		route("plugins", "routes/pluginListing.tsx"),

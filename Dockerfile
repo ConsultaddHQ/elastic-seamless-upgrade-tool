@@ -15,5 +15,6 @@ COPY --from=builder /app/server/build/libs/*.jar /app.jar
 
 # Copy Ansible files
 COPY data/ data/
+COPY server/scripts/  /scripts
 
 ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-jar", "app.jar"]

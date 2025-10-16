@@ -7,8 +7,8 @@ const sidebars: SidebarsConfig = {
             label: "Getting Started",
             items: [
                 "usage/installation",
+                "usage/create-user",
                 "usage/setup-ssl",
-                "usage/setup",
                 "usage/usage-guide",
             ],
         }],

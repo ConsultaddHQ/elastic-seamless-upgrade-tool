@@ -1,22 +1,13 @@
 #!/bin/bash
 set -eu
+
 # Get the docker tag from the first argument, default to 'latest'
 DOCKER_TAG="${1:-latest}"
 
 # Paths
-CERTS_DIR="./certs"
+APP_DIR="./seamless-upgrade-tool"
+CERTS_DIR="$APP_DIR/certs"
 mkdir -p "$CERTS_DIR"
-
-# Check if custom keystore exists
-if [ -f "$CERTS_DIR/keystore.p12" ]; then
-  TLS_ENV="
-    environment:
-      - SEAMLESS_UPGRADE_TOOL_TLS_KEY_STORE=/certs/keystore.p12
-      - SEAMLESS_UPGRADE_TOOL_TLS_KEY_STORE_PASSWORD=${SEAMLESS_UPGRADE_TOOL_TLS_KEY_STORE_PASSWORD}
-      - SEAMLESS_UPGRADE_TOOL_TLS_KEY_ALIAS=${SEAMLESS_UPGRADE_TOOL_TLS_KEY_ALIAS}"
-else
-  TLS_ENV=""
-fi
 
 # Define the docker-compose.yml content
 cat <<EOF > docker-compose.yml
@@ -24,9 +15,7 @@ cat <<EOF > docker-compose.yml
 services:
   seamless-upgrade-mongodb:
     image: mongo:8.0
-    container_name: mongodb
-    ports:
-      - '27017:27017'
+    container_name: seamless-upgrade-mongodb
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin123
@@ -35,19 +24,16 @@ services:
 
   seamless-upgrade-tool:
     image: hyperflex/elastic-seamless-upgrade-tool:$DOCKER_TAG
-    container_name: tool
+    container_name: seamless-upgrade-tool
     pull_policy: always
     ports:
       - '8080:8080'
     volumes:
-      - seamless-upgrade-tool:/output
+      - $APP_DIR:/output
       - $CERTS_DIR:/certs:ro
     depends_on:
       - seamless-upgrade-mongodb
-$TLS_ENV
-
 volumes:
-  seamless-upgrade-tool:
   seamless-upgrade-mongodb-data:
 EOF
 

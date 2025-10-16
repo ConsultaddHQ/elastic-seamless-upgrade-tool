@@ -4,7 +4,7 @@ spring:
   output:
     ansi-enabled: "never"
   application:
-    name: NextGen Seamless Upgrade
+    name: Elastic Seamless Upgrade Tool
   data:
     mongodb:
       uri: mongodb://admin:admin123@localhost:27017/admin
@@ -19,16 +19,11 @@ spring:
     caffeine:
       spec: initialCapacity=100,maximumSize=500,expireAfterAccess=5m
 
-app:
-  ansible:
-    playbooks-directory: /
-
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
 seamless:
-  encryption-key: changeit
   output:
     dir: "output"
 
@@ -38,11 +33,3 @@ server:
     enabled: true
     mime-types: text/html,text/xml,text/plain,application/json
     min-response-size: 1024
-  ssl:
-    enabled: true
-    key-store-type: PKCS12
-    key-store: ${SEAMLESS_UPGRADE_TOOL_TLS_KEY_STORE:classpath:keystore/keystore.p12}
-    key-store-password: ${SEAMLESS_UPGRADE_TOOL_TLS_KEY_STORE_PASSWORD:changeit}
-    key-alias: ${SEAMLESS_UPGRADE_TOOL_TLS_KEY_ALIAS:hyperflex}
-    protocol: TLS
-    enabled-protocols: TLSv1.2
