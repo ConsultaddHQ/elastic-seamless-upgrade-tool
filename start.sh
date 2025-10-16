@@ -36,7 +36,6 @@ services:
     depends_on:
       - seamless-upgrade-mongodb
 volumes:
-  seamless-upgrade-tool:
   seamless-upgrade-mongodb-data:
 EOF
 

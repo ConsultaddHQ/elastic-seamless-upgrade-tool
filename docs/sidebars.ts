@@ -9,7 +9,6 @@ const sidebars: SidebarsConfig = {
                 "usage/installation",
                 "usage/create-user",
                 "usage/setup-ssl",
-                "usage/setup",
                 "usage/usage-guide",
             ],
         }],
