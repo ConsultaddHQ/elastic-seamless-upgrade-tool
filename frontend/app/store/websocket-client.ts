@@ -1,3 +1,5 @@
+import { useLocalStore } from "./common"
+
 type EventHandler = (...args: any[]) => void
 
 interface WebSocketClientOptions {
@@ -26,7 +28,8 @@ export class WebSocketClient {
 	}
 
 	connect() {
-		this.socket = new WebSocket(this.url)
+		const token = useLocalStore.getState().sessionName
+		this.socket = new WebSocket(`${this.url}?token=${token}`)
 
 		this.socket.addEventListener("open", () => {
 			this.isConnected = true

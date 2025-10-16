@@ -1,6 +1,5 @@
 #!/bin/bash
 set -eu
-
 # Get the docker tag from the first argument, default to 'latest'
 DOCKER_TAG="${1:-latest}"
 
@@ -52,27 +51,30 @@ volumes:
   seamless-upgrade-mongodb-data:
 EOF
 
-# Start the services
-echo "Starting the containers..."
-docker compose -p seamless-upgrade up -d
+# Function to start containers
+start_containers() {
+    echo "Starting the containers..."
 
-# Function to check service status
-check_service() {
-    local service_name=$1
-    local status=$(docker inspect --format='{{.State.Status}}' $service_name 2>/dev/null)
-    if [ "$status" != "running" ]; then
-        echo "$service_name failed to start. Logs:"
-        docker logs $service_name
+    if command -v podman >/dev/null 2>&1; then
+        if podman compose version >/dev/null 2>&1; then
+            podman compose up -d
+        elif command -v podman-compose >/dev/null 2>&1; then
+            podman-compose up -d
+        else
+            echo "Error: Neither 'podman compose' nor 'podman-compose' is available."
+            exit 1
+        fi
+    else
+        echo "Error: Podman is not installed."
         exit 1
     fi
 }
 
+# Start containers
+start_containers
+
 # Wait a few seconds before checking status
 sleep 5
-
-# Check each service
-check_service "seamless-upgrade-mongodb"
-check_service "seamless-upgrade-tool"
 
 echo "Seamless upgrade tool running on:"
 echo "http://localhost:8080"
