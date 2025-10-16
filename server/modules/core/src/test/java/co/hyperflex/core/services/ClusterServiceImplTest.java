@@ -171,7 +171,7 @@ class ClusterServiceImplTest {
 
     AddSelfManagedClusterRequest request = new AddSelfManagedClusterRequest();
     request.setApiKey(MOCK_API_KEY);
-    when(secretStoreService.getSecret(anyString())).thenReturn(Optional.empty());
+    when(secretStoreService.getSecret(anyString())).thenThrow(new NotFoundException());
     when(clusterMapper.toEntity(request)).thenReturn(cluster);
     var connectionDetail = new ClientConnectionDetail(MOCK_ELASTIC_SEARCH_URL, null);
     when(elasticsearchClientProvider.getClient(connectionDetail)).thenThrow(new RuntimeException("Invalid credentials"));

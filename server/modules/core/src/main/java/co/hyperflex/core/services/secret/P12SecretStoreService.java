@@ -1,5 +1,8 @@
 package co.hyperflex.core.services.secret;
 
+import co.hyperflex.common.exceptions.NotFoundException;
+import co.hyperflex.common.services.ConfigurationService;
+import co.hyperflex.common.utils.SecretUtil;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.nio.file.Files;
@@ -17,6 +20,7 @@ import org.springframework.stereotype.Service;
 class P12SecretStoreService implements SecretStoreService {
 
   private static final String KEYSTORE_TYPE = "PKCS12";
+  private static final String SECRET_STORE_ENCRYPTION_KEY = "app.security.encryption.key";
 
   private final Path keystorePath;
   private final char[] keystorePassword;
@@ -26,12 +30,16 @@ class P12SecretStoreService implements SecretStoreService {
 
   public P12SecretStoreService(
       @Value("${seamless.output.dir}") String outputDir,
-      @Value("${seamless.encryption-key}") String keystorePassword) {
+      ConfigurationService configurationService) {
     try {
       Path outputDirPath = Path.of(outputDir);
       Files.createDirectories(outputDirPath);
       this.keystorePath = outputDirPath.resolve("credentials.p12");
-      this.keystorePassword = keystorePassword.toCharArray();
+      String ksPass = configurationService.<String>getOrInitialize(
+          SECRET_STORE_ENCRYPTION_KEY,
+          () -> SecretUtil.generateSecret(10)
+      );
+      this.keystorePassword = ksPass.toCharArray();
 
       // Create empty P12 if it does not exist
       if (!Files.exists(keystorePath)) {
@@ -99,9 +107,9 @@ class P12SecretStoreService implements SecretStoreService {
   }
 
   @Override
-  public Optional<Secret> getSecret(String key) {
+  public Secret getSecret(String key) {
     synchronized (lock) {
-      return Optional.ofNullable(cache.get(key));
+      return Optional.ofNullable(cache.get(key)).orElseThrow(() -> new NotFoundException("Secret not found: " + key));
     }
   }
 

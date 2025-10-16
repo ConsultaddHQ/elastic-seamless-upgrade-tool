@@ -104,6 +104,13 @@ subprojects {
     }
 }
 
+project(":server:modules:common") {
+    dependencies {
+        implementation 'org.yaml:snakeyaml:2.4'
+    }
+}
+
+
 project(":server:modules:elastic-client") {
     dependencies {
         implementation project(":server:modules:common")

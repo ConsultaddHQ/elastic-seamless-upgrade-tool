@@ -55,7 +55,7 @@ public class ElasticsearchClientProviderImpl implements ElasticsearchClientProvi
 
       RestClient genericClient = RestClient.builder()
           .baseUrl(detail.baseUrl())
-          .defaultHeader("Authorization", secretStoreService.getSecret(detail.secretKey()).orElseThrow().value())
+          .defaultHeader("Authorization", secretStoreService.getSecret(detail.secretKey()).value())
           .defaultHeader("Content-Type", "application/json")
           .requestFactory(new JdkClientHttpRequestFactory(jdkHttpClient))
           .build();

@@ -1,5 +1,7 @@
 package co.hyperflex.security;
 
+import co.hyperflex.common.services.ConfigurationService;
+import co.hyperflex.common.utils.SecretUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -10,17 +12,22 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 import javax.crypto.SecretKey;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 @Service
 public class JwtService {
-  @Value("${security.jwt.secret-key}")
-  private String secretKey;
+  private static String SECRET_KEY = "app.security.jwt.secret";
+  private static String EXPIRATION_TIME = "app.security.jwt.expiration-ms";
+  private final String secretKey;
+  private final long jwtExpiration;
 
-  @Value("${security.jwt.expiration-time}")
-  private long jwtExpiration;
+
+  public JwtService(ConfigurationService configurationService) {
+    this.secretKey = configurationService.getOrInitialize(SECRET_KEY, this::generateSecret);
+    this.jwtExpiration = configurationService.getOrInitialize(EXPIRATION_TIME, () -> 60 * 60 * 1000);
+  }
+
 
   public String extractUsername(String token) {
     return extractClaim(token, Claims::getSubject);
@@ -75,5 +82,9 @@ public class JwtService {
   private SecretKey getSignInKey() {
     byte[] keyBytes = Decoders.BASE64.decode(secretKey);
     return Keys.hmacShaKeyFor(keyBytes);
+  }
+
+  private String generateSecret() {
+    return SecretUtil.generateSecret(128);
   }
 }

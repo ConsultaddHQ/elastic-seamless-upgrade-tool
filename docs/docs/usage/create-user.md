@@ -37,7 +37,7 @@ Example output:
 
 ```
 CONTAINER ID   NAME                   STATUS
-1234abcd5678   tool                   Up 5 minutes
+1234abcd5678   seamless-upgrade-tool  Up 5 minutes
 ```
 
 ---
@@ -47,7 +47,7 @@ CONTAINER ID   NAME                   STATUS
 Run the interactive user creation script inside the container:
 
 ```bash
-docker exec -it tool /scripts/create-user
+docker exec -it seamless-upgrade-tool /scripts/create-user
 ```
 
 You’ll be prompted for:
@@ -70,7 +70,7 @@ Enter password: ******
 If you are using **Podman**, the command is almost identical:
 
 ```bash
-podman exec -it tool /scripts/create-user
+podman exec -it seamless-upgrade-tool /scripts/create-user
 ```
 
 You’ll be prompted for:
