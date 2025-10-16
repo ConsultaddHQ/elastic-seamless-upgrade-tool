@@ -1,0 +1,45 @@
+{
+  "docs": [
+    {
+      "type": "category",
+      "label": "Getting Started",
+      "items": [
+        "usage/installation",
+        "usage/create-user",
+        "usage/setup-ssl",
+        "usage/usage-guide"
+      ]
+    }
+  ],
+  "devGuide": [
+    {
+      "type": "category",
+      "label": "Developer Guide",
+      "items": [
+        "dev/contributing",
+        "dev/code-style",
+        "dev/project-structure"
+      ]
+    }
+  ],
+  "features": [
+    {
+      "type": "category",
+      "label": "Product Features",
+      "items": [
+        "features/overview",
+        "features/integrations",
+        "features/examples"
+      ]
+    }
+  ],
+  "releases": [
+    {
+      "type": "category",
+      "label": "Release Notes",
+      "items": [
+        "releases/v0.0.12"
+      ]
+    }
+  ]
+}
