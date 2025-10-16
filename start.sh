@@ -5,19 +5,9 @@ set -eu
 DOCKER_TAG="${1:-latest}"
 
 # Paths
-CERTS_DIR="./certs"
+APP_DIR="./seamless-upgrade-tool"
+CERTS_DIR="$APP_DIR/certs"
 mkdir -p "$CERTS_DIR"
-
-# Check if custom keystore exists
-if [ -f "$CERTS_DIR/keystore.p12" ]; then
-  TLS_ENV="
-    environment:
-      - SEAMLESS_UPGRADE_TOOL_TLS_KEY_STORE=/certs/keystore.p12
-      - SEAMLESS_UPGRADE_TOOL_TLS_KEY_STORE_PASSWORD=${SEAMLESS_UPGRADE_TOOL_TLS_KEY_STORE_PASSWORD}
-      - SEAMLESS_UPGRADE_TOOL_TLS_KEY_ALIAS=${SEAMLESS_UPGRADE_TOOL_TLS_KEY_ALIAS}"
-else
-  TLS_ENV=""
-fi
 
 # Define the docker-compose.yml content
 cat <<EOF > docker-compose.yml
@@ -41,12 +31,10 @@ services:
     ports:
       - '8080:8080'
     volumes:
-      - seamless-upgrade-tool:/output
+      - $APP_DIR:/output
       - $CERTS_DIR:/certs:ro
     depends_on:
       - seamless-upgrade-mongodb
-$TLS_ENV
-
 volumes:
   seamless-upgrade-tool:
   seamless-upgrade-mongodb-data:
