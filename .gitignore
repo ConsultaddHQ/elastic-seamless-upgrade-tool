@@ -44,3 +44,4 @@ bin/
 **/.DS_Store
 server/src/main/resources/static/**
 output/
+seamless-upgrade-tool

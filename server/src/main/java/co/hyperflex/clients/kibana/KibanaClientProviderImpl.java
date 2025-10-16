@@ -31,7 +31,7 @@ public class KibanaClientProviderImpl implements KibanaClientProvider {
   public KibanaClient getClient(ClientConnectionDetail detail) {
     RestClient client = RestClient.builder()
         .baseUrl(detail.baseUrl())
-        .defaultHeader("Authorization", secretStoreService.getSecret(detail.secretKey()).orElseThrow().value())
+        .defaultHeader("Authorization", secretStoreService.getSecret(detail.secretKey()).value())
         .defaultHeader("Content-Type", "application/json")
         .defaultHeader("kbn-xsrf", "true")
         .build();
