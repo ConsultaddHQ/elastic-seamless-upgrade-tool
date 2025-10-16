@@ -69,13 +69,13 @@ certificate and private key.
    **Using Docker:**
 
    ```bash
-   docker restart tool
+   docker restart seamless-upgrade-tool
    ```
 
    **Using Podman:**
 
    ```bash
-   podman restart tool
+   podman restart seamless-upgrade-tool
    ```
 
    After restart, the tool will serve HTTPS using your custom SSL certificate.

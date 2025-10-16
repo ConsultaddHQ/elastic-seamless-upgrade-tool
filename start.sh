@@ -15,7 +15,7 @@ cat <<EOF > docker-compose.yml
 services:
   seamless-upgrade-mongodb:
     image: mongo:8.0
-    container_name: mongodb
+    container_name: seamless-upgrade-mongodb
     ports:
       - '27017:27017'
     environment:
@@ -26,7 +26,7 @@ services:
 
   seamless-upgrade-tool:
     image: hyperflex/elastic-seamless-upgrade-tool:$DOCKER_TAG
-    container_name: tool
+    container_name: seamless-upgrade-tool
     pull_policy: always
     ports:
       - '8080:8080'
