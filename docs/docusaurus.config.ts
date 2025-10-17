@@ -67,9 +67,10 @@ const config: Config = {
         },
         { to: "/blog", label: "Blog", position: "left" },
         {
-          href: "https://github.com/ConsultaddHQ/elastic-seamless-upgrade-tool",
-          label: "GitHub",
-          position: "right",
+            href: 'https://github.com/langchain4j/langchain4j',
+            position: 'right',
+            className: 'header-github-link',
+            'aria-label': 'GitHub repository',
         },
         {
           type: 'docsVersionDropdown',
