@@ -1,0 +1,160 @@
+#!/usr/bin/env python3
+import argparse
+import getpass
+import json
+import requests
+import sys
+import urllib3
+
+# Suppress SSL warnings (only for development with self-signed certs)
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+API_BASE_URL = "https://localhost:8080/api/v1/auth"
+
+
+def create_user():
+    print("Creating a new user...")
+    username = input("Username: ").strip()
+    password = getpass.getpass("Password: ").strip()
+
+    if not username or not password:
+        print("Error: Username and password are required.")
+        sys.exit(1)
+
+    payload = {"username": username, "password": password}
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/signup",
+            json=payload,
+            verify=False,
+            headers={"Content-Type": "application/json"}
+        )
+        print(f"Response Code: {response.status_code}")
+        if response.status_code == 201 or response.status_code == 200:
+            print(f"User '{username}' created successfully.")
+        else:
+            print_response_errors(response)
+    except requests.exceptions.RequestException as e:
+        print("Error: Failed to connect to server.")
+        print(str(e))
+        sys.exit(1)
+
+
+def list_users():
+    print("Fetching user list...")
+    try:
+        response = requests.get(
+            f"{API_BASE_URL}/users",
+            verify=False,
+            headers={"Accept": "application/json"}
+        )
+        print(f"Response Code: {response.status_code}")
+        if response.status_code == 200:
+            try:
+                users = response.json()
+                if isinstance(users, list) and users:
+                    print("Users:")
+                    for user in users:
+                        print(f"- {user.get('username', '(unknown)')}")
+                else:
+                    print("No users found.")
+            except ValueError:
+                print("Error: Invalid response format.")
+                print(response.text)
+        else:
+            print_response_errors(response)
+    except requests.exceptions.RequestException as e:
+        print("Error: Failed to connect to server.")
+        print(str(e))
+        sys.exit(1)
+
+
+def remove_user():
+    username = input("Username to remove: ").strip()
+    if not username:
+        print("Error: Username is required.")
+        sys.exit(1)
+
+    try:
+        response = requests.delete(
+            f"{API_BASE_URL}/users/{username}",
+            verify=False
+        )
+        print(f"Response Code: {response.status_code}")
+        if response.status_code == 200:
+            print(f"User '{username}' removed successfully.")
+        elif response.status_code == 404:
+            print(f"User '{username}' not found.")
+        else:
+            print_response_errors(response)
+    except requests.exceptions.RequestException as e:
+        print("Error: Failed to connect to server.")
+        print(str(e))
+        sys.exit(1)
+
+
+def reset_password():
+    username = input("Username to reset password: ").strip()
+    new_password = getpass.getpass("New password: ").strip()
+
+    if not username or not new_password:
+        print("Error: Username and new password are required.")
+        sys.exit(1)
+
+    payload = {"password": new_password}
+    try:
+        response = requests.put(
+            f"{API_BASE_URL}/users/{username}/reset-password",
+            json=payload,
+            verify=False,
+            headers={"Content-Type": "application/json"}
+        )
+        print(f"Response Code: {response.status_code}")
+        if response.status_code == 200:
+            print(f"Password for user '{username}' was reset successfully.")
+        elif response.status_code == 404:
+            print(f"User '{username}' not found.")
+        else:
+            print_response_errors(response)
+    except requests.exceptions.RequestException as e:
+        print("Error: Failed to connect to server.")
+        print(str(e))
+        sys.exit(1)
+
+
+def print_response_errors(response):
+    """Print API errors from response."""
+    try:
+        data = response.json()
+        message = data.get("message") or data.get("error") or str(data)
+        print("Error:", message)
+    except ValueError:
+        print("Error:", response.text)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="User Management CLI")
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+    # Subcommands
+    subparsers.add_parser("create", help="Create a new user")
+    subparsers.add_parser("list", help="List all users")
+    subparsers.add_parser("remove", help="Remove a user")
+    subparsers.add_parser("reset-password", help="Reset a user's password")
+
+    args = parser.parse_args()
+
+    if args.command == "create":
+        create_user()
+    elif args.command == "list":
+        list_users()
+    elif args.command == "remove":
+        remove_user()
+    elif args.command == "reset-password":
+        reset_password()
+    else:
+        parser.print_help()
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
