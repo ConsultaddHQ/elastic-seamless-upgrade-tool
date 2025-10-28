@@ -22,6 +22,11 @@ public class KibanaClientImpl extends RestApiClient implements KibanaClient {
   }
 
   @Override
+  public String baseUrl(String hostIp) {
+    return this.protocol + hostIp + ":5601";
+  }
+
+  @Override
   public boolean isKibanaReady(String host) {
     String url = protocol + host + ":5601/api/kibana/settings";
     try {
