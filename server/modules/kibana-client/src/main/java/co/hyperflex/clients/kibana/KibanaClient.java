@@ -7,6 +7,8 @@ import co.hyperflex.common.client.ApiClient;
 public interface KibanaClient extends ApiClient {
   boolean isKibanaReady(String host);
 
+  String baseUrl(String host);
+
   String getKibanaVersion(String nodeIp);
 
   String getKibanaVersion();
