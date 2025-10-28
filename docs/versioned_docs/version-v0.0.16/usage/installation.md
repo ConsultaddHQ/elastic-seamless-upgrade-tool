@@ -25,13 +25,13 @@ Use the official **start script** to launch the tool.
 ### Using Docker
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ConsultaddHQ/elastic-seamless-upgrade-tool/main/start.sh | sh -s -- v0.0.14
+curl -fsSL https://raw.githubusercontent.com/ConsultaddHQ/elastic-seamless-upgrade-tool/main/start.sh | sh -s -- v0.0.16
 ```
 
 ### Using Podman
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ConsultaddHQ/elastic-seamless-upgrade-tool/main/start-pm.sh | sh -s -- v0.0.14
+curl -fsSL https://raw.githubusercontent.com/ConsultaddHQ/elastic-seamless-upgrade-tool/main/start-pm.sh | sh -s -- v0.0.16
 ````
 
 After starting, access the tool at:
