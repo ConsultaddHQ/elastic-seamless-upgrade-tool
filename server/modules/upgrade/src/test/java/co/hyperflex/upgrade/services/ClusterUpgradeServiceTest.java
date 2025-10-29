@@ -73,6 +73,7 @@ class ClusterUpgradeServiceTest {
     clusterUpgradeJob = new ClusterUpgradeJobEntity();
     clusterUpgradeJob.setId("jobId");
     clusterUpgradeJob.setStatus(ClusterUpgradeStatus.PENDING);
+    clusterUpgradeJob.setCurrentVersion("8.0.0");
 
     deprecationCounts = new DeprecationCounts(0, 0);
 
@@ -94,7 +95,7 @@ class ClusterUpgradeServiceTest {
       // Arrange
       when(clusterUpgradeJobService.getActiveJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
       when(precheckRunService.getStatusByUpgradeJobId(anyString())).thenReturn(PrecheckStatus.COMPLETED);
-      when(elasticClient.getValidSnapshots()).thenReturn(List.of(new GetElasticsearchSnapshotResponse("snapshot", new Date())));
+      when(elasticClient.getValidSnapshots("8.0.0")).thenReturn(List.of(new GetElasticsearchSnapshotResponse("snapshot", new Date())));
       when(clusterService.isNodesUpgraded(CLUSTER_ID, ClusterNodeType.ELASTIC)).thenReturn(false);
       when(clusterService.isNodesUpgraded(CLUSTER_ID, ClusterNodeType.KIBANA)).thenReturn(false);
 
@@ -115,7 +116,7 @@ class ClusterUpgradeServiceTest {
       // Arrange
       when(clusterUpgradeJobService.getActiveJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
       when(precheckRunService.getStatusByUpgradeJobId(anyString())).thenReturn(PrecheckStatus.FAILED);
-      when(elasticClient.getValidSnapshots()).thenReturn(Collections.emptyList());
+      when(elasticClient.getValidSnapshots("8.0.0")).thenReturn(Collections.emptyList());
 
       // Act
       ClusterInfoResponse response = clusterUpgradeService.upgradeInfo(CLUSTER_ID);
@@ -135,7 +136,7 @@ class ClusterUpgradeServiceTest {
       // Arrange
       when(clusterUpgradeJobService.getActiveJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
       when(precheckRunService.getStatusByUpgradeJobId(anyString())).thenReturn(PrecheckStatus.COMPLETED);
-      when(elasticClient.getValidSnapshots()).thenReturn(Collections.emptyList());
+      when(elasticClient.getValidSnapshots("8.0.0")).thenReturn(Collections.emptyList());
       when(clusterService.isNodesUpgraded(CLUSTER_ID, ClusterNodeType.ELASTIC)).thenReturn(true);
       when(clusterService.isNodesUpgraded(CLUSTER_ID, ClusterNodeType.KIBANA)).thenReturn(false);
 
@@ -153,7 +154,7 @@ class ClusterUpgradeServiceTest {
       // Arrange
       when(clusterUpgradeJobService.getActiveJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
       when(precheckRunService.getStatusByUpgradeJobId(anyString())).thenReturn(PrecheckStatus.COMPLETED);
-      when(elasticClient.getValidSnapshots()).thenReturn(Collections.emptyList());
+      when(elasticClient.getValidSnapshots("8.0.0")).thenReturn(Collections.emptyList());
       when(clusterService.isNodesUpgraded(CLUSTER_ID, ClusterNodeType.ELASTIC)).thenReturn(true);
       when(clusterService.isNodesUpgraded(CLUSTER_ID, ClusterNodeType.KIBANA)).thenReturn(true);
 
@@ -172,7 +173,7 @@ class ClusterUpgradeServiceTest {
       clusterUpgradeJob.setStatus(ClusterUpgradeStatus.UPDATED);
       when(clusterUpgradeJobService.getActiveJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
       when(precheckRunService.getStatusByUpgradeJobId(anyString())).thenReturn(PrecheckStatus.COMPLETED);
-      when(elasticClient.getValidSnapshots()).thenReturn(Collections.emptyList());
+      when(elasticClient.getValidSnapshots("8.0.0")).thenReturn(Collections.emptyList());
 
       // Act
       ClusterInfoResponse response = clusterUpgradeService.upgradeInfo(CLUSTER_ID);
@@ -188,7 +189,7 @@ class ClusterUpgradeServiceTest {
       // Arrange
       clusterUpgradeJob.setStatus(ClusterUpgradeStatus.UPGRADING);
       when(clusterUpgradeJobService.getActiveJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
-      when(elasticClient.getValidSnapshots()).thenReturn(Collections.emptyList());
+      when(elasticClient.getValidSnapshots("8.0.0")).thenReturn(Collections.emptyList());
       when(clusterService.isNodesUpgraded(CLUSTER_ID, ClusterNodeType.ELASTIC)).thenReturn(false);
 
       // Act
@@ -198,29 +199,6 @@ class ClusterUpgradeServiceTest {
       assertTrue(response.elastic().isUpgradable());
       assertFalse(response.kibana().isUpgradable());
       assertEquals(PrecheckStatus.COMPLETED, response.precheck().status());
-    }
-  }
-
-  @Nested
-  @DisplayName("Edge Case Scenarios")
-  class EdgeCases {
-
-    @Test
-    @DisplayName("Should handle cases with no active upgrade job")
-    void upgradeInfo_when_noActiveJob_then_prechecksAreCompleted() {
-      // Arrange
-      when(clusterUpgradeJobService.getActiveJobByClusterId(CLUSTER_ID)).thenThrow(new RuntimeException("No active job"));
-      when(elasticClient.getValidSnapshots()).thenReturn(Collections.emptyList());
-
-      // Act
-      ClusterInfoResponse response = clusterUpgradeService.upgradeInfo(CLUSTER_ID);
-
-      // Assert
-      assertNotNull(response);
-      assertEquals(PrecheckStatus.COMPLETED, response.precheck().status());
-      // isUpgradable is true because isClusterUpgraded is false and isNodesUpgraded is false by default
-      assertTrue(response.elastic().isUpgradable());
-      assertFalse(response.kibana().isUpgradable());
     }
   }
 }

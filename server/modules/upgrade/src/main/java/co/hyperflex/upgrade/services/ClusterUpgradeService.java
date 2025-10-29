@@ -118,12 +118,7 @@ public class ClusterUpgradeService {
   }
 
   public ClusterInfoResponse upgradeInfo(String clusterId) {
-    ClusterUpgradeJobEntity activeUpgradeJob = null;
-    try {
-      activeUpgradeJob = clusterUpgradeJobService.getActiveJobByClusterId(clusterId);
-    } catch (Exception e) {
-      log.error("Failed to retrieve active job for clusterId: {}", clusterId, e);
-    }
+    ClusterUpgradeJobEntity activeUpgradeJob = clusterUpgradeJobService.getActiveJobByClusterId(clusterId);
     try {
       ElasticClient client = elasticsearchClientProvider.getClient(clusterId);
       KibanaClient kibanaClient = kibanaClientProvider.getClient(clusterId);
@@ -142,12 +137,12 @@ public class ClusterUpgradeService {
         precheckStatus = PrecheckStatus.COMPLETED;
       }
 
-      List<GetElasticsearchSnapshotResponse> snapshots = client.getValidSnapshots();
+      List<GetElasticsearchSnapshotResponse> snapshots = client.getValidSnapshots(activeUpgradeJob.getCurrentVersion());
 
       DeprecationCounts kibanaDeprecationCounts = deprecationService.getKibanaDeprecationCounts(clusterId);
       DeprecationCounts elasticDeprecationCounts = deprecationService.getElasticDeprecationCounts(clusterId);
 
-      boolean isClusterUpgraded = activeUpgradeJob != null && activeUpgradeJob.getStatus() == ClusterUpgradeStatus.UPDATED;
+      boolean isClusterUpgraded = activeUpgradeJob.getStatus() == ClusterUpgradeStatus.UPDATED;
       // Evaluate upgrade status
       boolean isESUpgraded = isClusterUpgraded || clusterService.isNodesUpgraded(clusterId, ClusterNodeType.ELASTIC);
       boolean isKibanaUpgraded = isClusterUpgraded || clusterService.isNodesUpgraded(clusterId, ClusterNodeType.KIBANA);
