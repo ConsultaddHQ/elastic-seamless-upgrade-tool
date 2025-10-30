@@ -42,4 +42,6 @@ public interface ClusterService {
   void resetUpgradeStatus(@NotNull String clusterId);
 
   List<GetAllocationExplanationResponse> getAllocationExplanation(String clusterId);
+
+  void deleteCluster(String clusterId);
 }

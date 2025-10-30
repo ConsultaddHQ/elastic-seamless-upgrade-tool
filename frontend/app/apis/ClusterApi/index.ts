@@ -1,7 +1,7 @@
 import axiosJSON from "../http"
 
 class ClusterApi {
-	async getClusterOveriview(clusterId: string) {
+	async getClusterOverview(clusterId: string) {
 		const response = await axiosJSON.get(`/clusters/${clusterId}/overview`)
 		return response.data
 	}
@@ -12,6 +12,10 @@ class ClusterApi {
 	async getCluster(clusterId: string) {
 		const response = await axiosJSON.get(`/clusters/${clusterId}`)
 		return response.data
+	}
+
+	async deleteCluster(clusterId: string) {
+		await axiosJSON.delete(`/clusters/${clusterId}`)
 	}
 
 	async getClusterPrecheckSummary(clusterId: string) {

@@ -22,7 +22,7 @@ function ClusterInfo() {
 
 	const { data, isLoading, refetch, isRefetching, error } = useQuery({
 		queryKey: ["cluster-info"],
-		queryFn: () => clusterApi.getClusterOveriview(clusterId!),
+		queryFn: () => clusterApi.getClusterOverview(clusterId!),
 		staleTime: Infinity,
 		enabled: false,
 	})
