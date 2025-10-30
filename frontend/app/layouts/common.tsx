@@ -145,6 +145,7 @@ function Common() {
 					>
 						<Magicpen variant="Bold" color="currentColor" size="20px" /> Upcoming features
 					</Button>
+					<Divider orientation="vertical" className="bg-[#3A3544]" />
 					<Button
 						aria-label="Settings"
 						variant="light"
