@@ -1,5 +1,5 @@
 import { addToast, Button, Divider, ToastProvider, useDisclosure } from "@heroui/react"
-import { Box, Typography } from "@mui/material"
+import { Box, Tooltip, Typography } from "@mui/material"
 import { Edit, ElementPlus, LogoutCurve, Magicpen, Refresh2, Setting2, TickCircle, Warning2 } from "iconsax-react"
 import { useEffect } from "react"
 import { FiArrowUpRight, FiX } from "react-icons/fi"
@@ -102,59 +102,69 @@ function Common() {
 				<Box className="flex flex-row max-h-11 items-center border border-solid border-[#3A3544] rounded-lg overflow-hidden">
 					{pathname !== "/" ? (
 						<>
-							<Button
-								isIconOnly
-								aria-label="Settings"
-								variant="light"
-								radius="none"
-								className="min-w-11 min-h-11"
-								onPress={onEditOpen}
-							>
-								<Edit color="currentColor" size="20px" />
-							</Button>
+							<Tooltip title="Edit Cluster" arrow>
+								<Button
+									isIconOnly
+									aria-label="Edit Cluster"
+									variant="light"
+									radius="none"
+									className="min-w-11 min-h-11"
+									onPress={onEditOpen}
+								>
+									<Edit color="currentColor" size="20px" />
+								</Button>
+							</Tooltip>
 							<Divider orientation="vertical" className="bg-[#3A3544]" />
-							<Button
-								isIconOnly
-								aria-label="Settings"
-								variant="light"
-								radius="none"
-								className="min-w-11 min-h-11"
-								onPress={onSettingsOpen}
-							>
-								<Setting2 color="currentColor" size="20px" />
-							</Button>
+							<Tooltip title="Settings" arrow>
+								<Button
+									isIconOnly
+									aria-label="Settings"
+									variant="light"
+									radius="none"
+									className="min-w-11 min-h-11"
+									onPress={onSettingsOpen}
+								>
+									<Setting2 color="currentColor" size="20px" />
+								</Button>
+							</Tooltip>
 							<Divider orientation="vertical" className="bg-[#3A3544]" />
-							<Button
-								aria-label="Settings"
-								variant="light"
-								radius="none"
-								className="min-w-11 min-h-11"
-								onPress={() => navigate("/plugins")}
-							>
-								<ElementPlus color="currentColor" size="20px" />
-							</Button>
+							<Tooltip title="Plugins" arrow>
+								<Button
+									aria-label="Plugins"
+									variant="light"
+									radius="none"
+									className="min-w-11 min-h-11"
+									onPress={() => navigate("/plugins")}
+								>
+									<ElementPlus color="currentColor" size="20px" />
+								</Button>
+							</Tooltip>
 							<Divider orientation="vertical" className="bg-[#3A3544]" />
 						</>
 					) : null}
-					<Button
-						aria-label="Settings"
-						variant="light"
-						radius="none"
-						className="min-w-11 min-h-11"
-						onPress={onOpen}
-					>
-						<Magicpen variant="Bold" color="currentColor" size="20px" /> Upcoming features
-					</Button>
+					<Tooltip title="Upcoming features" arrow>
+						<Button
+							aria-label="Settings"
+							variant="light"
+							radius="none"
+							className="min-w-11 min-h-11"
+							onPress={onOpen}
+						>
+							<Magicpen variant="Bold" color="currentColor" size="20px" />
+						</Button>
+					</Tooltip>
 					<Divider orientation="vertical" className="bg-[#3A3544]" />
-					<Button
-						aria-label="Settings"
-						variant="light"
-						radius="none"
-						className="min-w-11 min-h-11 text-[#E87D65]"
-						onPress={logout}
-					>
-						<LogoutCurve color="#E87D65" size="20px" style={{ transform: "rotate(180deg)" }} /> Logout
-					</Button>
+					<Tooltip title="Logout" arrow>
+						<Button
+							aria-label="Settings"
+							variant="light"
+							radius="none"
+							className="min-w-11 min-h-11 text-[#E87D65]"
+							onPress={logout}
+						>
+							<LogoutCurve color="#E87D65" size="20px" style={{ transform: "rotate(180deg)" }} />
+						</Button>
+					</Tooltip>
 				</Box>
 			</Box>
 			<EditCluster isOpen={isEditOpen} onOpenChange={onEditOpenChange} />
