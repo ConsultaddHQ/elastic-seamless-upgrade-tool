@@ -15,13 +15,13 @@ public class DiskUtilizationCheck extends BaseElasticNodePrecheck {
   }
 
   @Override
-  public PrecheckSeverity getSeverity(){
+  public PrecheckSeverity getSeverity() {
     return PrecheckSeverity.WARNING;
   }
 
   @Override
   public void run(NodeContext context) {
-    try{
+    try {
       var nodeId = context.getNode().getId();
       var logger = context.getLogger();
 
@@ -42,28 +42,26 @@ public class DiskUtilizationCheck extends BaseElasticNodePrecheck {
       }
       ExtendedMemoryStats mem = fs.getMem();
 
-      if(mem != null){
+      if (mem != null) {
         // Bundled or custom JVM
         long totalStorage = mem.getTotalInBytes();
         long availableStorage = mem.getFreeInBytes();
         long usedStorage = totalStorage - availableStorage;
-        double usage = ((double)usedStorage/totalStorage)*100;
-        logger.info("Disk Utilization Check Completed for node {}",nodeName);
-        logger.info("Disk Utilized: {}%",String.format("%.2f", usage));
-        logger.info("Available Storage : {} GB",String.format("%.2f", availableStorage/(double)1073741824));
-        logger.info("Total Storage : {} GB",String.format("%.2f", totalStorage/(double)1073741824));
+        double usage = ((double) usedStorage / totalStorage) * 100;
+        logger.info("Disk Utilization Check Completed for node {}", nodeName);
+        logger.info("Disk Utilized: {}%", String.format("%.2f", usage));
+        logger.info("Available Storage : {} GB", String.format("%.2f", availableStorage / (double) 1073741824));
+        logger.info("Total Storage : {} GB", String.format("%.2f", totalStorage / (double) 1073741824));
         if (usage >= 85) {
           context.getLogger().error("Disk Utilization exceeded the threshold of 85%");
           throw new RuntimeException();
         }
 
-      }
-      else {
+      } else {
         logger.info("{}: Skipping Disk Usage Check —   stats missing.", nodeName);
         return;
       }
-    }
-    catch(Exception e){
+    } catch (Exception e) {
       context.getLogger().error("Disk Utilization check failed");
       context.getLogger().error(e.getMessage());
       throw new RuntimeException("Unable to run Disk Utilization check");
