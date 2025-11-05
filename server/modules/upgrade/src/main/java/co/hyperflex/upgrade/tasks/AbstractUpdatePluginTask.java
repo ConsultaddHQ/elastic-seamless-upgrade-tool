@@ -18,7 +18,11 @@ public abstract class AbstractUpdatePluginTask implements Task {
     try (SshCommandExecutor executor = context.getSshCommandExecutor()) {
       var pluginManger = pluginManagerFactory.create(executor, context.node().getType());
       logger.info("Getting list of installed plugins");
-      List<String> plugins = pluginManger.listPlugins();
+      List<String> plugins = pluginManger
+          .listPlugins()
+          .stream()
+          .filter(plugin -> !plugin.startsWith("WARNING:")) // 7.0.0 prints warning for old installed plugins
+          .toList();
 
       if (plugins.isEmpty()) {
         context.logger().info("No plugins found");
