@@ -160,11 +160,13 @@ public abstract class AbstractElasticClient implements ElasticClient {
     return execute(request);
   }
 
+
   @Override
   public PutClusterSettingsResponse updateClusterSettings(Map<String, Object> clusterSettings) {
     String uri = "/_cluster/settings?format=json";
     return execute(ApiRequest.builder(PutClusterSettingsResponse.class).put().body(clusterSettings).uri(uri).build());
   }
+
 
   @Override
   public <T> T execute(ApiRequest<T> request) {
