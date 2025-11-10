@@ -2,7 +2,7 @@ package co.hyperflex.security;
 
 import jakarta.validation.constraints.NotEmpty;
 
-public record CreateUserResponse(
-    @NotEmpty String message
+public record ResetPasswordRequest(
+    @NotEmpty String password
 ) {
 }

@@ -48,7 +48,9 @@ import co.hyperflex.core.services.ssh.SshKeyService;
 import co.hyperflex.core.utils.ClusterAuthUtils;
 import co.hyperflex.core.utils.NodeRoleRankerUtils;
 import jakarta.validation.constraints.NotNull;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
@@ -194,6 +196,23 @@ public class ClusterServiceImpl implements ClusterService {
       return clusterMapper.toGetClusterResponse(cluster, kibanaNodes);
     }
     throw new NotFoundException("Cluster not found with id: " + clusterId);
+  }
+
+  @Override
+  public void deleteCluster(String clusterId) {
+    ClusterEntity cluster = clusterRepository.getCluster(clusterId);
+    for (ClusterNodeEntity node : clusterNodeRepository.findByClusterId(cluster.getId())) {
+      clusterNodeRepository.deleteById(node.getId());
+    }
+    clusterRepository.deleteById(clusterId);
+    secretStoreService.removeSecret(clusterId);
+    if (cluster instanceof SelfManagedClusterEntity selfManagedCluster) {
+      try {
+        Files.delete(new File(selfManagedCluster.getSshInfo().keyPath()).toPath());
+      } catch (Exception e) {
+        log.error("Unable to delete ssh key for cluster: {}", cluster, e);
+      }
+    }
   }
 
   @Override

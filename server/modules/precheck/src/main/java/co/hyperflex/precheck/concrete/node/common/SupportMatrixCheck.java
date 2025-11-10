@@ -54,12 +54,12 @@ public class SupportMatrixCheck extends BaseNodePrecheck {
         for (var support : osSupport.supports()) {
           if (VersionUtils.inRange(targetVersion, support.start(), support.end())) {
             if (support.supported()) {
-              logger.info("{} version {} is supported on current node OS [{} {}]",
-                  nodeLabel, targetVersion, distro.name(), distro.version());
+              logger.info("The current node operating system [{} {}] is compatible with the target {} version {}",
+                  distro.name(), distro.version(), nodeLabel, targetVersion);
               return; // success, no need to check further
             } else {
-              logger.error("{} version {} is unsupported on current node OS [{} {}]",
-                  nodeLabel, targetVersion, distro.name(), distro.version());
+              logger.error("The current node operating system [{} {}] is incompatible with the target {} version {}",
+                  distro.name(), distro.version(), nodeLabel, targetVersion);
               throw new PrecheckFailedException();
             }
           }
@@ -67,10 +67,10 @@ public class SupportMatrixCheck extends BaseNodePrecheck {
       }
     }
 
-    logger.error("Unable to verify support for {} version {} on current node OS [{} {}].",
-        nodeLabel, targetVersion, distro.name(), distro.version());
-
-    logger.error("{} version support could not be verified", nodeLabel);
+    logger.error(
+        "The compatibility of the current node operating system [{} {}] with the target {} version {} could not be verified."
+            + " Please check the support matrix page manually to confirm compatibility.",
+        distro.name(), distro.version(), nodeLabel, targetVersion);
     throw new PrecheckFailedException();
   }
 

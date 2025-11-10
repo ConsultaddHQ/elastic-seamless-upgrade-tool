@@ -1,11 +1,16 @@
 package co.hyperflex.clients.elastic.dto.nodes;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class Stats {
   private Process process;
   private OperatingSystem os;
   private String name;
   private Jvm jvm;
   private Ingest ingest;
+
+  @JsonProperty("fs")
+  private NodeFileSystem fs;
 
   public Process getProcess() {
     return process;
@@ -45,5 +50,13 @@ public class Stats {
 
   public void setIngest(Ingest ingest) {
     this.ingest = ingest;
+  }
+
+  public NodeFileSystem getFs() {
+    return fs;
+  }
+
+  public void setFs(NodeFileSystem fs) {
+    this.fs = fs;
   }
 }

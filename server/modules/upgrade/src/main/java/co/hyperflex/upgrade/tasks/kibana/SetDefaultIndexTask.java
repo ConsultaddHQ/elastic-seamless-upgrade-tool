@@ -25,7 +25,7 @@ public class SetDefaultIndexTask implements Task {
 
     logger.info("Setting default index");
 
-    String url = "http://" + host + ":5601/api/kibana/settings";
+    String url = kibanaClient.baseUrl(host) + "/api/kibana/settings";
     try {
       String requestBody = "{\"changes\":{\"defaultIndex\":\"syslog\"}}";
 

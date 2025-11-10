@@ -3,7 +3,7 @@ import type { Route } from "../+types/root"
 import { Button } from "@heroui/react"
 import { useFormik } from "formik"
 import { ArrowRight, Eye, EyeSlash } from "iconsax-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router"
 import Input from "~/components/utilities/Input"
 import axiosJSON from "~/apis/http"
@@ -21,6 +21,12 @@ type TLoginForm = {
 export default function LoginPage() {
 	const navigate = useNavigate()
 	const [showPassword, setShowPassword] = useState(false)
+	useEffect(() => {
+		const sessionName = useLocalStore.getState().sessionName
+		if (sessionName) {
+			navigate("/")
+		}
+	}, [])
 
 	const formik = useFormik<TLoginForm>({
 		initialValues: {

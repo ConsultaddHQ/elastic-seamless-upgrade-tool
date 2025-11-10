@@ -1,10 +1,13 @@
 import { Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react"
 import { Box, Typography } from "@mui/material"
 import { useQuery } from "@tanstack/react-query"
-import { Folder } from "iconsax-react"
+import { Folder, Trash } from "iconsax-react"
 import { useCallback, type Key } from "react"
 import { useNavigate } from "react-router"
+import { toast } from "sonner"
 import { clusterApi } from "~/apis/ClusterApi"
+import { OutlinedBorderButton } from "~/components/utilities/Buttons"
+import { useConfirmationModal } from "~/components/utilities/ConfirmationModal"
 import { cn } from "~/lib/Utils"
 
 const columns: TColumn = [
@@ -32,12 +35,19 @@ const columns: TColumn = [
 		align: "start",
 		width: 40,
 	},
+	{
+		key: "action",
+		label: "Action",
+		align: "end",
+		width: 140,
+	},
 ]
 
 function ClusterList() {
 	const navigate = useNavigate()
+	const { ConfirmationModal, openConfirmation } = useConfirmationModal()
 
-	const { data, isLoading, isRefetching } = useQuery({
+	const { data, isLoading, isRefetching, refetch } = useQuery({
 		queryKey: ["get-all-clusters"],
 		queryFn: clusterApi.getClusters,
 		staleTime: 0,
@@ -79,6 +89,30 @@ function ClusterList() {
 							{row.status}
 						</Box>
 					)
+				case "action":
+					return (
+						<Box className="flex justify-end">
+							<OutlinedBorderButton
+								onClick={(e: any) => {
+									e.stopPropagation()
+									openConfirmation({
+										title: "Delete Cluster",
+										message: `Are you sure you want to delete the cluster "${row.name}"? This action cannot be undone.`,
+										confirmText: "Delete",
+										onConfirm: async () => {
+											await clusterApi.deleteCluster(row.id)
+											await refetch();
+											toast.success("Cluster deleted successfully")
+										},
+									})
+								}}
+								icon={Trash}
+								filledIcon={Trash}
+							>
+								Remove
+							</OutlinedBorderButton>
+						</Box>
+					)
 				default:
 					return cellValue
 			}
@@ -94,73 +128,76 @@ function ClusterList() {
 	}
 
 	return (
-		<Table
-			removeWrapper
-			layout="auto"
-			isHeaderSticky
-			classNames={{
-				base: "max-h-[calc(var(--window-height)-212px)] h-[calc(var(--window-height)-212px)] overflow-scroll",
-				// table: "min-h-[400px] min-w-[600px]",
-				th: "text-[#9D90BB] text-xs bg-[#161616] first:rounded-l-xl last:rounded-r-xl",
-				td: "text-sm font-normal leading-normal border-b-[0.5px] border-solid border-[#1E1E1E] first:rounded-l-xl last:rounded-r-xl",
-				tr: "[&>th]:h-[42px] [&>td]:h-[60px] hover:bg-[#28282A]",
-			}}
-			onRowAction={handleClusterSelect}
-		>
-			<TableHeader columns={columns}>
-				{(column) => (
-					<TableColumn key={column.key} align={column.align} width={column.width}>
-						{column.label}
-					</TableColumn>
-				)}
-			</TableHeader>
-			<TableBody
-				items={data || []}
-				isLoading={isLoading}
-				loadingContent={<Spinner color="secondary" />}
-				emptyContent={
-					<Box className="flex flex-col items-center h-full w-full gap-4">
-						<Box
-							className="flex items-center justify-center bg-[#1A1A1A] rounded-[10px] size-12"
-							marginTop="100px"
-						>
-							<Folder size="24px" color="#ADADAD" />
-						</Box>
-						<Box className="flex flex-col items-center gap-[5px]">
-							<Typography
-								color="#F1F0F0"
-								textAlign="center"
-								fontFamily="Manrope"
-								fontSize="16px"
-								fontWeight="400"
-								lineHeight="18px"
-								letterSpacing="0.32px"
-							>
-								No cluster available to display
-							</Typography>
-							<Typography
-								maxWidth="298px"
-								color="#A6A6A6"
-								textAlign="center"
-								fontFamily="Manrope"
-								fontSize="12px"
-								fontWeight="400"
-								lineHeight="normal"
-								letterSpacing="0.24px"
-							>
-								There are no clusters to display right now. Please add one to the display list.
-							</Typography>
-						</Box>
-					</Box>
-				}
+		<>
+			<Table
+				removeWrapper
+				layout="auto"
+				isHeaderSticky
+				classNames={{
+					base: "max-h-[calc(var(--window-height)-212px)] h-[calc(var(--window-height)-212px)] overflow-scroll",
+					// table: "min-h-[400px] min-w-[600px]",
+					th: "text-[#9D90BB] text-xs bg-[#161616] first:rounded-l-xl last:rounded-r-xl",
+					td: "text-sm font-normal leading-normal border-b-[0.5px] border-solid border-[#1E1E1E] first:rounded-l-xl last:rounded-r-xl",
+					tr: "[&>th]:h-[42px] [&>td]:h-[60px] hover:bg-[#28282A]",
+				}}
+				onRowAction={handleClusterSelect}
 			>
-				{(item: TClusterRow) => (
-					<TableRow key={item.id}>
-						{(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
-					</TableRow>
-				)}
-			</TableBody>
-		</Table>
+				<TableHeader columns={columns}>
+					{(column) => (
+						<TableColumn key={column.key} align={column.align} width={column.width}>
+							{column.label}
+						</TableColumn>
+					)}
+				</TableHeader>
+				<TableBody
+					items={data || []}
+					isLoading={isLoading}
+					loadingContent={<Spinner color="secondary" />}
+					emptyContent={
+						<Box className="flex flex-col items-center h-full w-full gap-4">
+							<Box
+								className="flex items-center justify-center bg-[#1A1A1A] rounded-[10px] size-12"
+								marginTop="100px"
+							>
+								<Folder size="24px" color="#ADADAD" />
+							</Box>
+							<Box className="flex flex-col items-center gap-[5px]">
+								<Typography
+									color="#F1F0F0"
+									textAlign="center"
+									fontFamily="Manrope"
+									fontSize="16px"
+									fontWeight="400"
+									lineHeight="18px"
+									letterSpacing="0.32px"
+								>
+									No cluster available to display
+								</Typography>
+								<Typography
+									maxWidth="298px"
+									color="#A6A6A6"
+									textAlign="center"
+									fontFamily="Manrope"
+									fontSize="12px"
+									fontWeight="400"
+									lineHeight="normal"
+									letterSpacing="0.24px"
+								>
+									There are no clusters to display right now. Please add one to the display list.
+								</Typography>
+							</Box>
+						</Box>
+					}
+				>
+					{(item: TClusterRow) => (
+						<TableRow key={item.id}>
+							{(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
+						</TableRow>
+					)}
+				</TableBody>
+			</Table>
+			{ConfirmationModal}
+		</>
 	)
 }
 

@@ -29,6 +29,7 @@ import jakarta.validation.Valid;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -92,6 +93,11 @@ public class ClusterController {
   @GetMapping("/{clusterId}")
   public GetClusterResponse getCluster(@PathVariable String clusterId) {
     return clusterService.getClusterById(clusterId);
+  }
+
+  @DeleteMapping("{clusterId}")
+  public void deleteCluster(@PathVariable String clusterId) {
+    clusterService.deleteCluster(clusterId);
   }
 
   @GetMapping("/{clusterId}/nodes")

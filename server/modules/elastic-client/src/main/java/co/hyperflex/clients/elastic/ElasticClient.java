@@ -34,7 +34,7 @@ public interface ElasticClient extends ApiClient {
 
   Boolean isAdaptiveReplicaEnabled() throws IOException;
 
-  List<GetElasticsearchSnapshotResponse> getValidSnapshots();
+  List<GetElasticsearchSnapshotResponse> getValidSnapshots(String version);
 
   GetElasticNodeAndIndexCountsResponse getEntitiesCounts();
 

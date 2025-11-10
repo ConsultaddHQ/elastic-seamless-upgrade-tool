@@ -42,35 +42,41 @@ public class CustomKibanaPluginsPrecheck extends BaseKibanaNodePrecheck {
     try (var executor = context.getSshExecutor()) {
       var pluginManager = pluginManagerFactory.create(executor, context.getNode().getType());
       List<String> plugins = pluginManager.listPlugins();
+
       if (plugins.isEmpty()) {
-        logger.info("No plugins found for node with ID [{}].", nodeId);
+        logger.info("No custom plugins detected on node [{}].", nodeId);
         return;
       }
 
-      logger.info("Node [{}] has manually installed plugins:", context.getNode().getName());
-
-      plugins.forEach(plugin -> logger.info("* {}", plugin));
+      logger.info("Detected manually installed plugins on node [{}]:", context.getNode().getName());
+      plugins.forEach(plugin -> logger.info("  • {}", plugin));
 
       var targetVersion = context.getClusterUpgradeJob().getTargetVersion();
-      logger.info("Checking plugin availability for target version [{}]", targetVersion);
+      logger.info("Verifying plugin compatibility for target version [{}]...", targetVersion);
 
-      boolean unavailable = false;
+      boolean verificationFailed = false;
+
       for (var plugin : plugins) {
         try {
           boolean available = pluginManager.isPluginAvailable(plugin, targetVersion);
-          logger.info("* {} : {}", plugin, available ? "available" : "unavailable");
+          if (available) {
+            logger.info("{} is available for target version [{}].", plugin, targetVersion);
+          } else {
+            logger.warn("{} is not available for target version [{}].", plugin, targetVersion);
+            verificationFailed = true;
+          }
         } catch (Exception e) {
-          logger.info(
-              "* {} : Unable to verify plugin — it may be unavailable or no source is configured",
-              plugin
-          );
-          unavailable = true;
+          logger.error("Unable to verify availability for plugin [{}]. It may be unsupported or no source is configured.", plugin);
+          verificationFailed = true;
         }
       }
-      if (unavailable) {
+
+      if (verificationFailed) {
+        logger.error("One or more plugins are unavailable or could not be verified. Please review logs for details.");
         throw new RuntimeException();
       }
     } catch (IOException e) {
+      logger.error("Error while executing SSH command for plugin verification: " + e.getMessage());
       throw new RuntimeException(e);
     }
   }

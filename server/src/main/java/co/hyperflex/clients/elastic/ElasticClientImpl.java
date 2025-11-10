@@ -54,7 +54,7 @@ public class ElasticClientImpl extends AbstractElasticClient {
   }
 
   @Override
-  public List<GetElasticsearchSnapshotResponse> getValidSnapshots() {
+  public List<GetElasticsearchSnapshotResponse> getValidSnapshots(String version) {
     try {
       ResponseEntity<JsonNode> repoResponse = restClient.get()
           .uri("/_snapshot")
@@ -92,6 +92,7 @@ public class ElasticClientImpl extends AbstractElasticClient {
               JsonNode snapshots = body.get("snapshots");
               return StreamSupport.stream(snapshots.spliterator(), false)
                   .filter(s -> s.has("start_time_in_millis"))
+                  .filter(s -> version.equals(s.get("version").asText()))
                   .filter(s -> {
                     long time = s.get("start_time_in_millis").asLong();
                     return time >= twentyFourHoursAgo && time <= now;

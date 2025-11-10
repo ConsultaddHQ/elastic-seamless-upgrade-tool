@@ -37,6 +37,8 @@ axiosJSON.interceptors.response.use(
 	},
 	async (error) => {
 		toast.error(error?.response?.data.err ?? StringManager.GENERIC_ERROR)
+
+		//Auth state resets thus redirect to login will automatically happen
 		const statusCode = error.response.status
 
 		if (statusCode == 401 || statusCode == 403) {

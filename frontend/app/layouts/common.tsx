@@ -1,25 +1,41 @@
 import { addToast, Button, Divider, ToastProvider, useDisclosure } from "@heroui/react"
-import { Box, Typography } from "@mui/material"
-import { Edit, ElementPlus, Magicpen, Refresh2, Setting2, TickCircle, Warning2 } from "iconsax-react"
+import { Box, Tooltip, Typography } from "@mui/material"
+import { Edit, ElementPlus, LogoutCurve, Magicpen, Refresh2, Setting2, TickCircle, Warning2 } from "iconsax-react"
 import { useEffect } from "react"
 import { FiArrowUpRight, FiX } from "react-icons/fi"
 import { Link, Outlet, useLocation, useNavigate } from "react-router"
 import EditCluster from "~/components/core/EditCluster"
 import Settings from "~/components/core/Settings"
 import UpcomingFeature from "~/components/core/UpcomingFeature"
+import { useConfirmationModal } from "~/components/utilities/ConfirmationModal"
 import AssetsManager from "~/constants/AssetsManager"
 import { useRealtimeEventListener } from "~/lib/hooks/useRealtimeEventListener"
 import { cn } from "~/lib/Utils"
+import { useLocalStore } from "~/store/common"
 import { useSocketStore } from "~/store/socket"
 import AiAssistantLayout from "./AiAssistantLayout"
 
 function Common() {
 	const { connect, disconnect } = useSocketStore()
 	const { isOpen, onOpen, onOpenChange } = useDisclosure()
+	const { ConfirmationModal, openConfirmation } = useConfirmationModal()
 	const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onOpenChange: onSettingsOpenChange } = useDisclosure()
 	const { isOpen: isEditOpen, onOpen: onEditOpen, onOpenChange: onEditOpenChange } = useDisclosure()
 	const { pathname } = useLocation()
 	const navigate = useNavigate()
+	const setSession = useLocalStore((state) => state.setSessionName)
+
+	const logout = () => {
+		openConfirmation({
+			title: "Logout",
+			message: "Are you sure you want to logout?",
+			Icon: ({ size }) => <LogoutCurve size={size} color={"#E87D65"} style={{ transform: "rotate(180deg)" }} />,
+			onConfirm: () => {
+				setSession("")
+				navigate("/login")
+			},
+		})
+	}
 
 	useEffect(() => {
 		connect() // Connect on mount
@@ -87,55 +103,76 @@ function Common() {
 				<Box className="flex flex-row max-h-11 items-center border border-solid border-[#3A3544] rounded-lg overflow-hidden">
 					{pathname !== "/" ? (
 						<>
-							<Button
-								isIconOnly
-								aria-label="Settings"
-								variant="light"
-								radius="none"
-								className="min-w-11 min-h-11"
-								onPress={onEditOpen}
-							>
-								<Edit color="currentColor" size="20px" />
-							</Button>
+							<Tooltip title="Edit Cluster" arrow>
+								<Button
+									isIconOnly
+									aria-label="Edit Cluster"
+									variant="light"
+									radius="none"
+									className="min-w-11 min-h-11"
+									onPress={onEditOpen}
+								>
+									<Edit color="currentColor" size="20px" />
+								</Button>
+							</Tooltip>
 							<Divider orientation="vertical" className="bg-[#3A3544]" />
-							<Button
-								isIconOnly
-								aria-label="Settings"
-								variant="light"
-								radius="none"
-								className="min-w-11 min-h-11"
-								onPress={onSettingsOpen}
-							>
-								<Setting2 color="currentColor" size="20px" />
-							</Button>
+							<Tooltip title="Settings" arrow>
+								<Button
+									isIconOnly
+									aria-label="Settings"
+									variant="light"
+									radius="none"
+									className="min-w-11 min-h-11"
+									onPress={onSettingsOpen}
+								>
+									<Setting2 color="currentColor" size="20px" />
+								</Button>
+							</Tooltip>
 							<Divider orientation="vertical" className="bg-[#3A3544]" />
-							<Button
-								aria-label="Settings"
-								variant="light"
-								radius="none"
-								className="min-w-11 min-h-11"
-								onPress={() => navigate("/plugins")}
-							>
-								<ElementPlus color="currentColor" size="20px" />
-							</Button>
+							<Tooltip title="Plugins" arrow>
+								<Button
+									aria-label="Plugins"
+									variant="light"
+									radius="none"
+									className="min-w-11 min-h-11"
+									onPress={() => navigate("/plugins")}
+								>
+									<ElementPlus color="currentColor" size="20px" />
+								</Button>
+							</Tooltip>
 							<Divider orientation="vertical" className="bg-[#3A3544]" />
 						</>
 					) : null}
-					<Button
-						aria-label="Settings"
-						variant="light"
-						radius="none"
-						className="min-w-11 min-h-11"
-						onPress={onOpen}
-					>
-						<Magicpen variant="Bold" color="currentColor" size="20px" /> Upcoming features
-					</Button>
+					<Tooltip title="Upcoming features" arrow>
+						<Button
+							aria-label="Settings"
+							variant="light"
+							radius="none"
+							className="min-w-11 min-h-11"
+							onPress={onOpen}
+						>
+							<Magicpen variant="Bold" color="currentColor" size="20px" />
+						</Button>
+					</Tooltip>
+					<Divider orientation="vertical" className="bg-[#3A3544]" />
+					<Tooltip title="Logout" arrow>
+						<Button
+							aria-label="Settings"
+							variant="light"
+							radius="none"
+							className="min-w-11 min-h-11 text-[#E87D65]"
+							onPress={logout}
+						>
+							<LogoutCurve color="#E87D65" size="20px" style={{ transform: "rotate(180deg)" }} />
+						</Button>
+					</Tooltip>
 				</Box>
 			</Box>
 			<EditCluster isOpen={isEditOpen} onOpenChange={onEditOpenChange} />
 			<UpcomingFeature isOpen={isOpen} onOpenChange={onOpenChange} />
 			<Settings isOpen={isSettingsOpen} onOpenChange={onSettingsOpenChange} />
 			<Outlet />
+			{ConfirmationModal}
 		</Box>
 	)
 }
