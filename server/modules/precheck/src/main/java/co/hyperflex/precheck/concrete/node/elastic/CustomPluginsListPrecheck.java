@@ -60,9 +60,9 @@ public class CustomPluginsListPrecheck extends BaseElasticNodePrecheck {
       try {
         boolean available = pluginManager.isPluginAvailable(plugin, targetVersion);
         if (available) {
-          logger.info("{} is available for target version [{}].", plugin, targetVersion);
+          logger.info("  • {} is available for target version [{}].", plugin, targetVersion);
         } else {
-          logger.warn("{} is not available for target version [{}].", plugin, targetVersion);
+          logger.warn("  • {} is not available for target version [{}].", plugin, targetVersion);
           verificationFailed = true;
         }
       } catch (Exception e) {
