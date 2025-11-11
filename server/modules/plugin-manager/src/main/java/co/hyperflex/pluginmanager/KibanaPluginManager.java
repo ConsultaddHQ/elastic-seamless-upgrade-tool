@@ -27,7 +27,7 @@ public class KibanaPluginManager extends AbstractPluginManager {
       var result = executor.execute(getBaseCommand() + "list");
       if (!result.isSuccess()) {
         // Some version of kibana (7.2 ...) requires this flag to list plugins
-        if (result.stdout().contains("--allow-root")) {
+        if (result.stderr().contains("--allow-root") || result.stdout().contains("--allow-root")) {
           var result1 = executor.execute(getBaseCommand() + "list --allow-root");
           if (!result1.isSuccess()) {
             result = result1;
