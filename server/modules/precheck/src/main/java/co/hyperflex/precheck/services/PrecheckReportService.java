@@ -78,7 +78,7 @@ public class PrecheckReportService {
 
     md.append("\n## Detailed Node Pre-checks\n");
     groupedPrechecks.node().forEach(node -> {
-      md.append(String.format("\n### 🖥️ %s (%s)\n", node.name(), node.ip()));
+      md.append(String.format("\n### %s (%s)\n", node.name(), node.ip()));
       md.append("| Check | Status | Duration (s) |\n");
       md.append("|-------|--------|---------------|\n");
       for (GetPrecheckEntry check : node.prechecks()) {
@@ -104,7 +104,7 @@ public class PrecheckReportService {
 
     md.append("\n## Detailed Index Pre-checks\n");
     for (var index : groupedPrechecks.index()) {
-      md.append(String.format("\n### 🖥️ %s\n", index.name()));
+      md.append(String.format("\n### %s\n", index.name()));
       md.append("| Check | Status | Duration (s) |\n");
       md.append("|-------|--------|---------------|\n");
       for (var check : index.prechecks()) {
@@ -261,7 +261,7 @@ public class PrecheckReportService {
     List<GetKibanaDeprecationResponse.Deprecation> deprecations = Optional
         .ofNullable(client.getDeprecations()).map(GetKibanaDeprecationResponse::deprecations).orElse(List.of());
 
-    StringBuilder md = new StringBuilder("## ⚠️ Kibana Deprecations\n\n");
+    StringBuilder md = new StringBuilder("## Kibana Deprecations\n\n");
 
     if (deprecations.isEmpty()) {
       md.append("N/A");
