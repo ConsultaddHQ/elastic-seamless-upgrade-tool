@@ -69,14 +69,14 @@ public class PrecheckReportService {
     md.append("Generated on: ").append(Instant.now()).append("\n\n");
 
     // Node summary
-    md.append("## Node Summary\n");
+    md.append("## Node Pre-checks Summary\n");
     md.append("| Node Name | IP | Status |\n");
     md.append("|-----------|----|--------|\n");
     groupedPrechecks.node().forEach(node -> {
       md.append(String.format("| %s | %s | %s |\n", node.name(), node.ip(), node.status()));
     });
 
-    md.append("\n## Detailed Pre-checks\n");
+    md.append("\n## Detailed Node Pre-checks\n");
     groupedPrechecks.node().forEach(node -> {
       md.append(String.format("\n### 🖥️ %s (%s)\n", node.name(), node.ip()));
       md.append("| Check | Status | Duration (s) |\n");
@@ -95,14 +95,14 @@ public class PrecheckReportService {
     });
 
     // Index summary
-    md.append("\n\n## Index Summary\n");
+    md.append("\n\n## Index Pre-checks Summary\n");
     md.append("| Index Name | Status |\n");
     md.append("|-----------|--------|\n");
     for (var index : groupedPrechecks.index()) {
       md.append(String.format("| %s | %s |\n", index.name(), index.status()));
     }
 
-    md.append("\n## Detailed Pre-checks\n");
+    md.append("\n## Detailed Index Pre-checks\n");
     for (var index : groupedPrechecks.index()) {
       md.append(String.format("\n### 🖥️ %s\n", index.name()));
       md.append("| Check | Status | Duration (s) |\n");
