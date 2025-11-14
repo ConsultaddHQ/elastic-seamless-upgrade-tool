@@ -51,7 +51,7 @@ public class CustomPluginsListPrecheck extends BaseElasticNodePrecheck {
     plugins.forEach(plugin -> logger.info("  • {}", plugin));
 
     var targetVersion = context.getClusterUpgradeJob().getTargetVersion();
-    logger.info("Verifying plugin availability for target version [{}]...", targetVersion);
+    logger.info("Verifying plugin availability for target version [{}]", targetVersion);
 
     boolean verificationFailed = false;
     var pluginManager = pluginManagerFactory.create(null, context.getNode().getType());
@@ -60,9 +60,9 @@ public class CustomPluginsListPrecheck extends BaseElasticNodePrecheck {
       try {
         boolean available = pluginManager.isPluginAvailable(plugin, targetVersion);
         if (available) {
-          logger.info("  • {} is available for target version [{}].", plugin, targetVersion);
+          logger.info("  • {} is available", plugin);
         } else {
-          logger.warn("  • {} is not available for target version [{}].", plugin, targetVersion);
+          logger.warn("  • {} is not available", plugin);
           verificationFailed = true;
         }
       } catch (Exception e) {

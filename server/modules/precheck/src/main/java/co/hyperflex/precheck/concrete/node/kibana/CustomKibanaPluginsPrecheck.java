@@ -1,6 +1,5 @@
 package co.hyperflex.precheck.concrete.node.kibana;
 
-
 import co.hyperflex.core.models.enums.ClusterType;
 import co.hyperflex.pluginmanager.PluginManagerFactory;
 import co.hyperflex.precheck.contexts.NodeContext;
@@ -36,7 +35,6 @@ public class CustomKibanaPluginsPrecheck extends BaseKibanaNodePrecheck {
 
   @Override
   public void run(NodeContext context) {
-    String nodeId = context.getNode().getId();
     Logger logger = context.getLogger();
 
     try (var executor = context.getSshExecutor()) {
@@ -52,7 +50,7 @@ public class CustomKibanaPluginsPrecheck extends BaseKibanaNodePrecheck {
       plugins.forEach(plugin -> logger.info("  • {}", plugin));
 
       var targetVersion = context.getClusterUpgradeJob().getTargetVersion();
-      logger.info("Verifying plugin compatibility for target version [{}]...", targetVersion);
+      logger.info("Verifying plugin compatibility for target version [{}]", targetVersion);
 
       boolean verificationFailed = false;
 
@@ -60,9 +58,9 @@ public class CustomKibanaPluginsPrecheck extends BaseKibanaNodePrecheck {
         try {
           boolean available = pluginManager.isPluginAvailable(plugin, targetVersion);
           if (available) {
-            logger.info("{} is available for target version [{}].", plugin, targetVersion);
+            logger.info("* {} is available", plugin);
           } else {
-            logger.warn("{} is not available for target version [{}].", plugin, targetVersion);
+            logger.warn("* {} is not available", plugin);
             verificationFailed = true;
           }
         } catch (Exception e) {
