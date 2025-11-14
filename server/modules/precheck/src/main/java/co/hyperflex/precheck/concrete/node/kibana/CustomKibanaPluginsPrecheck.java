@@ -44,7 +44,7 @@ public class CustomKibanaPluginsPrecheck extends BaseKibanaNodePrecheck {
       List<String> plugins = pluginManager.listPlugins();
 
       if (plugins.isEmpty()) {
-        logger.info("No custom plugins detected on node [{}].", nodeId);
+        logger.info("No custom plugins detected on node.");
         return;
       }
 
