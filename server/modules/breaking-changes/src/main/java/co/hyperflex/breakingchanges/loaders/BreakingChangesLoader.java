@@ -46,7 +46,7 @@ public class BreakingChangesLoader {
               breakingChange.setTitle(title);
               breakingChange.setImpact(impact);
               breakingChange.setDetail(description);
-              breakingChange.setUrl("Source: " + url);
+              breakingChange.setUrl(url);
               breakingChange.setVersion(version);
               breakingChange.setCategory(category);
               repository.save(breakingChange);

@@ -84,6 +84,7 @@ public class PrecheckRunService {
               "",
               "Impact:",
               breakingChange.getImpact(),
+              "Source:",
               breakingChange.getUrl()
           );
           return new GetBreakingChangeEntry(

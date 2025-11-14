@@ -159,7 +159,7 @@ public class PrecheckReportService {
           md.append("* ").append(change.getTitle()).append("\n\n");
           md.append("\t**Detail**: ").append(change.getDetail()).append("\n\n");
           md.append("\t**Impact**: ").append(change.getImpact()).append("\n\n");
-          md.append("\t**Source**: [source 🔗](").append(change.getUrl()).append("}\n\n");
+          md.append("\t**Source**: [🔗](").append(change.getUrl()).append("}\n\n");
         }
 
         md.append("\n");
