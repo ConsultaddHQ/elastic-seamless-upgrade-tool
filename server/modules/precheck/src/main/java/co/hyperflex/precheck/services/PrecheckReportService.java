@@ -156,7 +156,10 @@ public class PrecheckReportService {
         md.append("### ").append(category).append("\n\n");
 
         for (BreakingChangeEntity change : categoryChanges) {
-          md.append("- **").append(change.getTitle()).append("**: ").append(change.getDescription()).append("\n");
+          md.append("* ").append(change.getTitle()).append("\n\n");
+          md.append("\t**Detail**: ").append(change.getDetail()).append("\n\n");
+          md.append("\t**Impact**: ").append(change.getImpact()).append("\n\n");
+          md.append("\t**Source**: [source 🔗](").append(change.getUrl()).append("}\n\n");
         }
 
         md.append("\n");
@@ -251,7 +254,7 @@ public class PrecheckReportService {
     });
 
     if (!found[0]) {
-      md.append("### No deprecations found\n");
+      md.append("No deprecations found\n");
     }
     return md.toString();
   }
