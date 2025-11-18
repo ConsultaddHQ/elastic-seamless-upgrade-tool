@@ -271,7 +271,7 @@ public class ClusterServiceImpl implements ClusterService {
       String healthStatus = elasticClient.getHealthStatus();
       var counts = elasticClient.getEntitiesCounts();
       return new ClusterOverviewResponse(cluster.getName(), info.getClusterUuid(), healthStatus, info.getVersion().getNumber(), false,
-          counts.dataNodes(), counts.totalNodes(), activeMasters.size(),
+          counts.dataNodes(), counts.totalNodes(), counts.masterNodes(),
           activeMasters.stream().map(MasterRecord::getId).collect(Collectors.joining(",")), adaptiveReplicaEnabled, indicesCount,
           counts.activePrimaryShards(), counts.activeShards(), counts.unassignedShards(), counts.initializingShards(),
           counts.relocatingShards(), cluster.getType().getDisplayName());
