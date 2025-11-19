@@ -37,11 +37,12 @@ public class AiAssistantController {
               # Breaking Change Context
               - **Title:** %s
               - **Description:** %s
+              - **Impact:** %s
               - **Source:** %s
               
               # User Query
               %s
-              """.formatted(change.getTitle(), change.getDescription(), change.getUrl(), message);
+              """.formatted(change.getTitle(), change.getDetail(), change.getImpact(), change.getUrl(), message);
 
         }
       }
