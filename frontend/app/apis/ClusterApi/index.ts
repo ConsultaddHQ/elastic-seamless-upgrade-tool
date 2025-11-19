@@ -23,8 +23,8 @@ class ClusterApi {
 		return res.data
 	}
 
-	async getNodes(clusterId: string, type: string) {
-		const response = await axiosJSON.get(`/clusters/${clusterId}/nodes?type=${type}`)
+	async getNodes(clusterId: string, type?: string) {
+		const response = await axiosJSON.get(`/clusters/${clusterId}/nodes${type ? `?type=${type}` : ""}`)
 		return response.data
 	}
 
@@ -37,6 +37,11 @@ class ClusterApi {
 		const res = await axiosJSON.put(`/clusters/${clusterId}/nodes/${nodeId}/configuration`, {
 			config,
 		})
+		return res.data
+	}
+
+	async syncClusterNodes(clusterId: string) {
+		const res = await axiosJSON.post(`/clusters/${clusterId}/sync-nodes`)
 		return res.data
 	}
 

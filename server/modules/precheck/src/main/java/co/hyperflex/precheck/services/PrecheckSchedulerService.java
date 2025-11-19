@@ -112,7 +112,7 @@ public class PrecheckSchedulerService {
             .stream()
             .map(index -> {
               IndexPrecheckRunEntity precheckRun = new IndexPrecheckRunEntity();
-              precheckRun.setId(HashUtil.generateHash(precheck.getId() + ":" + upgradeJobId + ":" + index));
+              precheckRun.setId(HashUtil.generateHash(precheck.getId() + ":" + upgradeJobId + ":" + index.getIndex()));
               precheckRun.setIndex(new IndexPrecheckRunEntity.IndexInfo(index.getIndex()));
               precheckRun.setPrecheckId(precheck.getId());
               precheckRun.setClusterUpgradeJobId(upgradeJobId);
@@ -137,10 +137,7 @@ public class PrecheckSchedulerService {
   public void postConstruct() {
     notificationService.addNotificationListener(notification -> {
       if (notification instanceof UpgradeJobCreatedEvent event) {
-        boolean precheckExists = precheckRunService.precheckExistsForJob(event.getUpgradeJobId());
-        if (!precheckExists) {
-          schedule(event.getClusterId());
-        }
+        schedule(event.getClusterId());
       }
     });
   }

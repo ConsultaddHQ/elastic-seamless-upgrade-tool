@@ -7,8 +7,9 @@ import { useRealtimeEventListener } from "~/lib/hooks/useRealtimeEventListener"
 import TargetVersionDropdown from "~/components/utilities/TargetVersionDropdown"
 import AllocationExplain from "~/components/core/AllocationExplain"
 import { InfoCircle } from "iconsax-react"
-import { useParams } from "react-router"
+import { useNavigate, useParams } from "react-router"
 import { clusterApi } from "~/apis/ClusterApi"
+import { OutlinedBorderButton } from "~/components/utilities/Buttons"
 
 const CLUSTER_STATUS_COLOR: { [key: string]: string } = {
 	yellow: "#E0B517",
@@ -18,6 +19,7 @@ const CLUSTER_STATUS_COLOR: { [key: string]: string } = {
 
 function ClusterInfo() {
 	const { clusterId } = useParams()
+	const navigate = useNavigate()
 	const [showAllocation, setShowAllocation] = useState(false)
 
 	const { data, isLoading, refetch, isRefetching, error } = useQuery({
@@ -53,7 +55,18 @@ function ClusterInfo() {
 					>
 						Details
 					</Typography>
-					<TargetVersionDropdown />
+					<Box className="flex flex-row gap-2">
+						<OutlinedBorderButton
+							onClick={() => {
+								navigate(`/${clusterId}/nodes`)
+							}}
+							padding="8px 16px"
+							fontSize="13px"
+						>
+							Nodes
+						</OutlinedBorderButton>
+						<TargetVersionDropdown />
+					</Box>
 				</Box>
 				<Box className="flex flex-col gap-6 overflow-auto">
 					<Box className="flex flex-col sm:flex-row gap-6 sm:gap-16">

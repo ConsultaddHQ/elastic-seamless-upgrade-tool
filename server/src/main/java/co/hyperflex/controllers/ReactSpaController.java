@@ -9,6 +9,7 @@ public class ReactSpaController {
       "/{clusterId}/elastic/**",
       "/{clusterId}/upgrade-assistant",
       "/{clusterId}/cluster-overview",
+      "/{clusterId}/nodes",
       "/{clusterId}/kibana/**",
       "/{clusterId}/prechecks/**",
       "/plugins"}
