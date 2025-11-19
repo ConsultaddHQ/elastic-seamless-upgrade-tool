@@ -84,9 +84,7 @@ function UpgradeAssistant() {
 		const step3Status =
 			step2Status !== "COMPLETED"
 				? "NOTVISITED"
-				: criticalDeprecations > 0
-				? "PENDING"
-				: warningDeprecations > 0
+				: criticalDeprecations > 0 || warningDeprecations > 0
 				? "INPROGRESS"
 				: "COMPLETED"
 
@@ -351,7 +349,7 @@ function UpgradeAssistant() {
 								href={`https://cloud.elastic.co/deployments/${deploymentId}?show_upgrade=true`}
 							>
 								<OutlinedBorderButton
-									disabled={stepStatus["2"] === "NOTVISITED"}
+									disabled={step4Data?.isDisabled}
 									borderRadius="50%"
 									sx={{ minWidth: "38px !important", minHeight: "38px !important", padding: "0px" }}
 								>

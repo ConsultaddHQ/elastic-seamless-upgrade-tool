@@ -227,7 +227,7 @@ function ClusterNodes() {
 						</TableHeader>
 						<TableBody
 							items={data || []}
-							isLoading={isLoading}
+							isLoading={isSyncingNodes || isLoading}
 							loadingContent={<Spinner color="secondary" />}
 							emptyContent="No nodes upgrades found."
 						>
