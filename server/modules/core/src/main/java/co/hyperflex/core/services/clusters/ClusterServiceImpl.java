@@ -36,6 +36,7 @@ import co.hyperflex.core.services.clusters.dtos.ClusterOverviewResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterKibanaNodeResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterNodeResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterResponse;
+import co.hyperflex.core.services.clusters.dtos.SyncClusterNodesResponse;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterCredentialRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterCredentialResponse;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterRequest;
@@ -148,6 +149,13 @@ public class ClusterServiceImpl implements ClusterService {
     clusterRepository.save(cluster);
     syncElasticNodes(cluster);
     return new UpdateClusterResponse();
+  }
+
+  @Override
+  public SyncClusterNodesResponse syncClusterNodes(String clusterId) {
+    ClusterEntity clusterEntity = clusterRepository.getCluster(clusterId);
+    syncElasticNodes(clusterEntity);
+    return new SyncClusterNodesResponse();
   }
 
   @Override
@@ -271,7 +279,7 @@ public class ClusterServiceImpl implements ClusterService {
       String healthStatus = elasticClient.getHealthStatus();
       var counts = elasticClient.getEntitiesCounts();
       return new ClusterOverviewResponse(cluster.getName(), info.getClusterUuid(), healthStatus, info.getVersion().getNumber(), false,
-          counts.dataNodes(), counts.totalNodes(), activeMasters.size(),
+          counts.dataNodes(), counts.totalNodes(), counts.masterNodes(),
           activeMasters.stream().map(MasterRecord::getId).collect(Collectors.joining(",")), adaptiveReplicaEnabled, indicesCount,
           counts.activePrimaryShards(), counts.activeShards(), counts.unassignedShards(), counts.initializingShards(),
           counts.relocatingShards(), cluster.getType().getDisplayName());

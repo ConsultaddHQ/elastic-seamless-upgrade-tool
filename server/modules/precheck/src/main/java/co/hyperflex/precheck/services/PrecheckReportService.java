@@ -69,16 +69,16 @@ public class PrecheckReportService {
     md.append("Generated on: ").append(Instant.now()).append("\n\n");
 
     // Node summary
-    md.append("## Node Summary\n");
+    md.append("## Node Pre-checks Summary\n");
     md.append("| Node Name | IP | Status |\n");
     md.append("|-----------|----|--------|\n");
     groupedPrechecks.node().forEach(node -> {
       md.append(String.format("| %s | %s | %s |\n", node.name(), node.ip(), node.status()));
     });
 
-    md.append("\n## Detailed Pre-checks\n");
+    md.append("\n## Detailed Node Pre-checks\n");
     groupedPrechecks.node().forEach(node -> {
-      md.append(String.format("\n### 🖥️ %s (%s)\n", node.name(), node.ip()));
+      md.append(String.format("\n### %s (%s)\n", node.name(), node.ip()));
       md.append("| Check | Status | Duration (s) |\n");
       md.append("|-------|--------|---------------|\n");
       for (GetPrecheckEntry check : node.prechecks()) {
@@ -95,16 +95,16 @@ public class PrecheckReportService {
     });
 
     // Index summary
-    md.append("\n\n## Index Summary\n");
+    md.append("\n\n## Index Pre-checks Summary\n");
     md.append("| Index Name | Status |\n");
     md.append("|-----------|--------|\n");
     for (var index : groupedPrechecks.index()) {
       md.append(String.format("| %s | %s |\n", index.name(), index.status()));
     }
 
-    md.append("\n## Detailed Pre-checks\n");
+    md.append("\n## Detailed Index Pre-checks\n");
     for (var index : groupedPrechecks.index()) {
-      md.append(String.format("\n### 🖥️ %s\n", index.name()));
+      md.append(String.format("\n### %s\n", index.name()));
       md.append("| Check | Status | Duration (s) |\n");
       md.append("|-------|--------|---------------|\n");
       for (var check : index.prechecks()) {
@@ -156,7 +156,10 @@ public class PrecheckReportService {
         md.append("### ").append(category).append("\n\n");
 
         for (BreakingChangeEntity change : categoryChanges) {
-          md.append("- **").append(change.getTitle()).append("**: ").append(change.getDescription()).append("\n");
+          md.append("* ").append(change.getTitle()).append("\n\n");
+          md.append("\t**Detail**: ").append(change.getDetail()).append("\n\n");
+          md.append("\t**Impact**: ").append(change.getImpact()).append("\n\n");
+          md.append("\t**Source**: [🔗](").append(change.getUrl()).append("}\n\n");
         }
 
         md.append("\n");
@@ -251,16 +254,17 @@ public class PrecheckReportService {
     });
 
     if (!found[0]) {
-      md.append("### No deprecations found\n");
+      md.append("No deprecations found\n");
     }
     return md.toString();
   }
 
   private String getKibanaDeprecationsMdReport(String clusterId) {
     KibanaClient client = kibanaClientProvider.getClient(clusterId);
-    List<GetKibanaDeprecationResponse.Deprecation> deprecations = client.getDeprecations().deprecations();
+    List<GetKibanaDeprecationResponse.Deprecation> deprecations = Optional
+        .ofNullable(client.getDeprecations()).map(GetKibanaDeprecationResponse::deprecations).orElse(List.of());
 
-    StringBuilder md = new StringBuilder("## ⚠️ Kibana Deprecations\n\n");
+    StringBuilder md = new StringBuilder("## Kibana Deprecations\n\n");
 
     if (deprecations.isEmpty()) {
       md.append("N/A");

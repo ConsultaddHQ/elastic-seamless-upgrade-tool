@@ -24,7 +24,6 @@ import co.hyperflex.precheck.services.dtos.GetPrecheckSummaryResponse;
 import co.hyperflex.precheck.services.dtos.PrecheckRerunRequest;
 import co.hyperflex.precheck.services.dtos.SkipPrecheckResponse;
 import jakarta.validation.constraints.NotNull;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -78,10 +77,16 @@ public class PrecheckRunService {
     return breakingChangeRepository.getBreakingChanges(clusterUpgradeJob.getCurrentVersion(), clusterUpgradeJob.getTargetVersion())
         .stream()
         .map(breakingChange -> {
-          List<String> logs = new LinkedList<>();
-          logs.add("Category: " + breakingChange.getCategory());
-          logs.addAll(Arrays.asList(breakingChange.getDescription().split("\n")));
-          logs.add(breakingChange.getUrl());
+          List<String> logs = List.of(
+              "Category: " + breakingChange.getCategory(),
+              "Description:",
+              breakingChange.getDetail(),
+              "",
+              "Impact:",
+              breakingChange.getImpact(),
+              "Source:",
+              breakingChange.getUrl()
+          );
           return new GetBreakingChangeEntry(
               breakingChange.getId(),
               breakingChange.getTitle() + "(" + breakingChange.getVersion() + ")",

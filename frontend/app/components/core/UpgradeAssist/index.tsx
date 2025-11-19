@@ -84,9 +84,7 @@ function UpgradeAssistant() {
 		const step3Status =
 			step2Status !== "COMPLETED"
 				? "NOTVISITED"
-				: criticalDeprecations > 0
-				? "PENDING"
-				: warningDeprecations > 0
+				: criticalDeprecations > 0 || warningDeprecations > 0
 				? "INPROGRESS"
 				: "COMPLETED"
 
@@ -252,9 +250,9 @@ function UpgradeAssistant() {
 							lineHeight="20px"
 							letterSpacing="0.26px"
 						>
-							Prechecks verify your cluster's readiness for upgrade by running essential health and
-							configuration checks. Your Cluster needs to pass all the Prechecks to be eligible for
-							upgrade.
+							Prechecks ensure your cluster is ready for an upgrade by performing key health and
+							configuration validations. Your cluster must pass all Prechecks to qualify for the
+							upgrade.Prechecks verify
 						</Typography>
 					</Box>
 				</Box>
@@ -292,10 +290,10 @@ function UpgradeAssistant() {
 							lineHeight="20px"
 							letterSpacing="0.26px"
 						>
-							You must resolve any critical Elasticsearch and Kibana configuration issues before upgrading
-							to Elastic 8.x. Ignoring warnings might result in differences in behavior after you upgrade.
-							If you have application code that calls Elasticsearch APIs, review the Elasticsearch
-							deprecation logs to make sure you are not using deprecated APIs.
+							You must resolve all critical Elasticsearch and Kibana configuration issues before
+							performing any upgrade. Ignoring warnings may lead to unexpected behavior after the upgrade.
+							If your application uses Elasticsearch APIs, review the deprecation logs to ensure it does
+							not rely on deprecated endpoints or features.
 						</Typography>
 					</Box>
 					<Box className="flex flex-row gap-8 flex-grow w-full" flexWrap={{ xs: "wrap", md: "nowrap" }}>
@@ -339,8 +337,9 @@ function UpgradeAssistant() {
 							lineHeight="20px"
 							letterSpacing="0.26px"
 						>
-							Once you've resolved all critical issues and verified that your applications are ready, you
-							can upgrade to Elastic 8.x. Be sure to back up your data again before upgrading.
+							Once you’ve resolved all critical issues and confirmed that your applications are ready, you
+							can proceed with the upgrade. Make sure to take a fresh backup of your data before starting
+							the upgrade process.
 						</Typography>
 					</Box>
 					{infraType == "ELASTIC_CLOUD" ? (
@@ -350,7 +349,7 @@ function UpgradeAssistant() {
 								href={`https://cloud.elastic.co/deployments/${deploymentId}?show_upgrade=true`}
 							>
 								<OutlinedBorderButton
-									disabled={stepStatus["2"] === "NOTVISITED"}
+									disabled={step4Data?.isDisabled}
 									borderRadius="50%"
 									sx={{ minWidth: "38px !important", minHeight: "38px !important", padding: "0px" }}
 								>
@@ -393,8 +392,9 @@ function UpgradeAssistant() {
 								lineHeight="20px"
 								letterSpacing="0.26px"
 							>
-								Once you've resolved all critical issues and verified that your applications are ready,
-								you can upgrade to Elastic 8.x. Be sure to back up your data again before upgrading.
+								Once you’ve resolved all critical issues and confirmed that your applications are ready,
+								you can proceed with the upgrade. Make sure to take a fresh backup of your data before
+								starting the upgrade process.
 							</Typography>
 						</Box>
 						<OutlinedBorderButton

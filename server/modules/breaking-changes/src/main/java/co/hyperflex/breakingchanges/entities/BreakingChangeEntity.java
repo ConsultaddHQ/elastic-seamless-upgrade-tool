@@ -9,7 +9,8 @@ public class BreakingChangeEntity {
   private String id;
 
   private String title;
-  private String description;
+  private String detail;
+  private String impact;
   private String url;
   private String version;
   private String category;
@@ -17,6 +18,21 @@ public class BreakingChangeEntity {
   public BreakingChangeEntity() {
   }
 
+  public String getDetail() {
+    return detail;
+  }
+
+  public void setDetail(String detail) {
+    this.detail = detail;
+  }
+
+  public String getImpact() {
+    return impact;
+  }
+
+  public void setImpact(String impact) {
+    this.impact = impact;
+  }
 
   public String getId() {
     return id;
@@ -32,14 +48,6 @@ public class BreakingChangeEntity {
 
   public void setTitle(String title) {
     this.title = title;
-  }
-
-  public String getDescription() {
-    return description;
-  }
-
-  public void setDescription(String description) {
-    this.description = description;
   }
 
   public String getUrl() {

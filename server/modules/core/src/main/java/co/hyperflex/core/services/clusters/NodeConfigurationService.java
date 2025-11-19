@@ -33,11 +33,11 @@ public class NodeConfigurationService {
   }
 
   public GetNodeConfigurationResponse getNodeConfiguration(String clusterId, String nodeId) {
+    ClusterEntity cluster = clusterRepository.findById(clusterId).orElseThrow();
+    if (!(cluster instanceof SelfManagedClusterEntity selfManagedCluster)) {
+      throw new BadRequestException("This operation is not supported for cluster type: " + cluster.getType().getDisplayName());
+    }
     try {
-      ClusterEntity cluster = clusterRepository.findById(clusterId).orElseThrow();
-      if (!(cluster instanceof SelfManagedClusterEntity selfManagedCluster)) {
-        throw new BadRequestException("This operation is not supported for cluster type: " + cluster.getType().getDisplayName());
-      }
       ClusterNodeEntity clusterNode = clusterNodeRepository.findById(nodeId).orElseThrow();
       String configFilePath = getNodeConfigFilePath(clusterNode);
       var configCommand = "sudo cat " + configFilePath;

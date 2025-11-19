@@ -5,6 +5,7 @@ export default [
 	layout("layouts/common.tsx", [
 		index("routes/clusterListing.tsx"),
 		route("plugins", "routes/pluginListing.tsx"),
+		route(":clusterId/nodes", "routes/clusterNodes.tsx"),
 		layout("layouts/config.tsx", [
 			route(":clusterId/cluster-overview", "routes/clusterOverview.tsx"),
 			route(":clusterId/upgrade-assistant", "routes/upgradeAssist.tsx"),

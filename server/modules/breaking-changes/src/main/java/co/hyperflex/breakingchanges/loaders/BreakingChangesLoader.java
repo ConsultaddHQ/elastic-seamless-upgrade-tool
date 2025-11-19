@@ -44,8 +44,9 @@ public class BreakingChangesLoader {
               String impact = getFirstMatchingField(change, "impact");
               BreakingChangeEntity breakingChange = new BreakingChangeEntity();
               breakingChange.setTitle(title);
-              breakingChange.setDescription("Details:\n" + description + "\n\nImpact:\n" + impact);
-              breakingChange.setUrl("Source: " + url);
+              breakingChange.setImpact(impact);
+              breakingChange.setDetail(description);
+              breakingChange.setUrl(url);
               breakingChange.setVersion(version);
               breakingChange.setCategory(category);
               repository.save(breakingChange);
