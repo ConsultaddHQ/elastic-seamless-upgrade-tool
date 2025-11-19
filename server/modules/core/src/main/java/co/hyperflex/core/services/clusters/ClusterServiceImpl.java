@@ -36,6 +36,7 @@ import co.hyperflex.core.services.clusters.dtos.ClusterOverviewResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterKibanaNodeResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterNodeResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterResponse;
+import co.hyperflex.core.services.clusters.dtos.SyncClusterNodesResponse;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterCredentialRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterCredentialResponse;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterRequest;
@@ -148,6 +149,13 @@ public class ClusterServiceImpl implements ClusterService {
     clusterRepository.save(cluster);
     syncElasticNodes(cluster);
     return new UpdateClusterResponse();
+  }
+
+  @Override
+  public SyncClusterNodesResponse syncClusterNodes(String clusterId) {
+    ClusterEntity clusterEntity = clusterRepository.getCluster(clusterId);
+    syncElasticNodes(clusterEntity);
+    return new SyncClusterNodesResponse();
   }
 
   @Override

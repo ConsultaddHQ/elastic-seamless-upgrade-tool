@@ -15,6 +15,7 @@ import co.hyperflex.core.services.clusters.dtos.GetClusterNodeResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterResponse;
 import co.hyperflex.core.services.clusters.dtos.GetDeprecationsResponse;
 import co.hyperflex.core.services.clusters.dtos.GetNodeConfigurationResponse;
+import co.hyperflex.core.services.clusters.dtos.SyncClusterNodesResponse;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterCredentialRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterCredentialResponse;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterRequest;
@@ -70,6 +71,11 @@ public class ClusterController {
   @PutMapping("/{clusterId}")
   public UpdateClusterResponse updateCluster(@Valid @RequestBody UpdateClusterRequest request, @PathVariable String clusterId) {
     return clusterService.updateCluster(clusterId, request);
+  }
+
+  @PostMapping("/{clusterId}/sync-nodes")
+  public SyncClusterNodesResponse syncClusterNodes(@PathVariable String clusterId) {
+    return clusterService.syncClusterNodes(clusterId);
   }
 
   @PutMapping("/{clusterId}/ssh")
