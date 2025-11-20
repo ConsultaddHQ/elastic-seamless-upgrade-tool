@@ -1,5 +1,6 @@
 package co.hyperflex.controllers;
 
+import co.hyperflex.annotations.Licensed;
 import co.hyperflex.core.models.enums.ClusterNodeType;
 import co.hyperflex.core.services.upgrade.dtos.ClusterNodeUpgradeRequest;
 import co.hyperflex.core.services.upgrade.dtos.ClusterNodeUpgradeResponse;
@@ -42,6 +43,7 @@ public class UpgradeController {
     return clusterUpgradeService.upgradeNode(new ClusterNodeUpgradeRequest(clusterId, nodeId));
   }
 
+  @Licensed
   @GetMapping("/info")
   public ClusterInfoResponse clusterInfo(@PathVariable String clusterId) {
     return clusterUpgradeService.upgradeInfo(clusterId);

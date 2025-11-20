@@ -95,7 +95,7 @@ subprojects {
         implementation 'jakarta.validation:jakarta.validation-api:3.1.0'
         implementation 'org.springframework:spring-context:6.2.8'
         implementation 'org.slf4j:slf4j-api:1.7.36'
-
+        implementation 'io.jsonwebtoken:jjwt-jackson:0.13.0'
         testImplementation 'org.mockito:mockito-core:5.13.0'
         testImplementation 'org.mockito:mockito-junit-jupiter:5.13.0'
         testImplementation 'org.junit.jupiter:junit-jupiter:5.11.0'
