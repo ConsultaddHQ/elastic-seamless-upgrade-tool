@@ -1,4 +1,4 @@
-import { Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react"
+import { Checkbox, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react"
 import { Box, Typography } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { CloseCircle, DocumentText, Flash, More, Refresh, TickCircle, Warning2 } from "iconsax-react"
@@ -92,6 +92,7 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 	const [showNodeLogs, setShowNodeLogs] = useState<TUpgradeRow | undefined>()
 	const [showNodeConfig, setShowNodeConfig] = useState<TUpgradeRow | undefined>()
 	const { ConfirmationModal, openConfirmation } = useConfirmationModal()
+	const [skipHealth, setSkipHealth] = useState(false)
 
 	useRealtimeEventListener("UPGRADE_PROGRESS_CHANGE", () => refetch(), true)
 
@@ -116,16 +117,15 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 	}
 
 	const performUpgrade = async (nodeId: string) => {
-		console.log("triggered")
-		await clusterUpgradeApi
-			.upgradeNode(clusterId!, nodeId)
-			.then(() => {
-				refetch()
-				toast.success("Upgrade started")
-			})
-			.catch(() => {
-				toast.error("Failed to start upgrade")
-			})
+		await clusterUpgradeApi.upgradeNode(clusterId!, nodeId)
+		refetch()
+		toast.success("Upgrade started")
+	}
+
+	const retryNodeUpgrade = async (nodeId: string, skipHealth: boolean = false) => {
+		await clusterUpgradeApi.retryNodeUpgrade(clusterId!, nodeId, { skipHealth })
+		refetch()
+		toast.success("Upgrade started")
 	}
 
 	const { data, isLoading, refetch, isRefetching } = useQuery({
@@ -137,6 +137,12 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 	const { mutate: PerformUpgrade, isPending } = useMutation({
 		mutationKey: ["node-upgrade"],
 		mutationFn: performUpgrade,
+	})
+
+	const { mutate: PerformRetryUpgrade, isPending: isRetryPending } = useMutation({
+		mutationKey: ["retry-node-upgrade"],
+		mutationFn: async ({ nodeId, skipHealth }: { nodeId: string; skipHealth: boolean }) =>
+			await retryNodeUpgrade(nodeId, skipHealth),
 	})
 
 	const getNodeAction = (row: TUpgradeRow) => {
@@ -186,14 +192,41 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 						onClick={() => {
 							openConfirmation({
 								title: "Retry Upgrade",
-								message: `Are you sure you want to retry upgrade for node ${row.node_name}?`,
+								message: (
+									<Box className="flex flex-col gap-4">
+										<Box className="flex ">
+											<Typography
+												color="#ADADAD"
+												fontSize="16px"
+												fontWeight="500"
+												lineHeight="22px"
+												align="center"
+												className="w-full"
+												fontStyle={"Figtree"}
+											>
+												Do you want to proceed with upgrading node ${row.node_name}?
+											</Typography>
+										</Box>
+										<Box className="flex ">
+											<Checkbox
+												color="warning"
+												checked={skipHealth}
+												onChange={(e) => {
+													setSkipHealth(e.target.checked)
+												}}
+											>
+												Skip health check
+											</Checkbox>
+										</Box>
+									</Box>
+								),
 								confirmText: "Retry",
-								onConfirm: () => PerformUpgrade(row.key),
+								onConfirm: () => PerformRetryUpgrade({ nodeId: row.key, skipHealth }),
 							})
 						}}
 						icon={Refresh}
 						filledIcon={Refresh}
-						disabled={row?.disabled || isPending}
+						disabled={row?.disabled || isRetryPending}
 					>
 						Retry
 					</OutlinedBorderButton>
