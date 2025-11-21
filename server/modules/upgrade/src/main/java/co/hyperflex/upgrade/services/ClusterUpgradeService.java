@@ -34,11 +34,13 @@ import co.hyperflex.precheck.services.PrecheckRunService;
 import co.hyperflex.upgrade.entities.UpgradeLogEntity;
 import co.hyperflex.upgrade.planner.UpgradePlanBuilder;
 import co.hyperflex.upgrade.services.dtos.ClusterInfoResponse;
+import co.hyperflex.upgrade.services.dtos.NodeUpgradePlanResponse;
 import co.hyperflex.upgrade.tasks.Configuration;
 import co.hyperflex.upgrade.tasks.Context;
 import co.hyperflex.upgrade.tasks.Task;
 import co.hyperflex.upgrade.tasks.TaskResult;
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -292,5 +294,31 @@ public class ClusterUpgradeService {
     node.setProgress(progress);
     clusterNodeRepository.save(node);
     notificationService.sendNotification(new UpgradeProgressChangeEvent());
+  }
+
+  public NodeUpgradePlanResponse clusterNodeUpgradePlan(String clusterId, String nodeId) {
+    ClusterNodeEntity node = clusterNodeRepository.findById(nodeId).orElseThrow();
+    ClusterUpgradeJobEntity upgradeJob = clusterUpgradeJobService.getActiveJobByClusterId(clusterId);
+    List<Task> tasks = upgradePlanBuilder.buildPlanFor(node, upgradeJob);
+    int index = 0;
+    int checkpoint = upgradeJob.getNodeCheckPoints().getOrDefault(nodeId, 0);
+    List<NodeUpgradePlanResponse.Task> planTasks = new LinkedList<>();
+    for (Task task : tasks) {
+      var status = NodeUpgradeStatus.AVAILABLE;
+      if (checkpoint == index) {
+        status = node.getStatus();
+      } else if (checkpoint > index) {
+        status = NodeUpgradeStatus.UPGRADED;
+      }
+
+      planTasks.add(
+          new NodeUpgradePlanResponse.Task(
+              task.getId() + "-" + index,
+              task.getName(),
+              status));
+
+      index++;
+    }
+    return new NodeUpgradePlanResponse(planTasks);
   }
 }

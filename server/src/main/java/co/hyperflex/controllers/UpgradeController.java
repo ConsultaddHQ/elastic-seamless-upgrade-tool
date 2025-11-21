@@ -9,6 +9,7 @@ import co.hyperflex.core.services.upgrade.dtos.GetUpgradeLogsResponse;
 import co.hyperflex.upgrade.services.ClusterUpgradeService;
 import co.hyperflex.upgrade.services.UpgradeLogService;
 import co.hyperflex.upgrade.services.dtos.ClusterInfoResponse;
+import co.hyperflex.upgrade.services.dtos.NodeUpgradePlanResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,6 +41,12 @@ public class UpgradeController {
   public ClusterNodeUpgradeResponse clusterNodeUpgrade(@PathVariable String clusterId,
                                                        @PathVariable String nodeId) {
     return clusterUpgradeService.upgradeNode(new ClusterNodeUpgradeRequest(clusterId, nodeId));
+  }
+
+  @GetMapping("/nodes/{nodeId}/plan")
+  public NodeUpgradePlanResponse clusterNodeUpgradePlan(@PathVariable String clusterId,
+                                                        @PathVariable String nodeId) {
+    return clusterUpgradeService.clusterNodeUpgradePlan(clusterId, nodeId);
   }
 
   @GetMapping("/info")

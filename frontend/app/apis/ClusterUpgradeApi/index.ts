@@ -31,13 +31,17 @@ class ClusterUpgradeApi {
 		const response = await axiosJSON.post(`/clusters/${clusterId}/upgrades/nodes/${nodeId}`)
 		return response.data
 	}
+	async nodeUpgradePlan(clusterId: string, nodeId: string) {
+		const response = await axiosJSON.get(`/clusters/${clusterId}/upgrades/nodes/${nodeId}/plan`)
+		return response.data
+	}
 
-  async upgradeAllNodes(clusterId: string, nodeType: string) {
-    const response = await axiosJSON.post(`/clusters/${clusterId}/upgrades?nodeType=${nodeType}`);
-    return response.data;
-  }
-	
-  async getUpgradeJobStatus(clusterId: string) {
+	async upgradeAllNodes(clusterId: string, nodeType: string) {
+		const response = await axiosJSON.post(`/clusters/${clusterId}/upgrades?nodeType=${nodeType}`)
+		return response.data
+	}
+
+	async getUpgradeJobStatus(clusterId: string) {
 		const response = await axiosJSON.get<{
 			isStopping: true
 			status: string
