@@ -6,6 +6,7 @@ import co.hyperflex.upgrade.tasks.Context;
 import co.hyperflex.upgrade.tasks.Task;
 import co.hyperflex.upgrade.tasks.TaskResult;
 import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -43,5 +44,10 @@ public class WaitForGreenClusterStatusTask implements Task {
     }
     logger.error("Cluster health did not become green after {} attempts.", MAX_RETRIES);
     return TaskResult.failure("Cluster health did not become green after multiple retries.");
+  }
+
+  @Override
+  public boolean skip(Map<String, Boolean> flags) {
+    return flags.getOrDefault("skipHealth", false);
   }
 }

@@ -11,6 +11,21 @@ import { useParams } from "react-router"
 import { Typography } from "@mui/material"
 import { useRealtimeEventListener } from "~/lib/hooks/useRealtimeEventListener"
 
+import { useReactFlow } from "@xyflow/react"
+
+function AutoScrollToNode({ targetId }: { targetId: string }) {
+	const { getNode, setCenter } = useReactFlow()
+
+	useEffect(() => {
+		const node = getNode(targetId)
+		if (node) {
+			setCenter(node.position.x + 200, node.position.y + 50, { zoom: 1.1 })
+		}
+	}, [targetId])
+
+	return null
+}
+
 const nodeTypes = { taskNode: TaskNode }
 function NodeUpgradePLanBreadcrumb({ onBack }: { onBack: () => void }) {
 	return (
@@ -32,6 +47,21 @@ function NodeUpgradePLanBreadcrumb({ onBack }: { onBack: () => void }) {
 export default function PipelineFlow({ onOpenChange, node }: { onOpenChange: () => void; node: TUpgradeRow }) {
 	const { clusterId } = useParams()
 	const [tasks, setTasks] = useState<{ id: string; name: string; status: NodeUpgradeStatus }[]>([])
+	const [targetNodeId, setTargetNodeId] = useState<string>("")
+
+	useEffect(() => {
+		const upgradingTask = tasks.find((task) => task.status === "UPGRADING" || task.status === "FAILED")
+		if (upgradingTask) {
+			setTargetNodeId(upgradingTask.id)
+		} else {
+			const availableTask = tasks.find((task) => task.status === "AVAILABLE")
+			if (availableTask) {
+				setTargetNodeId(availableTask.id)
+			} else if (tasks.length > 0) {
+				setTargetNodeId(tasks[tasks.length - 1].id)
+			}
+		}
+	}, [tasks])
 
 	const getPlan = async () => {
 		if (clusterId && node?.id) {
@@ -100,11 +130,11 @@ export default function PipelineFlow({ onOpenChange, node }: { onOpenChange: () 
 								nodes={nodes}
 								edges={edges}
 								nodeTypes={nodeTypes}
-								fitView
 								style={{ borderRadius: "20px" }}
 							>
 								<Background />
 								<Controls />
+								<AutoScrollToNode targetId={targetNodeId} />
 							</ReactFlow>
 						</Box>
 					</Box>

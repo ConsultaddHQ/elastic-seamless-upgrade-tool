@@ -10,6 +10,7 @@ import co.hyperflex.upgrade.services.ClusterUpgradeService;
 import co.hyperflex.upgrade.services.UpgradeLogService;
 import co.hyperflex.upgrade.services.dtos.ClusterInfoResponse;
 import co.hyperflex.upgrade.services.dtos.NodeUpgradePlanResponse;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,8 +40,10 @@ public class UpgradeController {
 
   @PostMapping("/nodes/{nodeId}")
   public ClusterNodeUpgradeResponse clusterNodeUpgrade(@PathVariable String clusterId,
-                                                       @PathVariable String nodeId) {
-    return clusterUpgradeService.upgradeNode(new ClusterNodeUpgradeRequest(clusterId, nodeId));
+                                                       @PathVariable String nodeId,
+                                                       @RequestParam(name = "skipHealth", required = false, defaultValue = "false")
+                                                       Boolean skipHealth) {
+    return clusterUpgradeService.upgradeNode(new ClusterNodeUpgradeRequest(clusterId, nodeId), Map.of("skipHealth", skipHealth));
   }
 
   @GetMapping("/nodes/{nodeId}/plan")
