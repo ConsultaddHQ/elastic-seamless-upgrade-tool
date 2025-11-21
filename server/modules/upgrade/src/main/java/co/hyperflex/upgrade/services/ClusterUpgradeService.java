@@ -221,16 +221,16 @@ public class ClusterUpgradeService {
               continue;
             }
             try {
-              log.info("Starting task [name: {}] for node [ip: {}]", task.getName(), node.getIp());
-              TaskResult result = task.run(context);
-              log.info("Task [name: {}] completed for node [ip: {}] [success: {}] [result: {}] [progress: {}%]", task.getName(),
-                  node.getIp(),
-                  result.success(), result.message(), (index * 100) / tasks.size());
+              if (task.skip(flags)) {
+                log.error("Task [name: {}] skipped by user for node [ip: {}]", task.getName(), node.getIp());
+              } else {
+                log.info("Starting task [name: {}] for node [ip: {}]", task.getName(), node.getIp());
+                TaskResult result = task.run(context);
+                log.info("Task [name: {}] completed for node [ip: {}] [success: {}] [result: {}] [progress: {}%]", task.getName(),
+                    node.getIp(),
+                    result.success(), result.message(), (index * 100) / tasks.size());
 
-              if (!result.success()) {
-                if (task.skip(flags)) {
-                  log.error("Task [name: {}] skipped by user for node [ip: {}] — {}", task.getName(), node.getIp(), result.message());
-                } else {
+                if (!result.success()) {
                   log.error("Task [name: {}] failed for node [ip: {}] — {}", task.getName(), node.getIp(), result.message());
                   throw new RuntimeException(result.message());
                 }
