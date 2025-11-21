@@ -40,6 +40,7 @@ import co.hyperflex.upgrade.tasks.Task;
 import co.hyperflex.upgrade.tasks.TaskResult;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.slf4j.Logger;
@@ -89,13 +90,13 @@ public class ClusterUpgradeService {
     this.upgradeNotificationService = upgradeNotificationService;
   }
 
-  public ClusterNodeUpgradeResponse upgradeNode(ClusterNodeUpgradeRequest request) {
+  public ClusterNodeUpgradeResponse upgradeNode(ClusterNodeUpgradeRequest request, Map<String, Boolean> flags) {
 
     ClusterEntity cluster = clusterRepository.findById(request.clusterId()).orElseThrow();
     if (cluster instanceof SelfManagedClusterEntity selfManagedCluster) {
       ClusterUpgradeJobEntity clusterUpgradeJob = clusterUpgradeJobService.getActiveJobByClusterId(request.clusterId());
       ClusterNodeEntity clusterNode = clusterNodeRepository.findById(request.nodeId()).orElseThrow();
-      upgradeNodes(selfManagedCluster, List.of(clusterNode), clusterUpgradeJob.getId());
+      upgradeNodes(selfManagedCluster, List.of(clusterNode), clusterUpgradeJob.getId(), flags);
     } else {
       throw new BadRequestException("Upgrade not supported for cluster");
     }
@@ -110,7 +111,7 @@ public class ClusterUpgradeService {
           clusterNodeRepository.findByClusterId(clusterId).stream().filter(node -> node.getType() == nodeType)
               .sorted(Comparator.comparingInt(ClusterNodeEntity::getRank)).toList();
 
-      upgradeNodes(selfManagedCluster, clusterNodes, clusterUpgradeJob.getId());
+      upgradeNodes(selfManagedCluster, clusterNodes, clusterUpgradeJob.getId(), Map.of());
     } else {
       throw new BadRequestException("Upgrade not supported for cluster");
     }
@@ -165,7 +166,8 @@ public class ClusterUpgradeService {
     }
   }
 
-  private void upgradeNodes(SelfManagedClusterEntity cluster, List<ClusterNodeEntity> nodes, String clusterUpgradeJobId) {
+  private void upgradeNodes(SelfManagedClusterEntity cluster, List<ClusterNodeEntity> nodes, String clusterUpgradeJobId,
+                            Map<String, Boolean> flags) {
 
     executorService.submit(() -> {
       try {
@@ -224,8 +226,12 @@ public class ClusterUpgradeService {
                   result.success(), result.message(), (index * 100) / tasks.size());
 
               if (!result.success()) {
-                log.error("Task [name: {}] failed for node [ip: {}] — {}", task.getName(), node.getIp(), result.message());
-                throw new RuntimeException(result.message());
+                if (task.skip(flags)) {
+                  log.error("Task [name: {}] skipped by user for node [ip: {}] — {}", task.getName(), node.getIp(), result.message());
+                } else {
+                  log.error("Task [name: {}] failed for node [ip: {}] — {}", task.getName(), node.getIp(), result.message());
+                  throw new RuntimeException(result.message());
+                }
               }
 
               checkPoint++;
