@@ -1,3 +1,5 @@
+type NodeUpgradeStatus = "AVAILABLE" | "UPGRADING" | "FAILED" | "UPGRADED"
+
 type TUpgradeRow = {
 	id: string
 	status: string

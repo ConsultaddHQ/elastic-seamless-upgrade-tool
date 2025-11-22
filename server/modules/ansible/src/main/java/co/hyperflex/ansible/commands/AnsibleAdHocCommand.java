@@ -6,10 +6,10 @@ import java.util.Map;
 import java.util.Objects;
 
 public class AnsibleAdHocCommand {
-  private final Map<String, Object> args;
+  private final Object args;
   private final String module;
 
-  public AnsibleAdHocCommand(Map<String, Object> args, String module) {
+  public AnsibleAdHocCommand(Object args, String module) {
     this.args = args;
     this.module = module;
   }
@@ -26,14 +26,23 @@ public class AnsibleAdHocCommand {
     if (args == null) {
       return Collections.emptyList();
     }
-    return args.entrySet().stream().map(entry -> entry.getKey() + "=" + entry.getValue()).toList();
+    if (args instanceof List<?> listArgs) {
+      return (List<String>) listArgs;
+    }
+    Map<String, Object> argsMap = (Map<String, Object>) args;
+    return argsMap.entrySet().stream().map(entry -> entry.getKey() + "=" + entry.getValue()).toList();
   }
 
   public static class Builder {
-    private Map<String, Object> args;
+    private Object args;
     private String module;
 
     public Builder args(Map<String, Object> args) {
+      this.args = args;
+      return this;
+    }
+
+    public Builder args(List<String> args) {
       this.args = args;
       return this;
     }

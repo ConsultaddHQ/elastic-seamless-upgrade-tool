@@ -31,6 +31,10 @@ class ClusterUpgradeApi {
 		const response = await axiosJSON.post(`/clusters/${clusterId}/upgrades/nodes/${nodeId}`)
 		return response.data
 	}
+	async nodeUpgradePlan(clusterId: string, nodeId: string) {
+		const response = await axiosJSON.get(`/clusters/${clusterId}/upgrades/nodes/${nodeId}/plan`)
+		return response.data
+	}
 
 	async retryNodeUpgrade(clusterId: string, nodeId: string, flags: { skipHealth: boolean }) {
 		const response = await axiosJSON.post(

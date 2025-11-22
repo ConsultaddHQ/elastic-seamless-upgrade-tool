@@ -12,6 +12,7 @@ import UpgradeLogs from "../UpgradeLogs"
 import { AppDropdown, type DropdownItem } from "~/components/utilities/AppDropdown"
 import { ClusterActions } from "~/components/core/UpgradeCluster/widgets/ClusterActions"
 import NodeConfiguration from "~/components/core/NodeConfiguration"
+import NodeUpgradePlan from "~/components/core/NodeUpgradePlan"
 import { useParams } from "react-router"
 import { clusterApi } from "~/apis/ClusterApi"
 import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
@@ -91,6 +92,7 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 	const { clusterId } = useParams()
 	const [showNodeLogs, setShowNodeLogs] = useState<TUpgradeRow | undefined>()
 	const [showNodeConfig, setShowNodeConfig] = useState<TUpgradeRow | undefined>()
+	const [showNodeUpgradePlan, setShowNodeUpgradePlan] = useState<TUpgradeRow | undefined>()
 	const { ConfirmationModal, openConfirmation } = useConfirmationModal()
 	const [skipHealth, setSkipHealth] = useState(false)
 
@@ -221,7 +223,8 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 									</Box>
 								),
 								confirmText: "Retry",
-								onConfirm: () => PerformRetryUpgrade({ nodeId: row.key, skipHealth }),
+								onConfirm: () =>
+									setTimeout(() => PerformRetryUpgrade({ nodeId: row.key, skipHealth }), 2000),
 							})
 						}}
 						icon={Refresh}
@@ -247,6 +250,13 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 				label: "Configuration",
 				onClick: () => {
 					setShowNodeConfig(row)
+				},
+				icon: <DocumentText size="14px" color="currentColor" />,
+			},
+			{
+				label: "Upgrade Plan",
+				onClick: () => {
+					setShowNodeUpgradePlan(row)
 				},
 				icon: <DocumentText size="14px" color="currentColor" />,
 			},
@@ -329,6 +339,9 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 			{showNodeLogs && <UpgradeLogs node={showNodeLogs} onOpenChange={() => setShowNodeLogs(undefined)} />}
 			{showNodeConfig && (
 				<NodeConfiguration node={showNodeConfig} onOpenChange={() => setShowNodeConfig(undefined)} />
+			)}
+			{showNodeUpgradePlan && (
+				<NodeUpgradePlan node={showNodeUpgradePlan} onOpenChange={() => setShowNodeUpgradePlan(undefined)} />
 			)}
 			<Box className="flex flex-col gap-4 w-full rounded-2xl bg-[#0d0d0d]" padding="16px 24px">
 				<Box className="flex flex-row items-center gap-2 justify-between w-full">

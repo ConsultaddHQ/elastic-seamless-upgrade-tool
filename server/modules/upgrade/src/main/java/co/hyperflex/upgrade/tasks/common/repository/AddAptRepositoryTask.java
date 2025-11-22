@@ -6,6 +6,7 @@ import co.hyperflex.ansible.commands.AnsibleAdHocCommand;
 import co.hyperflex.upgrade.tasks.AbstractAnsibleTask;
 import co.hyperflex.upgrade.tasks.Context;
 import co.hyperflex.upgrade.tasks.TaskResult;
+import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Component;
 
@@ -78,11 +79,9 @@ public class AddAptRepositoryTask extends AbstractAnsibleTask {
     // Step 2: Convert GPG key
     var convertKey = AnsibleAdHocCommand.builder()
         .module(MODULE_COMMAND)
-        .args(Map.of(
-            "cmd", String.format(
-                "gpg --batch --yes --dearmor -o %s %s",
-                KEYRING_PATH, TEMP_GPG_KEY
-            )
+        .args(List.of(String.format(
+            "gpg --batch --yes --dearmor -o %s %s",
+            KEYRING_PATH, TEMP_GPG_KEY)
         ))
         .build();
     var convertResult = runAdHocCommand(convertKey, context);
