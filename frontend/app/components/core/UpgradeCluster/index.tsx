@@ -223,7 +223,8 @@ function UpgradeCluster({ clusterType }: TUpgradeCluster) {
 									</Box>
 								),
 								confirmText: "Retry",
-								onConfirm: () => PerformRetryUpgrade({ nodeId: row.key, skipHealth }),
+								onConfirm: () =>
+									setTimeout(() => PerformRetryUpgrade({ nodeId: row.key, skipHealth }), 2000),
 							})
 						}}
 						icon={Refresh}
