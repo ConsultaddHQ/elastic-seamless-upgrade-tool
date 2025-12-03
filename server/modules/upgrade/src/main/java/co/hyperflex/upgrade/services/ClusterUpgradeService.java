@@ -121,7 +121,7 @@ public class ClusterUpgradeService {
   }
 
   public ClusterInfoResponse upgradeInfo(String clusterId) {
-    ClusterUpgradeJobEntity activeUpgradeJob = clusterUpgradeJobService.getActiveJobByClusterId(clusterId);
+    ClusterUpgradeJobEntity activeUpgradeJob = clusterUpgradeJobService.getLatestJobByClusterId(clusterId);
     try {
       ElasticClient client = elasticsearchClientProvider.getClient(clusterId);
       KibanaClient kibanaClient = kibanaClientProvider.getClient(clusterId);
