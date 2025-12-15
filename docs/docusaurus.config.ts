@@ -65,6 +65,12 @@ const config: Config = {
           position: "left",
           label: "Docs",
         },
+        {
+          type: "docSidebar",
+          sidebarId: "features",
+          position: "left",
+          label: "Features",
+        },
         { to: "/blog", label: "Blog", position: "left" },
         {
             href: 'https://github.com/ConsultaddHQ/elastic-seamless-upgrade-tool',
