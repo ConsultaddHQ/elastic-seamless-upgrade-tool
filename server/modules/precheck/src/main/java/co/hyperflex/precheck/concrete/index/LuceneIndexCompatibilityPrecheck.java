@@ -19,61 +19,54 @@ public class LuceneIndexCompatibilityPrecheck extends BaseIndexPrecheck {
 
   @Override
   public void run(IndexContext context) {
-    try {
+    var logger = context.getLogger();
+    var indexName = context.getIndexName();
+    var clusterUpgradeJob = context.getClusterUpgradeJob();
+    int targetLucene = mapEsVersionToLucene(clusterUpgradeJob.getTargetVersion());
 
-      var logger = context.getLogger();
-      var indexName = context.getIndexName();
-      var clusterUpgradeJob = context.getClusterUpgradeJob();
-      int targetLucene = mapEsVersionToLucene(clusterUpgradeJob.getCurrentVersion());
+    var request = ApiRequest.builder(JsonNode.class).get().uri("/" + indexName + "/_segments").build();
+    JsonNode root = context.getElasticClient().execute(request);
+    JsonNode segmentsNode = root.path("indices").path(indexName).path("shards");
 
-      var request = ApiRequest.builder(JsonNode.class).get().uri("/" + indexName + "/_segments").build();
-      JsonNode root = context.getElasticClient().execute(request);
-      JsonNode segmentsNode = root.path("indices").path(indexName).path("shards");
+    Set<Integer> luceneVersions = new HashSet<>();
 
-      Set<Integer> luceneVersions = new HashSet<>();
-
-      // Iterate over shards and collect Lucene versions
-      segmentsNode.properties().forEach(entry -> {
-        entry.getValue().forEach(shard -> {
-          JsonNode segments = shard.path("segments");
-          segments.properties().forEach(segEntry -> {
-            JsonNode segment = segEntry.getValue();
-            String versionStr = segment.path("version").asText(); // e.g. "8.11.1"
-            if (!versionStr.isEmpty()) {
-              int major = Integer.parseInt(versionStr.split("\\.")[0]);
-              luceneVersions.add(major);
-            }
-          });
+    // Iterate over shards and collect Lucene versions
+    segmentsNode.properties().forEach(entry -> {
+      entry.getValue().forEach(shard -> {
+        JsonNode segments = shard.path("segments");
+        segments.properties().forEach(segEntry -> {
+          JsonNode segment = segEntry.getValue();
+          String versionStr = segment.path("version").asText(); // e.g. "8.11.1"
+          if (!versionStr.isEmpty()) {
+            int major = Integer.parseInt(versionStr.split("\\.")[0]);
+            luceneVersions.add(major);
+          }
         });
       });
+    });
 
-      boolean foundUnsupportedLucene = false;
-      for (Integer luceneVersion : luceneVersions) {
-        if (luceneVersion < targetLucene - 1) {
-          logger.error("Index [{}] contains Lucene v{} segments, too old for target Lucene {}. Please reindex before upgrade.", indexName,
-              luceneVersion, targetLucene);
-          foundUnsupportedLucene = true;
-        } else if (luceneVersion == targetLucene - 1) {
-          logger.warn(
-              "Index [{}] contains Lucene v{} segments. Target Elasticsearch [v{}] uses lucene [v{}]."
-                  + " Consider reindexing to avoid future issues",
-              indexName,
-              luceneVersion, clusterUpgradeJob.getTargetVersion(), targetLucene);
-        }
+    boolean foundUnsupportedLucene = false;
+    for (Integer luceneVersion : luceneVersions) {
+      if (luceneVersion < targetLucene - 1) {
+        logger.error("Index [{}] contains Lucene v{} segments, too old for target Lucene v{}. Please reindex before upgrade.", indexName,
+            luceneVersion, targetLucene);
+        foundUnsupportedLucene = true;
+      } else if (luceneVersion == targetLucene - 1) {
+        logger.warn(
+            "Index [{}] contains Lucene v{} segments. Target Elasticsearch [v{}] uses lucene [v{}]."
+                + " Consider reindexing to avoid future issues",
+            indexName,
+            luceneVersion, clusterUpgradeJob.getTargetVersion(), targetLucene);
       }
-      if (foundUnsupportedLucene) {
-        throw new RuntimeException();
-      } else {
-        logger.info("Index [{}] segments are compatible with target Lucene {}", indexName, targetLucene);
-      }
-
-    } catch (Exception e) {
-      context.getLogger().error("Error executing precheck: {}", e.getMessage(), e);
-      throw new RuntimeException(e);
+    }
+    if (foundUnsupportedLucene) {
+      throw new RuntimeException();
+    } else {
+      logger.info("Index [{}] segments are compatible with target Lucene {}", indexName, targetLucene);
     }
   }
 
-  private int mapEsVersionToLucene(String esCreatedVersion) {
+  private int mapEsVersionToLucene(String elasticVersion) {
     Map<String, Integer> esToLucene = Map.of(
         "5", 6,
         "6", 7,
@@ -82,7 +75,7 @@ public class LuceneIndexCompatibilityPrecheck extends BaseIndexPrecheck {
         "9", 10
     );
 
-    String major = esCreatedVersion.substring(0, 1);
+    String major = elasticVersion.substring(0, 1);
     return esToLucene.getOrDefault(major, -1);
   }
 }
