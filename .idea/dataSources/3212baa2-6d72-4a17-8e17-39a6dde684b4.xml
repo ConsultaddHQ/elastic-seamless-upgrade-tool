@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <dataSource name="postgres@localhost">
-  <database-model serializer="dbm" dbms="POSTGRES" family-id="POSTGRES" format-version="4.53">
+  <database-model serializer="dbm" dbms="POSTGRES" family-id="POSTGRES" format-version="4.54">
     <root id="1">
       <DateStyle>mdy</DateStyle>
       <Grants>1||-9223372036854775808|c|G
@@ -4232,7 +4232,6 @@ false Zulu
     <schema id="264" parent="2" name="public">
       <Comment>standard public schema</Comment>
       <Current>1</Current>
-      <IntrospectionStateNumber>772</IntrospectionStateNumber>
       <LastIntrospectionLocalTimestamp>2025-07-22.05:01:57</LastIntrospectionLocalTimestamp>
       <ObjectId>2200</ObjectId>
       <StateNumber>531</StateNumber>

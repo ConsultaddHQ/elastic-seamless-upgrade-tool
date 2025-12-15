@@ -24,7 +24,7 @@ public class LuceneIndexCompatibilityPrecheck extends BaseIndexPrecheck {
       var logger = context.getLogger();
       var indexName = context.getIndexName();
       var clusterUpgradeJob = context.getClusterUpgradeJob();
-      int targetLucene = mapEsVersionToLucene(clusterUpgradeJob.getCurrentVersion());
+      int targetLucene = mapEsVersionToLucene(clusterUpgradeJob.getTargetVersion());
 
       var request = ApiRequest.builder(JsonNode.class).get().uri("/" + indexName + "/_segments").build();
       JsonNode root = context.getElasticClient().execute(request);
@@ -73,7 +73,7 @@ public class LuceneIndexCompatibilityPrecheck extends BaseIndexPrecheck {
     }
   }
 
-  private int mapEsVersionToLucene(String esCreatedVersion) {
+  private int mapEsVersionToLucene(String elasticVersion) {
     Map<String, Integer> esToLucene = Map.of(
         "5", 6,
         "6", 7,
@@ -82,7 +82,7 @@ public class LuceneIndexCompatibilityPrecheck extends BaseIndexPrecheck {
         "9", 10
     );
 
-    String major = esCreatedVersion.substring(0, 1);
+    String major = elasticVersion.substring(0, 1);
     return esToLucene.getOrDefault(major, -1);
   }
 }
