@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotNull;
 
 public record CreateClusterUpgradeJobResponse(
     @NotNull String message,
-    @NotNull String id
+    @NotNull String id,
+    @NotNull boolean isValidUpgradePath
 ) {
 }

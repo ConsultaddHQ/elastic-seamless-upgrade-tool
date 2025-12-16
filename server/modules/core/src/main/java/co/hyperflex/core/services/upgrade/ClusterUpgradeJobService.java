@@ -5,6 +5,7 @@ import co.hyperflex.clients.elastic.ElasticsearchClientProvider;
 import co.hyperflex.clients.elastic.dto.info.InfoResponse;
 import co.hyperflex.common.exceptions.ConflictException;
 import co.hyperflex.common.exceptions.NotFoundException;
+import co.hyperflex.common.utils.VersionUtils;
 import co.hyperflex.core.models.enums.ClusterUpgradeStatus;
 import co.hyperflex.core.repositories.ClusterUpgradeJobRepository;
 import co.hyperflex.core.services.clusters.ClusterService;
@@ -104,8 +105,8 @@ public class ClusterUpgradeJobService {
     clusterService.resetUpgradeStatus(clusterId);
 
     notificationService.sendNotification(new UpgradeJobCreatedEvent(existingJob.getId(), clusterId));
-
-    return new CreateClusterUpgradeJobResponse("Cluster upgrade job created successfully", existingJob.getId());
+    boolean isValidUpgradePath = VersionUtils.isValidUpgrade(currentVersion, request.targetVersion());
+    return new CreateClusterUpgradeJobResponse("Cluster upgrade job created successfully", existingJob.getId(), isValidUpgradePath);
   }
 
   public StopClusterUpgradeResponse stopClusterUpgrade(@NotNull String clusterId) {

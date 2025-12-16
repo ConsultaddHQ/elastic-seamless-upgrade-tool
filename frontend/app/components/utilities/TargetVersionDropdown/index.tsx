@@ -8,6 +8,7 @@ import useSafeRouteStore from "~/store/safeRoutes"
 import { useEffect } from "react"
 import { useNavigate, useParams } from "react-router"
 import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
+import { useConfirmationModal } from "../ConfirmationModal"
 
 const STYLES = {
 	MENU_ITEMS: {
@@ -40,7 +41,18 @@ function TargetVersionDropdown() {
 	const { clusterId } = useParams()
 	const setUpgradeAssistAllowed = useSafeRouteStore((state) => state.setUpgradeAssistAllowed)
 	const navigate = useNavigate()
+	const { openConfirmation, ConfirmationModal } = useConfirmationModal()
 
+	const showInvalidUpgradePathModal = () => {
+		openConfirmation({
+			title: "Unsupported Upgrade Path",
+			message: `This upgrade path is not supported. The upgrade cannot be performed, but you can still run prechecks for reporting purposes.`,
+			confirmText: "Got it",
+			onConfirm: async () => {
+				navigate(`/${clusterId}/upgrade-assistant`)
+			},
+		})
+	}
 	const { data, isLoading, isRefetching, refetch } = useQuery({
 		queryKey: ["get-target-version-info"],
 		queryFn: async () => {
@@ -55,7 +67,11 @@ function TargetVersionDropdown() {
 	const handleVersionSelect = async (ver: string) => {
 		const data = await clusterUpgradeApi.setTargetVersion(clusterId!, ver)
 		setUpgradeAssistAllowed(data?.targetVersion)
-		navigate(`/${clusterId}/upgrade-assistant`)
+		if (!data.isValidUpgradePath) {
+			showInvalidUpgradePathModal()
+		} else {
+			navigate(`/${clusterId}/upgrade-assistant`)
+		}
 	}
 
 	const { mutate: HandleVersion, isPending } = useMutation({
@@ -67,49 +83,52 @@ function TargetVersionDropdown() {
 	}, [])
 
 	return (
-		<OneLineSkeleton
-			className="rounded-[10px] max-w-[250px] w-[154px]"
-			show={isLoading || isRefetching}
-			component={
-				<PopupState variant="popover" popupId="demo-popup-menu">
-					{(popupState) => (
-						<Box className="relative">
-							<OutlinedBorderButton {...bindTrigger(popupState)} disabled={data?.underUpgrade}>
-								{isPending ? "Please wait..." : data?.targetVersion ?? "Upgrade available"}{" "}
-								<ArrowDown2 size="14px" color="#959595" />
-							</OutlinedBorderButton>
-							<Menu
-								{...bindMenu(popupState)}
-								transformOrigin={{
-									vertical: "top",
-									horizontal: "left",
-								}}
-								slotProps={{
-									root: STYLES.MENU_ROOT,
-									paper: STYLES.MENU_PAPER,
-								}}
-							>
-								{data?.possibleUpgradeVersions?.map((update: string, index: number) => {
-									return (
-										<MenuItem
-											key={index}
-											sx={STYLES.MENU_ITEMS}
-											onClick={() => {
-												popupState.close()
-												HandleVersion(update)
-											}}
-										>
-											{update}
-										</MenuItem>
-									)
-								})}
-							</Menu>
-						</Box>
-					)}
-				</PopupState>
-			}
-			height="36px"
-		/>
+		<>
+			<OneLineSkeleton
+				className="rounded-[10px] max-w-[250px] w-[154px]"
+				show={isLoading || isRefetching}
+				component={
+					<PopupState variant="popover" popupId="demo-popup-menu">
+						{(popupState) => (
+							<Box className="relative">
+								<OutlinedBorderButton {...bindTrigger(popupState)} disabled={data?.underUpgrade}>
+									{isPending ? "Please wait..." : data?.targetVersion ?? "Upgrade available"}{" "}
+									<ArrowDown2 size="14px" color="#959595" />
+								</OutlinedBorderButton>
+								<Menu
+									{...bindMenu(popupState)}
+									transformOrigin={{
+										vertical: "top",
+										horizontal: "left",
+									}}
+									slotProps={{
+										root: STYLES.MENU_ROOT,
+										paper: STYLES.MENU_PAPER,
+									}}
+								>
+									{data?.possibleUpgradeVersions?.map((update: string, index: number) => {
+										return (
+											<MenuItem
+												key={index}
+												sx={STYLES.MENU_ITEMS}
+												onClick={() => {
+													popupState.close()
+													HandleVersion(update)
+												}}
+											>
+												{update}
+											</MenuItem>
+										)
+									})}
+								</Menu>
+							</Box>
+						)}
+					</PopupState>
+				}
+				height="36px"
+			/>
+			{ConfirmationModal}
+		</>
 	)
 }
 

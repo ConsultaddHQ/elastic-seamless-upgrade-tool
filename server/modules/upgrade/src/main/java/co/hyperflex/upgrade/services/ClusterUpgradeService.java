@@ -121,35 +121,35 @@ public class ClusterUpgradeService {
   }
 
   public ClusterInfoResponse upgradeInfo(String clusterId) {
-    ClusterUpgradeJobEntity activeUpgradeJob = clusterUpgradeJobService.getLatestJobByClusterId(clusterId);
+    ClusterUpgradeJobEntity upgradeJob = clusterUpgradeJobService.getLatestJobByClusterId(clusterId);
     try {
       ElasticClient client = elasticsearchClientProvider.getClient(clusterId);
       KibanaClient kibanaClient = kibanaClientProvider.getClient(clusterId);
       GetClusterResponse cluster = clusterService.getClusterById(clusterId);
       PrecheckStatus precheckStatus = null;
-      if (activeUpgradeJob != null) {
-        boolean isClusterUpgrading = activeUpgradeJob.getStatus() == ClusterUpgradeStatus.UPGRADING
-            || activeUpgradeJob.getStatus() == ClusterUpgradeStatus.PARTIALLY_UPDATED
-            || activeUpgradeJob.getStatus() == ClusterUpgradeStatus.FAILED;
+      if (upgradeJob != null) {
+        boolean isClusterUpgrading = upgradeJob.getStatus() == ClusterUpgradeStatus.UPGRADING
+            || upgradeJob.getStatus() == ClusterUpgradeStatus.PARTIALLY_UPDATED
+            || upgradeJob.getStatus() == ClusterUpgradeStatus.FAILED;
         if (isClusterUpgrading) {
           precheckStatus = PrecheckStatus.COMPLETED;
         } else {
-          precheckStatus = precheckRunService.getStatusByUpgradeJobId(activeUpgradeJob.getId());
+          precheckStatus = precheckRunService.getStatusByUpgradeJobId(upgradeJob.getId());
         }
       } else {
         precheckStatus = PrecheckStatus.COMPLETED;
       }
 
-      List<GetElasticsearchSnapshotResponse> snapshots = client.getValidSnapshots(activeUpgradeJob.getCurrentVersion());
+      List<GetElasticsearchSnapshotResponse> snapshots = client.getValidSnapshots(upgradeJob.getCurrentVersion());
 
       DeprecationCounts kibanaDeprecationCounts = deprecationService.getKibanaDeprecationCounts(clusterId);
       DeprecationCounts elasticDeprecationCounts = deprecationService.getElasticDeprecationCounts(clusterId);
 
-      boolean isClusterUpgraded = activeUpgradeJob.getStatus() == ClusterUpgradeStatus.UPDATED;
+      boolean isClusterUpgraded = upgradeJob.getStatus() == ClusterUpgradeStatus.UPDATED;
       // Evaluate upgrade status
       boolean isESUpgraded = isClusterUpgraded || clusterService.isNodesUpgraded(clusterId, ClusterNodeType.ELASTIC);
       boolean isKibanaUpgraded = isClusterUpgraded || clusterService.isNodesUpgraded(clusterId, ClusterNodeType.KIBANA);
-
+      boolean isValidUpgradePath = VersionUtils.isValidUpgrade(upgradeJob.getCurrentVersion(), upgradeJob.getTargetVersion());
       boolean isElasticUpgradable = !isESUpgraded;
       boolean isKibanaUpgradable = !isKibanaUpgraded && isESUpgraded;
 
@@ -161,7 +161,7 @@ public class ClusterUpgradeService {
 
       ClusterInfoResponse.Precheck precheck = new ClusterInfoResponse.Precheck(precheckStatus);
       String deploymentId = cluster instanceof GetElasticCloudClusterResponse elasticCloud ? elasticCloud.getDeploymentId() : null;
-      return new ClusterInfoResponse(elastic, kibana, precheck, deploymentId);
+      return new ClusterInfoResponse(elastic, kibana, precheck, deploymentId, isValidUpgradePath);
     } catch (Exception e) {
       log.error("Failed to get upgrade info for clusterId: {}", clusterId, e);
       throw new RuntimeException(e);
@@ -170,7 +170,7 @@ public class ClusterUpgradeService {
 
   private void upgradeNodes(SelfManagedClusterEntity cluster, List<ClusterNodeEntity> nodes, String clusterUpgradeJobId,
                             Map<String, Boolean> flags) {
-
+    validateUpgradePath(clusterUpgradeJobId);
     executorService.submit(() -> {
       try {
         final Logger log = LoggerFactory.getLogger(UpgradeLogService.class);
@@ -326,5 +326,13 @@ public class ClusterUpgradeService {
       index++;
     }
     return new NodeUpgradePlanResponse(planTasks);
+  }
+
+  private void validateUpgradePath(String upgradeJobId) {
+    var job = clusterUpgradeJobService.getUpgradeJobById(upgradeJobId);
+    if (!VersionUtils.isValidUpgrade(job.getCurrentVersion(), job.getTargetVersion())) {
+      throw new BadRequestException("Direct upgrades across multiple major versions are not allowed."
+          + " Please complete intermediate upgrades before proceeding.");
+    }
   }
 }

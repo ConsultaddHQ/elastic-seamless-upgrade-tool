@@ -30,4 +30,10 @@ public class VersionUtils {
   public static boolean isMajorVersionUpgrade(String currentVersion, String targetVersion) {
     return currentVersion.charAt(0) != targetVersion.charAt(0);
   }
+
+  public static boolean isValidUpgrade(String currentVersion, String targetVersion) {
+    int currentMajorVersion = Integer.parseInt(currentVersion.substring(0, currentVersion.indexOf('.')));
+    int targetMajorVersion = Integer.parseInt(targetVersion.substring(0, targetVersion.indexOf('.')));
+    return currentMajorVersion == targetMajorVersion || currentMajorVersion + 1 == targetMajorVersion;
+  }
 }

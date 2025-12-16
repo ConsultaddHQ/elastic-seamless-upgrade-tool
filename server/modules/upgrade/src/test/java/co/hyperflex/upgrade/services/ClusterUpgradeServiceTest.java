@@ -74,6 +74,7 @@ class ClusterUpgradeServiceTest {
     clusterUpgradeJob.setId("jobId");
     clusterUpgradeJob.setStatus(ClusterUpgradeStatus.PENDING);
     clusterUpgradeJob.setCurrentVersion("8.0.0");
+    clusterUpgradeJob.setTargetVersion("9.0.0");
 
     deprecationCounts = new DeprecationCounts(0, 0);
 
@@ -163,6 +164,7 @@ class ClusterUpgradeServiceTest {
 
       // Assert
       assertFalse(response.elastic().isUpgradable());
+      assertTrue(response.isValidUpgradePath());
       assertFalse(response.kibana().isUpgradable());
     }
 
@@ -181,6 +183,7 @@ class ClusterUpgradeServiceTest {
       // Assert
       assertFalse(response.elastic().isUpgradable());
       assertFalse(response.kibana().isUpgradable());
+      assertTrue(response.isValidUpgradePath());
     }
 
     @Test
@@ -199,6 +202,26 @@ class ClusterUpgradeServiceTest {
       assertTrue(response.elastic().isUpgradable());
       assertFalse(response.kibana().isUpgradable());
       assertEquals(PrecheckStatus.COMPLETED, response.precheck().status());
+      assertTrue(response.isValidUpgradePath());
+    }
+
+    @Test
+    @DisplayName("Should show invalid upgrade path when job has skipped major upgrade")
+    void upgradeInfo_when_jobSkippedMajor_then_UpgradePathIsInvalid() {
+      // Arrange
+      clusterUpgradeJob.setStatus(ClusterUpgradeStatus.UPDATED);
+      clusterUpgradeJob.setTargetVersion("11.0.0");
+      when(clusterUpgradeJobService.getLatestJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
+      when(precheckRunService.getStatusByUpgradeJobId(anyString())).thenReturn(PrecheckStatus.COMPLETED);
+      when(elasticClient.getValidSnapshots("8.0.0")).thenReturn(Collections.emptyList());
+
+      // Act
+      ClusterInfoResponse response = clusterUpgradeService.upgradeInfo(CLUSTER_ID);
+
+      // Assert
+      assertFalse(response.elastic().isUpgradable());
+      assertFalse(response.kibana().isUpgradable());
+      assertFalse(response.isValidUpgradePath());
     }
   }
 }

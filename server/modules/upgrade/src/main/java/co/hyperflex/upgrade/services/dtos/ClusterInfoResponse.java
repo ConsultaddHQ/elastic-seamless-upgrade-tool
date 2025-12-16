@@ -10,8 +10,8 @@ public record ClusterInfoResponse(
     @NotNull Elastic elastic,
     @NotNull Kibana kibana,
     @NotNull Precheck precheck,
-    @Nullable String deploymentId
-) {
+    @Nullable String deploymentId,
+    boolean isValidUpgradePath) {
   public record Elastic(
       boolean isUpgradable,
       DeprecationCounts deprecationCounts,
