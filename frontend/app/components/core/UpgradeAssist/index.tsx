@@ -18,6 +18,7 @@ import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
 function UpgradeAssistant() {
 	const { clusterId } = useParams()
 	const [infraType, setInfraType] = useState<string>("")
+	const [isValidUpgradePath, setIsValidUpgradePath] = useState<boolean>(false)
 	useEffect(() => {
 		if (clusterId) {
 			clusterApi.getCluster(clusterId).then((cluster) => {
@@ -67,8 +68,9 @@ function UpgradeAssistant() {
 		if (upgradeInfo?.elastic?.snapshot?.snapshot) {
 			startTimer(moment.utc(upgradeInfo?.elastic?.snapshot?.snapshot.createdAt).local().valueOf())
 		}
-		const { elastic, kibana, precheck } = upgradeInfo ?? {}
+		const { elastic, kibana, precheck, isValidUpgradePath: isValidUpgradePath1 } = upgradeInfo ?? {}
 		const step1Status = elastic?.snapshot?.snapshot ? "COMPLETED" : "PENDING"
+		setIsValidUpgradePath(isValidUpgradePath1)
 
 		const step2Status =
 			step1Status !== "COMPLETED" ? "NOTVISITED" : precheck?.status === "COMPLETED" ? "COMPLETED" : "PENDING"
@@ -98,7 +100,6 @@ function UpgradeAssistant() {
 
 		const step4Status = getNextStepStatus(step3Status, elastic?.isUpgradable)
 		const step5Status = getNextStepStatus(step4Status, kibana?.isUpgradable)
-		// const step5Status = "NOTVISITED"
 
 		setStepStatus({
 			"1": step1Status,
@@ -183,15 +184,15 @@ function UpgradeAssistant() {
 						data?.elastic?.snapshot?.snapshot ? (
 							<Box className="flex flex-col gap-[6px] items-end">
 								{/* <Tooltip
-									content={"You have to take snapshot again after the time ends."}
-									closeDelay={0}
-									color="foreground"
-									size="sm"
-									radius="sm"
-									placement="left"
-								>
-									<InfoCircle size="14px" color="#6E6E6E" />
-								</Tooltip> */}
+                    content={"You have to take snapshot again after the time ends."}
+                    closeDelay={0}
+                    color="foreground"
+                    size="sm"
+                    radius="sm"
+                    placement="left"
+                >
+                    <InfoCircle size="14px" color="#6E6E6E" />
+                </Tooltip> */}
 								<Typography
 									fontSize="14px"
 									fontWeight="400"
@@ -347,11 +348,20 @@ function UpgradeAssistant() {
 							<a
 								target="_blank"
 								href={`https://cloud.elastic.co/deployments/${deploymentId}?show_upgrade=true`}
+								onClick={(e) => {
+									if (!isValidUpgradePath) {
+										e.preventDefault()
+									}
+								}}
 							>
 								<OutlinedBorderButton
-									disabled={step4Data?.isDisabled}
+									disabled={step4Data?.isDisabled || !isValidUpgradePath}
 									borderRadius="50%"
-									sx={{ minWidth: "38px !important", minHeight: "38px !important", padding: "0px" }}
+									sx={{
+										minWidth: "38px !important",
+										minHeight: "38px !important",
+										padding: "0px",
+									}}
 								>
 									<FiArrowUpRight size="20px" color="#FFF" />
 								</OutlinedBorderButton>
@@ -361,7 +371,7 @@ function UpgradeAssistant() {
 						<OutlinedBorderButton
 							component={Link}
 							to={`/${clusterId}/elastic/upgrade`}
-							disabled={step4Data?.isDisabled}
+							disabled={step4Data?.isDisabled || !isValidUpgradePath}
 							icon={Flash}
 							filledIcon={Flash}
 						>
@@ -397,10 +407,11 @@ function UpgradeAssistant() {
 								starting the upgrade process.
 							</Typography>
 						</Box>
+
 						<OutlinedBorderButton
 							component={Link}
 							to={`/${clusterId}/kibana/upgrade`}
-							disabled={step5Data?.isDisabled}
+							disabled={step5Data?.isDisabled || !isValidUpgradePath}
 							icon={Flash}
 							filledIcon={Flash}
 						>
