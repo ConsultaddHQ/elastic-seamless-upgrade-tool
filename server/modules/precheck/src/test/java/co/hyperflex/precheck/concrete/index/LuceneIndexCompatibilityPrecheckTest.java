@@ -22,26 +22,15 @@ import org.slf4j.Logger;
 @ExtendWith(MockitoExtension.class)
 class LuceneIndexCompatibilityPrecheckTest {
 
-  @InjectMocks
-  private LuceneIndexCompatibilityPrecheck precheck;
-
-  @Mock
-  private ElasticClient elasticClient;
-
   @Mock
   ClusterEntity clusterEntity;
-
   @Mock
   KibanaClient kibanaClient;
-
   @Mock
   ClusterUpgradeJobEntity clusterUpgradeJobEntity;
-
   @Mock
   Logger logger;
-
   String index = "test-index";
-
   String segmentResponse = """
       {
          "_shards": {
@@ -107,7 +96,10 @@ class LuceneIndexCompatibilityPrecheckTest {
          }
        }
       """;
-
+  @InjectMocks
+  private LuceneIndexCompatibilityPrecheck precheck;
+  @Mock
+  private ElasticClient elasticClient;
 
   @Test
   void shouldPass() throws JsonProcessingException {

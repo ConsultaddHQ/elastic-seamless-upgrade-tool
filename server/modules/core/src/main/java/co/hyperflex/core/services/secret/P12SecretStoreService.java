@@ -1,8 +1,8 @@
 package co.hyperflex.core.services.secret;
 
-import co.hyperflex.common.exceptions.NotFoundException;
-import co.hyperflex.common.services.ConfigurationService;
-import co.hyperflex.common.utils.SecretUtil;
+import co.hyperflex.core.exceptions.NotFoundException;
+import co.hyperflex.core.services.ConfigurationService;
+import co.hyperflex.core.utils.SecretUtil;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.nio.file.Files;

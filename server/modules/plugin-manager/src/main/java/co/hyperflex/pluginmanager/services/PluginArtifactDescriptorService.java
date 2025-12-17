@@ -1,6 +1,6 @@
 package co.hyperflex.pluginmanager.services;
 
-import co.hyperflex.common.exceptions.NotFoundException;
+import co.hyperflex.core.exceptions.NotFoundException;
 import co.hyperflex.pluginmanager.entities.PluginArtifactDescriptor;
 import co.hyperflex.pluginmanager.repositories.PluginArtifactDescriptorRepository;
 import co.hyperflex.pluginmanager.services.dtos.AddPluginArtifactDescriptorRequest;

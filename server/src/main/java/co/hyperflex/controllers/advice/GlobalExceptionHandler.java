@@ -1,6 +1,6 @@
 package co.hyperflex.controllers.advice;
 
-import co.hyperflex.common.exceptions.AppException;
+import co.hyperflex.core.exceptions.AppException;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;

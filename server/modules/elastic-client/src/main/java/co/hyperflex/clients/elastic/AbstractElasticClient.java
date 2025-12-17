@@ -1,5 +1,7 @@
 package co.hyperflex.clients.elastic;
 
+import co.hyperflex.clients.client.ApiClient;
+import co.hyperflex.clients.client.ApiRequest;
 import co.hyperflex.clients.elastic.dto.GetElasticDeprecationResponse;
 import co.hyperflex.clients.elastic.dto.GetElasticNodeAndIndexCountsResponse;
 import co.hyperflex.clients.elastic.dto.cat.indices.FlushResponse;
@@ -13,8 +15,6 @@ import co.hyperflex.clients.elastic.dto.cluster.health.ClusterHealthResponse;
 import co.hyperflex.clients.elastic.dto.info.InfoResponse;
 import co.hyperflex.clients.elastic.dto.nodes.NodesInfoResponse;
 import co.hyperflex.clients.elastic.dto.nodes.NodesStatsResponse;
-import co.hyperflex.common.client.ApiClient;
-import co.hyperflex.common.client.ApiRequest;
 import java.util.List;
 import java.util.Map;
 
