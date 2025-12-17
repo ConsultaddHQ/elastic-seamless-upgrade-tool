@@ -1,6 +1,6 @@
 package co.hyperflex.upgrade.tasks.elastic.ml;
 
-import co.hyperflex.common.client.ApiRequest;
+import co.hyperflex.clients.client.ApiRequest;
 import co.hyperflex.upgrade.tasks.Context;
 import co.hyperflex.upgrade.tasks.Task;
 import co.hyperflex.upgrade.tasks.TaskResult;

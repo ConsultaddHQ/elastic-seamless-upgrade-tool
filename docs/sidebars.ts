@@ -25,11 +25,9 @@ const sidebars: SidebarsConfig = {
     features: [
         {
             type: "category",
-            label: "Product Features",
+            label: "Features",
             items: [
-                "features/overview",
-                "features/integrations",
-                "features/examples",
+                "features/prechecks"
             ],
         }],
     releases: [

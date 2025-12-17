@@ -1,6 +1,6 @@
 package co.hyperflex.precheck.runner;
 
-import co.hyperflex.common.exceptions.NotFoundException;
+import co.hyperflex.core.exceptions.NotFoundException;
 import co.hyperflex.core.services.notifications.NotificationService;
 import co.hyperflex.core.services.notifications.PrecheckProgressChangeEvent;
 import co.hyperflex.precheck.contexts.ClusterContext;

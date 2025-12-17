@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import co.hyperflex.common.exceptions.NotFoundException;
+import co.hyperflex.core.exceptions.NotFoundException;
 import co.hyperflex.pluginmanager.entities.PluginArtifactDescriptor;
 import co.hyperflex.pluginmanager.repositories.PluginArtifactDescriptorRepository;
 import co.hyperflex.pluginmanager.services.dtos.AddPluginArtifactDescriptorRequest;

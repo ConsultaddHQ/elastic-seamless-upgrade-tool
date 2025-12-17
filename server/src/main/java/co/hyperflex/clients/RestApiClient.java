@@ -1,7 +1,7 @@
 package co.hyperflex.clients;
 
-import co.hyperflex.common.client.ApiClient;
-import co.hyperflex.common.client.ApiRequest;
+import co.hyperflex.clients.client.ApiClient;
+import co.hyperflex.clients.client.ApiRequest;
 import java.util.Map;
 import java.util.function.Consumer;
 import org.springframework.http.HttpHeaders;

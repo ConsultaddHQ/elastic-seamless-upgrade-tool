@@ -1,9 +1,9 @@
 package co.hyperflex.controllers;
 
-import co.hyperflex.common.exceptions.BadRequestException;
-import co.hyperflex.common.exceptions.ConflictException;
-import co.hyperflex.common.exceptions.ForbiddenException;
-import co.hyperflex.common.exceptions.NotFoundException;
+import co.hyperflex.core.exceptions.BadRequestException;
+import co.hyperflex.core.exceptions.ConflictException;
+import co.hyperflex.core.exceptions.ForbiddenException;
+import co.hyperflex.core.exceptions.NotFoundException;
 import co.hyperflex.security.AuthResponse;
 import co.hyperflex.security.CreateUserRequest;
 import co.hyperflex.security.CreateUserResponse;
@@ -52,6 +52,13 @@ public class AuthController {
     this.passwordEncoder = passwordEncoder;
   }
 
+  private static void isForbidden(HttpServletRequest request) {
+    String remoteAddr = request.getRemoteAddr();
+    if (!"127.0.0.1".equals(remoteAddr) && !"0:0:0:0:0:0:0:1".equals(remoteAddr)) {
+      throw new ForbiddenException("Access denied");
+    }
+  }
+
   @PostMapping("/login")
   public AuthResponse login(
       @Valid @RequestBody UsernamePasswordAuthRequest authRequest
@@ -63,13 +70,6 @@ public class AuthController {
       return new AuthResponse(token);
     } catch (Exception e) {
       throw new BadRequestException("Invalid username or password");
-    }
-  }
-
-  private static void isForbidden(HttpServletRequest request) {
-    String remoteAddr = request.getRemoteAddr();
-    if (!"127.0.0.1".equals(remoteAddr) && !"0:0:0:0:0:0:0:1".equals(remoteAddr)) {
-      throw new ForbiddenException("Access denied");
     }
   }
 

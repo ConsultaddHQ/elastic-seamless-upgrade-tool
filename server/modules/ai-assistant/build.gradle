@@ -1,8 +1,6 @@
 dependencies {
     implementation project(':server:modules:elastic-client')
-    implementation project(':server:modules:kibana-client')
     implementation project(':server:modules:ansible')
-    implementation project(':server:modules:common')
     implementation project(':server:modules:core')
     implementation project(':server:modules:precheck')
     implementation project(":server:modules:breaking-changes")

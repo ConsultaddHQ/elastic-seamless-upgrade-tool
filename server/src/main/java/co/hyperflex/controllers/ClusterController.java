@@ -1,7 +1,7 @@
 package co.hyperflex.controllers;
 
 import co.hyperflex.clients.elastic.dto.GetAllocationExplanationResponse;
-import co.hyperflex.common.exceptions.BadRequestException;
+import co.hyperflex.core.exceptions.BadRequestException;
 import co.hyperflex.core.models.enums.ClusterNodeType;
 import co.hyperflex.core.services.certificates.CertificateFile;
 import co.hyperflex.core.services.certificates.CertificatesService;

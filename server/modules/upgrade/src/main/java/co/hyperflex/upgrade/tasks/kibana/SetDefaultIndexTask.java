@@ -1,7 +1,7 @@
 package co.hyperflex.upgrade.tasks.kibana;
 
+import co.hyperflex.clients.client.ApiRequest;
 import co.hyperflex.clients.kibana.KibanaClient;
-import co.hyperflex.common.client.ApiRequest;
 import co.hyperflex.upgrade.tasks.Context;
 import co.hyperflex.upgrade.tasks.Task;
 import co.hyperflex.upgrade.tasks.TaskResult;
