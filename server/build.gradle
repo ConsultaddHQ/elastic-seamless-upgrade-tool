@@ -18,10 +18,8 @@ repositories {
 
 dependencies {
     implementation project(':server:modules:elastic-client')
-    implementation project(':server:modules:kibana-client')
     implementation project(':server:modules:ansible')
     implementation project(':server:modules:ssh-client')
-    implementation project(':server:modules:common')
     implementation project(':server:modules:core')
     implementation project(':server:modules:precheck')
     implementation project(':server:modules:upgrade')
@@ -104,22 +102,8 @@ subprojects {
     }
 }
 
-project(":server:modules:common") {
-    dependencies {
-        implementation 'org.yaml:snakeyaml:2.4'
-    }
-}
-
-
 project(":server:modules:elastic-client") {
     dependencies {
-        implementation project(":server:modules:common")
-    }
-}
-
-project(":server:modules:kibana-client") {
-    dependencies {
-        implementation project(":server:modules:common")
     }
 }
 
@@ -131,55 +115,49 @@ project(":server:modules:ssh-client") {
 
 project(":server:modules:core") {
     dependencies {
-        implementation project(":server:modules:common")
         implementation project(":server:modules:elastic-client")
-        implementation project(":server:modules:kibana-client")
         implementation project(":server:modules:ssh-client")
-        implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:3.5.3'
+        implementation 'org.yaml:snakeyaml:2.4'
+        implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:3.5.6'
     }
 }
 
 project(":server:modules:precheck") {
     dependencies {
-        implementation project(":server:modules:common")
         implementation project(":server:modules:core")
         implementation project(":server:modules:elastic-client")
-        implementation project(":server:modules:kibana-client")
         implementation project(":server:modules:ssh-client")
         implementation project(":server:modules:breaking-changes")
         implementation project(":server:modules:plugin-manager")
-        implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:3.5.3'
+        implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:3.5.6'
     }
 }
 
 project(":server:modules:plugin-manager") {
     dependencies {
-        implementation project(":server:modules:common")
         implementation project(":server:modules:core")
         implementation project(":server:modules:ssh-client")
         implementation project(":server:modules:breaking-changes")
-        implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:3.5.3'
+        implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:3.5.6'
     }
 }
 
 project(":server:modules:upgrade") {
     dependencies {
-        implementation project(":server:modules:common")
         implementation project(":server:modules:core")
         implementation project(":server:modules:elastic-client")
-        implementation project(":server:modules:kibana-client")
         implementation project(":server:modules:ssh-client")
         implementation project(":server:modules:ansible")
         implementation project(":server:modules:precheck")
         implementation project(":server:modules:plugin-manager")
-        implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:3.5.3'
+        implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:3.5.6'
     }
 }
 
 project(":server:modules:breaking-changes") {
     dependencies {
-        implementation project(":server:modules:common")
-        implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:3.5.3'
+        implementation project(":server:modules:core")
+        implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:3.5.6'
     }
 }
 

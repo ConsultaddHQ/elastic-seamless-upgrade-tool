@@ -1,10 +1,10 @@
 package co.hyperflex.core.services.clusters;
 
-import co.hyperflex.common.exceptions.BadRequestException;
 import co.hyperflex.core.entites.clusters.ClusterEntity;
 import co.hyperflex.core.entites.clusters.SelfManagedClusterEntity;
 import co.hyperflex.core.entites.clusters.nodes.ClusterNodeEntity;
 import co.hyperflex.core.entites.clusters.nodes.ElasticNodeEntity;
+import co.hyperflex.core.exceptions.BadRequestException;
 import co.hyperflex.core.repositories.ClusterNodeRepository;
 import co.hyperflex.core.repositories.ClusterRepository;
 import co.hyperflex.core.services.clusters.dtos.GetNodeConfigurationResponse;

@@ -1,6 +1,6 @@
 package co.hyperflex.core.utils;
 
-import co.hyperflex.common.client.ClientConnectionDetail;
+import co.hyperflex.clients.client.ClientConnectionDetail;
 import co.hyperflex.core.entites.clusters.ClusterEntity;
 import co.hyperflex.core.services.secret.Secret;
 import java.util.Base64;
