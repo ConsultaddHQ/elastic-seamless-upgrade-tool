@@ -1,6 +1,7 @@
 package co.hyperflex.controllers;
 
 import co.hyperflex.breakingchanges.services.deprecations.DeprecationService;
+import co.hyperflex.breakingchanges.services.deprecations.dtos.GetDeprecationsResponse;
 import co.hyperflex.clients.elastic.dto.GetAllocationExplanationResponse;
 import co.hyperflex.core.exceptions.BadRequestException;
 import co.hyperflex.core.models.enums.ClusterNodeType;
@@ -14,7 +15,6 @@ import co.hyperflex.core.services.clusters.dtos.ClusterListItemResponse;
 import co.hyperflex.core.services.clusters.dtos.ClusterOverviewResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterNodeResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterResponse;
-import co.hyperflex.core.services.clusters.dtos.GetDeprecationsResponse;
 import co.hyperflex.core.services.clusters.dtos.GetNodeConfigurationResponse;
 import co.hyperflex.core.services.clusters.dtos.SyncClusterNodesResponse;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterCredentialRequest;

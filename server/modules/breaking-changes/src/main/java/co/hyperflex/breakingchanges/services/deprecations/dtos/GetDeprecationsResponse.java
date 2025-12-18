@@ -1,4 +1,4 @@
-package co.hyperflex.core.services.clusters.dtos;
+package co.hyperflex.breakingchanges.services.deprecations.dtos;
 
 import java.util.List;
 
