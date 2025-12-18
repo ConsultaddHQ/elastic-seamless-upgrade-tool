@@ -1,7 +1,7 @@
 package co.hyperflex.ai;
 
-import co.hyperflex.clients.elastic.ElasticsearchClientProvider;
 import co.hyperflex.clients.client.ApiRequest;
+import co.hyperflex.clients.elastic.ElasticsearchClientProvider;
 import co.hyperflex.core.services.clusters.ClusterService;
 import co.hyperflex.core.services.clusters.dtos.GetClusterNodeResponse;
 import co.hyperflex.core.services.upgrade.ClusterUpgradeJobService;
