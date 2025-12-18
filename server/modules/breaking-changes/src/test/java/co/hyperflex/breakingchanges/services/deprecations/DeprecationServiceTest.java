@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 import co.hyperflex.breakingchanges.services.deprecations.dtos.DeprecationCounts;
+import co.hyperflex.breakingchanges.services.deprecations.dtos.GetDeprecationsResponse;
 import co.hyperflex.clients.elastic.ElasticClient;
 import co.hyperflex.clients.elastic.ElasticsearchClientProvider;
 import co.hyperflex.clients.elastic.dto.ElasticDeprecation;
@@ -11,7 +12,6 @@ import co.hyperflex.clients.elastic.dto.GetElasticDeprecationResponse;
 import co.hyperflex.clients.kibana.KibanaClient;
 import co.hyperflex.clients.kibana.KibanaClientProvider;
 import co.hyperflex.clients.kibana.dto.GetKibanaDeprecationResponse;
-import co.hyperflex.core.services.clusters.dtos.GetDeprecationsResponse;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
