@@ -1,6 +1,6 @@
 package co.hyperflex.precheck.concrete.cluster;
 
-import co.hyperflex.core.services.deprecations.DeprecationService;
+import co.hyperflex.breakingchanges.services.deprecations.DeprecationService;
 import co.hyperflex.precheck.contexts.ClusterContext;
 import co.hyperflex.precheck.core.BaseClusterPrecheck;
 import org.slf4j.Logger;
