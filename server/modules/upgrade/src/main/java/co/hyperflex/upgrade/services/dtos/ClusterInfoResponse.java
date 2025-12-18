@@ -1,7 +1,7 @@
 package co.hyperflex.upgrade.services.dtos;
 
+import co.hyperflex.breakingchanges.services.deprecations.dtos.DeprecationCounts;
 import co.hyperflex.clients.elastic.dto.GetElasticsearchSnapshotResponse;
-import co.hyperflex.core.services.deprecations.dtos.DeprecationCounts;
 import co.hyperflex.precheck.core.enums.PrecheckStatus;
 import com.mongodb.lang.Nullable;
 import jakarta.validation.constraints.NotNull;

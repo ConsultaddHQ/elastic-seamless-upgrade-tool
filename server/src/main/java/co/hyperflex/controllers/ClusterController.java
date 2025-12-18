@@ -1,5 +1,6 @@
 package co.hyperflex.controllers;
 
+import co.hyperflex.breakingchanges.services.deprecations.DeprecationService;
 import co.hyperflex.clients.elastic.dto.GetAllocationExplanationResponse;
 import co.hyperflex.core.exceptions.BadRequestException;
 import co.hyperflex.core.models.enums.ClusterNodeType;
@@ -24,7 +25,6 @@ import co.hyperflex.core.services.clusters.dtos.UpdateClusterSshDetailRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateNodeConfigurationRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateNodeConfigurationResponse;
 import co.hyperflex.core.services.clusters.dtos.UploadCertificateResponse;
-import co.hyperflex.core.services.deprecations.DeprecationService;
 import co.hyperflex.upgrade.services.NodeUpgradeService;
 import jakarta.validation.Valid;
 import java.io.IOException;
