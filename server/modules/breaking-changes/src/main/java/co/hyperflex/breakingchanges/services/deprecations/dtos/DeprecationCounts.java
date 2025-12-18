@@ -1,4 +1,4 @@
-package co.hyperflex.core.services.deprecations.dtos;
+package co.hyperflex.breakingchanges.services.deprecations.dtos;
 
 public record DeprecationCounts(
     int critical,

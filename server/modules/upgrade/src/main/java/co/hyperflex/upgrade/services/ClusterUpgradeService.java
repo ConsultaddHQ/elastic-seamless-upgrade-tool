@@ -1,5 +1,7 @@
 package co.hyperflex.upgrade.services;
 
+import co.hyperflex.breakingchanges.services.deprecations.DeprecationService;
+import co.hyperflex.breakingchanges.services.deprecations.dtos.DeprecationCounts;
 import co.hyperflex.clients.elastic.ElasticClient;
 import co.hyperflex.clients.elastic.ElasticsearchClientProvider;
 import co.hyperflex.clients.elastic.dto.GetElasticsearchSnapshotResponse;
@@ -19,8 +21,6 @@ import co.hyperflex.core.services.clusters.dtos.GetClusterNodeResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterResponse;
 import co.hyperflex.core.services.clusters.dtos.GetElasticCloudClusterResponse;
 import co.hyperflex.core.services.clusters.lock.ClusterLockService;
-import co.hyperflex.core.services.deprecations.DeprecationService;
-import co.hyperflex.core.services.deprecations.dtos.DeprecationCounts;
 import co.hyperflex.core.services.notifications.NotificationService;
 import co.hyperflex.core.services.notifications.UpgradeProgressChangeEvent;
 import co.hyperflex.core.services.upgrade.ClusterUpgradeJobService;
