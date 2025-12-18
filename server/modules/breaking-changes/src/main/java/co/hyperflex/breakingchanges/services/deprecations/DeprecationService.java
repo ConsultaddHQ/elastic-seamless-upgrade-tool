@@ -1,6 +1,7 @@
 package co.hyperflex.breakingchanges.services.deprecations;
 
 import co.hyperflex.breakingchanges.services.deprecations.dtos.DeprecationCounts;
+import co.hyperflex.breakingchanges.services.deprecations.dtos.GetDeprecationsResponse;
 import co.hyperflex.clients.elastic.ElasticClient;
 import co.hyperflex.clients.elastic.ElasticsearchClientProvider;
 import co.hyperflex.clients.elastic.dto.ElasticDeprecation;
@@ -8,7 +9,6 @@ import co.hyperflex.clients.elastic.dto.GetElasticDeprecationResponse;
 import co.hyperflex.clients.kibana.KibanaClient;
 import co.hyperflex.clients.kibana.KibanaClientProvider;
 import co.hyperflex.clients.kibana.dto.GetKibanaDeprecationResponse;
-import co.hyperflex.core.services.clusters.dtos.GetDeprecationsResponse;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
