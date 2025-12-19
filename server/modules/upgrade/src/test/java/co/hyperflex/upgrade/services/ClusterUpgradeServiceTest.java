@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
+import co.hyperflex.breakingchanges.services.deprecations.DeprecationService;
+import co.hyperflex.breakingchanges.services.deprecations.dtos.DeprecationCounts;
 import co.hyperflex.clients.elastic.ElasticClient;
 import co.hyperflex.clients.elastic.ElasticsearchClientProvider;
 import co.hyperflex.clients.elastic.dto.GetElasticsearchSnapshotResponse;
@@ -17,8 +19,6 @@ import co.hyperflex.core.models.enums.ClusterUpgradeStatus;
 import co.hyperflex.core.repositories.ClusterNodeRepository;
 import co.hyperflex.core.repositories.ClusterRepository;
 import co.hyperflex.core.services.clusters.ClusterService;
-import co.hyperflex.core.services.deprecations.DeprecationService;
-import co.hyperflex.core.services.deprecations.dtos.DeprecationCounts;
 import co.hyperflex.core.services.notifications.NotificationService;
 import co.hyperflex.core.services.upgrade.ClusterUpgradeJobService;
 import co.hyperflex.core.upgrade.ClusterUpgradeJobEntity;

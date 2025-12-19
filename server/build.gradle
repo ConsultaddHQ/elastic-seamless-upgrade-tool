@@ -146,6 +146,7 @@ project(":server:modules:upgrade") {
     dependencies {
         implementation project(":server:modules:core")
         implementation project(":server:modules:elastic-client")
+        implementation project(":server:modules:breaking-changes")
         implementation project(":server:modules:ssh-client")
         implementation project(":server:modules:ansible")
         implementation project(":server:modules:precheck")
@@ -157,6 +158,7 @@ project(":server:modules:upgrade") {
 project(":server:modules:breaking-changes") {
     dependencies {
         implementation project(":server:modules:core")
+        implementation project(":server:modules:elastic-client")
         implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:3.5.6'
     }
 }
