@@ -48,14 +48,13 @@ public class LuceneIndexCompatibilityPrecheck extends BaseIndexPrecheck {
     boolean foundUnsupportedLucene = false;
 
     //Take minimum lucene version and validate for it only
-    if(!luceneVersions.isEmpty()){
+    if (!luceneVersions.isEmpty()) {
       Integer minimumLuceneVersionOfASegment = luceneVersions.iterator().next();
       if (minimumLuceneVersionOfASegment < targetLucene - 1) {
         logger.error("Index [{}] contains Lucene v{} segments, too old for target Lucene v{}. Please reindex before upgrade.", indexName,
             minimumLuceneVersionOfASegment, targetLucene);
         foundUnsupportedLucene = true;
-      }
-      else if (minimumLuceneVersionOfASegment == targetLucene - 1) {
+      } else if (minimumLuceneVersionOfASegment == targetLucene - 1) {
         logger.warn(
             "Index [{}] contains Lucene v{} segments. Target Elasticsearch [v{}] uses lucene [v{}]."
                 + " Consider reindexing to avoid future issues",
@@ -66,8 +65,7 @@ public class LuceneIndexCompatibilityPrecheck extends BaseIndexPrecheck {
 
     if (foundUnsupportedLucene) {
       throw new RuntimeException();
-    }
-    else{
+    } else {
       logger.info("Index [{}] segments are compatible with target Lucene {}", indexName, targetLucene);
     }
   }
