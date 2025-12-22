@@ -4,9 +4,9 @@ import co.hyperflex.clients.client.ApiRequest;
 import co.hyperflex.precheck.contexts.IndexContext;
 import co.hyperflex.precheck.core.BaseIndexPrecheck;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -28,7 +28,7 @@ public class LuceneIndexCompatibilityPrecheck extends BaseIndexPrecheck {
     JsonNode root = context.getElasticClient().execute(request);
     JsonNode segmentsNode = root.path("indices").path(indexName).path("shards");
 
-    Set<Integer> luceneVersions = new HashSet<>();
+    Set<Integer> luceneVersions = new TreeSet<>();
 
     // Iterate over shards and collect Lucene versions
     segmentsNode.properties().forEach(entry -> {
