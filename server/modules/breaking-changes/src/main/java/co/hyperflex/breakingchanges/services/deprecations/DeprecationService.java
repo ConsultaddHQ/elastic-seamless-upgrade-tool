@@ -36,6 +36,7 @@ public class DeprecationService {
           Optional.ofNullable(kibanaClient.getDeprecations()).map(GetKibanaDeprecationResponse::deprecations).orElse(new LinkedList<>());
       return deprecations.stream().map((item) -> new GetDeprecationsResponse(
           Optional.ofNullable(item.title()).orElse("unknown"),
+          null,
           item.message(),
           item.level(),
           Optional.ofNullable(item.correctiveActions().manualSteps()).orElse(List.of("Check docs"))
@@ -83,29 +84,35 @@ public class DeprecationService {
     });
     Optional.ofNullable(deprecation.indexSettings()).ifPresent(deprecations -> {
       deprecations.forEach(
-          (s, deprecations1) -> processMigrationDeprecations(deprecations1, responses));
+          (s, deprecations1) -> processMigrationDeprecations(s, deprecations1, responses));
     });
     Optional.ofNullable(deprecation.dataStreams()).ifPresent(deprecations -> {
       deprecations.forEach(
-          (s, deprecations1) -> processMigrationDeprecations(deprecations1, responses));
+          (s, deprecations1) -> processMigrationDeprecations(s, deprecations1, responses));
     });
     Optional.ofNullable(deprecation.ilmPolicies()).ifPresent(deprecations -> {
       deprecations.forEach(
-          (s, deprecations1) -> processMigrationDeprecations(deprecations1, responses));
+          (s, deprecations1) -> processMigrationDeprecations(s, deprecations1, responses));
     });
     Optional.ofNullable(deprecation.templates()).ifPresent(deprecations -> {
       deprecations.forEach(
-          (s, deprecations1) -> processMigrationDeprecations(deprecations1, responses));
+          (s, deprecations1) -> processMigrationDeprecations(s, deprecations1, responses));
     });
     return responses;
   }
 
   private void processMigrationDeprecations(List<ElasticDeprecation> deprecations,
                                             List<GetDeprecationsResponse> responses) {
+    processMigrationDeprecations(null, deprecations, responses);
+  }
+
+  private void processMigrationDeprecations(String name, List<ElasticDeprecation> deprecations,
+                                            List<GetDeprecationsResponse> responses) {
     if (deprecations != null) {
       deprecations.forEach((item) -> {
         responses.add(new GetDeprecationsResponse(
             item.message(),
+            name,
             item.details(),
             item.level(),
             List.of(Optional.ofNullable(item.url()).orElse(""))

@@ -30,6 +30,9 @@ public class ElasticDeprecationsPrecheck extends BaseClusterPrecheck {
       for (var deprecation : deprecations) {
         logger.info("* {}", deprecation.issue());
         logger.info("\tLevel {}", deprecation.type());
+        if (deprecation.name() != null) {
+          logger.info("\tName {}", deprecation.name());
+        }
         logger.info("\tDetail:  {}", deprecation.issueDetails());
         logger.info("\tResolutions");
         deprecation.resolutions().forEach(resolution -> logger.info("\t - {}", resolution));
