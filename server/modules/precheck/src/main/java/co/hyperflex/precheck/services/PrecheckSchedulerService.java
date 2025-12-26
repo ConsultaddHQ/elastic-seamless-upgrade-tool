@@ -80,6 +80,7 @@ public class PrecheckSchedulerService {
           precheckRun.setSeverity(precheck.getSeverity());
           precheckRun.setClusterId(clusterId);
           precheckRun.setName(precheck.getName());
+          precheckRun.setSkippable(precheck.skippable());
           return precheckRun;
         }).filter(precheckRun -> {
           PrecheckContext context = precheckContextResolver.resolveContext(precheckRun);
@@ -97,6 +98,7 @@ public class PrecheckSchedulerService {
       precheckRun.setSeverity(precheck.getSeverity());
       precheckRun.setClusterId(clusterId);
       precheckRun.setName(precheck.getName());
+      precheckRun.setSkippable(precheck.skippable());
       return precheckRun;
     }).forEach(precheckRunRepository::save);
   }
@@ -119,6 +121,7 @@ public class PrecheckSchedulerService {
               precheckRun.setSeverity(precheck.getSeverity());
               precheckRun.setName(precheck.getName());
               precheckRun.setClusterId(clusterId);
+              precheckRun.setSkippable(precheck.skippable());
               return precheckRun;
             }).filter(precheckRun -> {
               PrecheckContext context = precheckContextResolver.resolveContext(precheckRun);

@@ -10,6 +10,6 @@ public record GetPrecheckEntry(
     PrecheckStatus status,
     PrecheckSeverity severity,
     List<String> logs,
-    String duration
-) {
+    String duration,
+    boolean skippable) {
 }

@@ -54,6 +54,7 @@ public abstract class PrecheckRunEntity {
   private Date startTime;
 
   private Date endTime;
+  private boolean skippable;
 
   public String getId() {
     return id;
@@ -141,6 +142,14 @@ public abstract class PrecheckRunEntity {
 
   public void setClusterId(String clusterId) {
     this.clusterId = clusterId;
+  }
+
+  public void setSkippable(boolean skippable) {
+    this.skippable = skippable;
+  }
+
+  public boolean isSkippable() {
+    return skippable;
   }
 }
 
