@@ -4,9 +4,9 @@ import co.hyperflex.clients.client.ApiRequest;
 import co.hyperflex.precheck.contexts.IndexContext;
 import co.hyperflex.precheck.core.BaseIndexPrecheck;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -28,7 +28,7 @@ public class LuceneIndexCompatibilityPrecheck extends BaseIndexPrecheck {
     JsonNode root = context.getElasticClient().execute(request);
     JsonNode segmentsNode = root.path("indices").path(indexName).path("shards");
 
-    Set<Integer> luceneVersions = new HashSet<>();
+    Set<Integer> luceneVersions = new TreeSet<>();
 
     // Iterate over shards and collect Lucene versions
     segmentsNode.properties().forEach(entry -> {
@@ -46,19 +46,23 @@ public class LuceneIndexCompatibilityPrecheck extends BaseIndexPrecheck {
     });
 
     boolean foundUnsupportedLucene = false;
-    for (Integer luceneVersion : luceneVersions) {
-      if (luceneVersion < targetLucene - 1) {
+
+    //Take minimum lucene version and validate for it only
+    if (!luceneVersions.isEmpty()) {
+      Integer minimumLuceneVersionOfASegment = luceneVersions.iterator().next();
+      if (minimumLuceneVersionOfASegment < targetLucene - 1) {
         logger.error("Index [{}] contains Lucene v{} segments, too old for target Lucene v{}. Please reindex before upgrade.", indexName,
-            luceneVersion, targetLucene);
+            minimumLuceneVersionOfASegment, targetLucene);
         foundUnsupportedLucene = true;
-      } else if (luceneVersion == targetLucene - 1) {
+      } else if (minimumLuceneVersionOfASegment == targetLucene - 1) {
         logger.warn(
             "Index [{}] contains Lucene v{} segments. Target Elasticsearch [v{}] uses lucene [v{}]."
                 + " Consider reindexing to avoid future issues",
             indexName,
-            luceneVersion, clusterUpgradeJob.getTargetVersion(), targetLucene);
+            minimumLuceneVersionOfASegment, clusterUpgradeJob.getTargetVersion(), targetLucene);
       }
     }
+
     if (foundUnsupportedLucene) {
       throw new RuntimeException();
     } else {
