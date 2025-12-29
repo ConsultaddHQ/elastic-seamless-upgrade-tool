@@ -23,4 +23,7 @@ public sealed interface Precheck<T extends PrecheckContext> permits BaseClusterP
     return true;
   }
 
+  default boolean skippable() {
+    return true;
+  }
 }
