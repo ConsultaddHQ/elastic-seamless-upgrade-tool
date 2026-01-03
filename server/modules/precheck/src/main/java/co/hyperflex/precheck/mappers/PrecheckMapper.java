@@ -11,14 +11,14 @@ public class PrecheckMapper {
 
   public GetPrecheckEntry toPrecheckEntry(
       PrecheckRunEntity precheckRun) {
-
     return new GetPrecheckEntry(
         precheckRun.getId(),
         precheckRun.getName(),
         precheckRun.getStatus(),
         precheckRun.getSeverity(),
         precheckRun.getLogs(),
-        getDuration(precheckRun.getStartTime(), precheckRun.getEndTime())
+        getDuration(precheckRun.getStartTime(), precheckRun.getEndTime()),
+        precheckRun.isSkippable()
     );
   }
 

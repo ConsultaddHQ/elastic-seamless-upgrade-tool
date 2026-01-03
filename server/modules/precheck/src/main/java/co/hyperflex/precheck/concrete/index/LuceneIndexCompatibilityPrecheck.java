@@ -82,4 +82,9 @@ public class LuceneIndexCompatibilityPrecheck extends BaseIndexPrecheck {
     String major = elasticVersion.substring(0, 1);
     return esToLucene.getOrDefault(major, -1);
   }
+
+  @Override
+  public boolean skippable() {
+    return false;
+  }
 }
