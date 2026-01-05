@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { AiAssistantContext } from "."
-import { useLocalStore } from "~/store/common"
+import { useParams } from "react-router"
 
 export type Context = {
 	precheckId?: string
@@ -10,8 +10,8 @@ export type Context = {
 	setShowAssistant: (show: boolean) => void
 }
 const AiAssistantProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-	const clusterId = useLocalStore((state) => state.clusterId)
-  const [showAssistant, setShowAssistant] = useState(false)
+	const clusterId = useParams().clusterId
+	const [showAssistant, setShowAssistant] = useState(false)
 	const [precheckId, setPrecheckId] = useState<string | undefined>(undefined)
 	return (
 		<AiAssistantContext.Provider value={{ clusterId, precheckId, setPrecheckId, showAssistant, setShowAssistant }}>
