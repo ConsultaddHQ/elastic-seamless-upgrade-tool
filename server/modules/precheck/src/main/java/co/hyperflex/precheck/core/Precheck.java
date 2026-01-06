@@ -30,4 +30,8 @@ public sealed interface Precheck<T extends PrecheckContext> permits BaseClusterP
   default boolean preRun(T context) {
     return true;
   }
+
+  default boolean skippable() {
+    return true;
+  }
 }

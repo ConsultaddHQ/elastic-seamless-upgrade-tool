@@ -1,6 +1,8 @@
 package co.hyperflex.precheck.services;
 
 import co.hyperflex.breakingchanges.BreakingChangeRepository;
+import co.hyperflex.core.exceptions.AppException;
+import co.hyperflex.core.exceptions.HttpStatus;
 import co.hyperflex.core.services.notifications.NotificationService;
 import co.hyperflex.core.services.notifications.PrecheckProgressChangeEvent;
 import co.hyperflex.core.services.upgrade.ClusterUpgradeJobService;
@@ -110,6 +112,7 @@ public class PrecheckRunService {
 
   public List<GetIndexPrecheckGroup> getIndexPrecheckGroups(String clusterId) {
     var clusterUpgradeJob = clusterUpgradeJobService.getLatestJobByClusterId(clusterId);
+
     return precheckRunRepository.getAllByJobId(clusterUpgradeJob.getId(), PrecheckType.INDEX)
         .stream()
         .map(IndexPrecheckRunEntity.class::cast)
@@ -301,13 +304,17 @@ public class PrecheckRunService {
 
   public SkipPrecheckResponse skipPrecheck(String id, boolean skip) {
     PrecheckSeverity severity;
+    PrecheckRunEntity precheckRun = precheckRunRepository.findById(id).orElseThrow();
+    Precheck<?> precheck = precheckRegistry.getById(precheckRun.getPrecheckId()).orElseThrow();
     if (skip) {
+      if (!precheck.skippable()) {
+        throw new AppException("You cannot skip this precheck +[" + precheck.getName() + "]", HttpStatus.NOT_ACCEPTABLE);
+      }
       severity = PrecheckSeverity.SKIPPED;
     } else {
-      PrecheckRunEntity precheckRun = precheckRunRepository.findById(id).orElseThrow();
-      Precheck<?> precheck = precheckRegistry.getById(precheckRun.getPrecheckId()).orElseThrow();
       severity = precheck.getSeverity();
     }
+
     Update update = new Update().set(PrecheckRunEntity.SEVERITY, severity);
     precheckRunRepository.updateById(id, update);
     notificationService.sendNotification(new PrecheckProgressChangeEvent());
