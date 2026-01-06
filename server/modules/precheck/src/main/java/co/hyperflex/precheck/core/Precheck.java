@@ -23,6 +23,14 @@ public sealed interface Precheck<T extends PrecheckContext> permits BaseClusterP
     return true;
   }
 
+  /**
+   * Pre-run hook: optional setup or early validation.
+   * Return false to skip actual run.
+   */
+  default boolean preRun(T context) {
+    return true;
+  }
+
   default boolean skippable() {
     return true;
   }
