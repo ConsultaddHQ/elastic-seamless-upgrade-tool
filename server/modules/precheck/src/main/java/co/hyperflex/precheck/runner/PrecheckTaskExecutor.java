@@ -53,9 +53,9 @@ public class PrecheckTaskExecutor {
           .orElseThrow(() -> new NotFoundException("Precheck not found: " + record.getPrecheckId()));
 
       switch (record.getType()) {
-        case NODE -> ((BaseNodePrecheck) precheck).run((NodeContext) context);
-        case INDEX -> ((BaseIndexPrecheck) precheck).run((IndexContext) context);
-        case CLUSTER -> ((BaseClusterPrecheck) precheck).run((ClusterContext) context);
+        case NODE -> handleNode(((BaseNodePrecheck) precheck), (NodeContext) context);
+        case INDEX -> handleIndex(((BaseIndexPrecheck) precheck), (IndexContext) context);
+        case CLUSTER -> handleCluster(((BaseClusterPrecheck) precheck), (ClusterContext) context);
         default -> throw new IllegalArgumentException("Unknown precheck type: " + record.getType());
       }
       precheckRunService.updatePrecheckStatus(record.getId(), PrecheckStatus.COMPLETED);
@@ -71,6 +71,24 @@ public class PrecheckTaskExecutor {
       MDC.clear();
     }
     return CompletableFuture.completedFuture(null);
+  }
+
+  private void handleNode(BaseNodePrecheck precheck, NodeContext context) {
+    if (precheck.preRun(context)) {
+      precheck.run(context);
+    }
+  }
+
+  private void handleIndex(BaseIndexPrecheck precheck, IndexContext context) {
+    if (precheck.preRun(context)) {
+      precheck.run(context);
+    }
+  }
+
+  private void handleCluster(BaseClusterPrecheck precheck, ClusterContext context) {
+    if (precheck.preRun(context)) {
+      precheck.run(context);
+    }
   }
 
 }
