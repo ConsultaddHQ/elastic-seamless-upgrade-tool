@@ -24,7 +24,7 @@ public class ChatModelConfig {
 
     return OpenAiChatModel.builder()
         .baseUrl("https://api.groq.com/openai/v1")
-        .apiKey("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")
+        .apiKey("")
         .modelName("llama-3.3-70b-versatile")
         .build();
   }
