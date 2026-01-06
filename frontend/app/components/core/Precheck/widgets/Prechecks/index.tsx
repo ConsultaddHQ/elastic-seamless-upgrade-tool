@@ -1,5 +1,5 @@
 import { Skeleton } from "@heroui/react"
-import { Box, Typography } from "@mui/material"
+import { Box, Tooltip, Typography } from "@mui/material"
 import { Refresh } from "iconsax-react"
 import { useEffect, useState } from "react"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"
@@ -28,6 +28,7 @@ function Prechecks({
 	const [selectedPrecheck, setSelectedPrecheck] = useState<TPrecheck | null>(null)
 	const [{ severity }, _] = useFilters<{ severity?: SEVERITY }>({})
 	const [prechecks, setPrechecks] = useState<TPrecheck[]>([])
+	const isSkippable = selectedPrecheck?.skippable === true
 
 	useEffect(() => {
 		if (selectedPrecheck !== null) {
@@ -163,12 +164,20 @@ function Prechecks({
 									)}
 								</Box>
 								<Box className="flex flex-row gap-2">
-									<Switch
-										checked={selectedPrecheck?.severity === "SKIPPED"}
-										onChange={(skip) => handlePrecheckSkip(selectedPrecheck.id, skip)}
-										label="Skip"
-										disabled={isPending || isLoading}
-									/>
+									<Tooltip
+										title={!isSkippable ? "This precheck cannot be skipped" : ""}
+										placement="top"
+									>
+										<span className="inline-flex items-center">
+											<Switch
+												checked={selectedPrecheck?.severity === "SKIPPED"}
+												onChange={(skip) => handlePrecheckSkip(selectedPrecheck.id, skip)}
+												label="Skip"
+												disabled={!isSkippable || isPending || isLoading}
+											/>
+										</span>
+									</Tooltip>
+
 									<OutlinedBorderButton
 										onClick={handlePrecheckRerun}
 										disabled={isPending || isLoading}
