@@ -32,8 +32,11 @@ public class VersionUtils {
   }
 
   public static boolean isValidUpgrade(String currentVersion, String targetVersion) {
+    boolean isCompatibleMajorVersionChange = (currentVersion.equals("7.17.28"))
+        || (currentVersion.equals("8.19.0"));
     int currentMajorVersion = Integer.parseInt(currentVersion.substring(0, currentVersion.indexOf('.')));
     int targetMajorVersion = Integer.parseInt(targetVersion.substring(0, targetVersion.indexOf('.')));
-    return currentMajorVersion == targetMajorVersion || currentMajorVersion + 1 == targetMajorVersion;
+    return (currentMajorVersion == targetMajorVersion
+        || (isCompatibleMajorVersionChange && (currentMajorVersion + 1 == targetMajorVersion)));
   }
 }
