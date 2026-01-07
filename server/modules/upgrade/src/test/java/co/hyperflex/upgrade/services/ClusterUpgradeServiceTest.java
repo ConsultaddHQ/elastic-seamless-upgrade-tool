@@ -25,6 +25,9 @@ import co.hyperflex.core.upgrade.ClusterUpgradeJobEntity;
 import co.hyperflex.precheck.core.enums.PrecheckStatus;
 import co.hyperflex.precheck.services.PrecheckRunService;
 import co.hyperflex.upgrade.services.dtos.ClusterInfoResponse;
+import co.hyperflex.upgrade.services.migration.FeatureMigrationService;
+import co.hyperflex.upgrade.services.migration.FeatureMigrationStatus;
+import co.hyperflex.upgrade.services.migration.GetFeatureMigrationResponse;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -63,6 +66,8 @@ class ClusterUpgradeServiceTest {
   private ElasticClient elasticClient;
   @Mock
   private KibanaClient kibanaClient;
+  @Mock
+  private FeatureMigrationService featureMigrationService;
   @InjectMocks
   private ClusterUpgradeService clusterUpgradeService;
   private ClusterUpgradeJobEntity clusterUpgradeJob;
@@ -79,6 +84,8 @@ class ClusterUpgradeServiceTest {
     deprecationCounts = new DeprecationCounts(0, 0);
 
     // Common mocks for most tests
+    when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(new GetFeatureMigrationResponse(
+        FeatureMigrationStatus.NO_MIGRATION_NEEDED));
     when(elasticsearchClientProvider.getClient(CLUSTER_ID)).thenReturn(elasticClient);
     when(kibanaClientProvider.getClient(CLUSTER_ID)).thenReturn(kibanaClient);
     when(deprecationService.getKibanaDeprecationCounts(CLUSTER_ID)).thenReturn(deprecationCounts);

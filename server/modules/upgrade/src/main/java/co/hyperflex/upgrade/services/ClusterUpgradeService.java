@@ -1,10 +1,8 @@
 package co.hyperflex.upgrade.services;
 
 import co.hyperflex.breakingchanges.services.deprecations.DeprecationService;
-import co.hyperflex.breakingchanges.services.deprecations.dtos.DeprecationCounts;
 import co.hyperflex.clients.elastic.ElasticClient;
 import co.hyperflex.clients.elastic.ElasticsearchClientProvider;
-import co.hyperflex.clients.elastic.dto.GetElasticsearchSnapshotResponse;
 import co.hyperflex.clients.kibana.KibanaClient;
 import co.hyperflex.clients.kibana.KibanaClientProvider;
 import co.hyperflex.core.entites.clusters.ClusterEntity;
@@ -35,6 +33,7 @@ import co.hyperflex.upgrade.entities.UpgradeLogEntity;
 import co.hyperflex.upgrade.planner.UpgradePlanBuilder;
 import co.hyperflex.upgrade.services.dtos.ClusterInfoResponse;
 import co.hyperflex.upgrade.services.dtos.NodeUpgradePlanResponse;
+import co.hyperflex.upgrade.services.migration.FeatureMigrationService;
 import co.hyperflex.upgrade.tasks.Configuration;
 import co.hyperflex.upgrade.tasks.Context;
 import co.hyperflex.upgrade.tasks.Task;
@@ -66,6 +65,7 @@ public class ClusterUpgradeService {
   private final ClusterLockService clusterLockService;
   private final UpgradePlanBuilder upgradePlanBuilder;
   private final UpgradeNotificationService upgradeNotificationService;
+  private final FeatureMigrationService featureMigrationService;
 
   public ClusterUpgradeService(ElasticsearchClientProvider elasticsearchClientProvider,
                                ClusterNodeRepository clusterNodeRepository,
@@ -77,7 +77,7 @@ public class ClusterUpgradeService {
                                PrecheckRunService precheckRunService,
                                ClusterLockService clusterLockService,
                                UpgradePlanBuilder upgradePlanBuilder,
-                               UpgradeNotificationService upgradeNotificationService) {
+                               UpgradeNotificationService upgradeNotificationService, FeatureMigrationService featureMigrationService) {
     this.elasticsearchClientProvider = elasticsearchClientProvider;
     this.clusterNodeRepository = clusterNodeRepository;
     this.clusterService = clusterService;
@@ -90,6 +90,7 @@ public class ClusterUpgradeService {
     this.clusterLockService = clusterLockService;
     this.upgradePlanBuilder = upgradePlanBuilder;
     this.upgradeNotificationService = upgradeNotificationService;
+    this.featureMigrationService = featureMigrationService;
   }
 
   public ClusterNodeUpgradeResponse upgradeNode(ClusterNodeUpgradeRequest request, Map<String, Boolean> flags) {
@@ -121,29 +122,21 @@ public class ClusterUpgradeService {
   }
 
   public ClusterInfoResponse upgradeInfo(String clusterId) {
-    ClusterUpgradeJobEntity upgradeJob = clusterUpgradeJobService.getLatestJobByClusterId(clusterId);
+    var upgradeJob = clusterUpgradeJobService.getLatestJobByClusterId(clusterId);
     try {
       ElasticClient client = elasticsearchClientProvider.getClient(clusterId);
       KibanaClient kibanaClient = kibanaClientProvider.getClient(clusterId);
       GetClusterResponse cluster = clusterService.getClusterById(clusterId);
-      PrecheckStatus precheckStatus = null;
-      if (upgradeJob != null) {
-        boolean isClusterUpgrading = upgradeJob.getStatus() == ClusterUpgradeStatus.UPGRADING
-            || upgradeJob.getStatus() == ClusterUpgradeStatus.PARTIALLY_UPDATED
-            || upgradeJob.getStatus() == ClusterUpgradeStatus.FAILED;
-        if (isClusterUpgrading) {
-          precheckStatus = PrecheckStatus.COMPLETED;
-        } else {
-          precheckStatus = precheckRunService.getStatusByUpgradeJobId(upgradeJob.getId());
-        }
-      } else {
-        precheckStatus = PrecheckStatus.COMPLETED;
-      }
+      boolean isClusterUpgrading = upgradeJob.getStatus() == ClusterUpgradeStatus.UPGRADING
+          || upgradeJob.getStatus() == ClusterUpgradeStatus.PARTIALLY_UPDATED
+          || upgradeJob.getStatus() == ClusterUpgradeStatus.FAILED;
 
-      List<GetElasticsearchSnapshotResponse> snapshots = client.getValidSnapshots(upgradeJob.getCurrentVersion());
+      PrecheckStatus precheckStatus =
+          isClusterUpgrading ? PrecheckStatus.COMPLETED : precheckRunService.getStatusByUpgradeJobId(upgradeJob.getId());
 
-      DeprecationCounts kibanaDeprecationCounts = deprecationService.getKibanaDeprecationCounts(clusterId);
-      DeprecationCounts elasticDeprecationCounts = deprecationService.getElasticDeprecationCounts(clusterId);
+      var snapshots = client.getValidSnapshots(upgradeJob.getCurrentVersion());
+      var kibanaDeprecationCounts = deprecationService.getKibanaDeprecationCounts(clusterId);
+      var elasticDeprecationCounts = deprecationService.getElasticDeprecationCounts(clusterId);
 
       boolean isClusterUpgraded = upgradeJob.getStatus() == ClusterUpgradeStatus.UPDATED;
       // Evaluate upgrade status
@@ -153,15 +146,17 @@ public class ClusterUpgradeService {
       boolean isElasticUpgradable = !isESUpgraded;
       boolean isKibanaUpgradable = !isKibanaUpgraded && isESUpgraded;
 
-      ClusterInfoResponse.Elastic elastic = new ClusterInfoResponse.Elastic(isElasticUpgradable, elasticDeprecationCounts,
+      var elastic = new ClusterInfoResponse.Elastic(isElasticUpgradable, elasticDeprecationCounts,
           new ClusterInfoResponse.Elastic.SnapshotWrapper(snapshots.isEmpty() ? null : snapshots.getFirst(),
               kibanaClient.getSnapshotCreationPageUrl()));
 
-      ClusterInfoResponse.Kibana kibana = new ClusterInfoResponse.Kibana(isKibanaUpgradable, kibanaDeprecationCounts);
+      var kibana = new ClusterInfoResponse.Kibana(isKibanaUpgradable, kibanaDeprecationCounts);
 
-      ClusterInfoResponse.Precheck precheck = new ClusterInfoResponse.Precheck(precheckStatus);
-      String deploymentId = cluster instanceof GetElasticCloudClusterResponse elasticCloud ? elasticCloud.getDeploymentId() : null;
-      return new ClusterInfoResponse(elastic, kibana, precheck, deploymentId, isValidUpgradePath);
+      var precheck = new ClusterInfoResponse.Precheck(precheckStatus);
+      var deploymentId = cluster instanceof GetElasticCloudClusterResponse elasticCloud ? elasticCloud.getDeploymentId() : null;
+      var featureMigration = featureMigrationService.getFeatureMigrationResponse(clusterId);
+      return new ClusterInfoResponse(elastic, kibana, precheck, deploymentId, isValidUpgradePath,
+          new ClusterInfoResponse.FeatureMigration(featureMigration.status()));
     } catch (Exception e) {
       log.error("Failed to get upgrade info for clusterId: {}", clusterId, e);
       throw new RuntimeException(e);

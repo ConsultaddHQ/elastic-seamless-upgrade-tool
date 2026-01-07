@@ -3,6 +3,7 @@ package co.hyperflex.upgrade.services.dtos;
 import co.hyperflex.breakingchanges.services.deprecations.dtos.DeprecationCounts;
 import co.hyperflex.clients.elastic.dto.GetElasticsearchSnapshotResponse;
 import co.hyperflex.precheck.core.enums.PrecheckStatus;
+import co.hyperflex.upgrade.services.migration.FeatureMigrationStatus;
 import com.mongodb.lang.Nullable;
 import jakarta.validation.constraints.NotNull;
 
@@ -11,7 +12,8 @@ public record ClusterInfoResponse(
     @NotNull Kibana kibana,
     @NotNull Precheck precheck,
     @Nullable String deploymentId,
-    boolean isValidUpgradePath) {
+    boolean isValidUpgradePath,
+    @Nullable FeatureMigration featureMigration) {
   public record Elastic(
       boolean isUpgradable,
       DeprecationCounts deprecationCounts,
@@ -34,5 +36,11 @@ public record ClusterInfoResponse(
   public record Precheck(
       @NotNull PrecheckStatus status
   ) {
+  }
+
+  public record FeatureMigration(
+      @NotNull FeatureMigrationStatus status
+  ) {
+
   }
 }
