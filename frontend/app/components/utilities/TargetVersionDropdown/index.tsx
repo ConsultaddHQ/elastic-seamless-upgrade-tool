@@ -46,7 +46,12 @@ function TargetVersionDropdown() {
 	const showInvalidUpgradePathModal = () => {
 		openConfirmation({
 			title: "Unsupported Upgrade Path",
-			message: `This upgrade path is not supported. The upgrade cannot be performed, but you can still run prechecks for reporting purposes.`,
+			message: `This upgrade path is not supported. The upgrade cannot be performed, but you can still run prechecks for reporting purposes.
+
+			NOTE: You can only peform major upgrades when you are on the most recent minor version of current Major version
+			`,
+
+
 			confirmText: "Got it",
 			onConfirm: async () => {
 				navigate(`/${clusterId}/upgrade-assistant`)
