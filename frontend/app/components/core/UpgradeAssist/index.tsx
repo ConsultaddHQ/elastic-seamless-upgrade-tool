@@ -279,7 +279,7 @@ function UpgradeAssistant() {
 					{stepStatus["2"] === "COMPLETED" || stepStatus["2"] === "INPROGRESS" ? null : (
 						<Box className="flex items-start">
 							<OutlinedBorderButton
-								disabled={isMigratingSystemFeatures}
+								disabled={isMigratingSystemFeatures || stepStatus["1"] !== "COMPLETED"}
 								onClick={() => migrateSystemFeatures({ clusterId: clusterId! })}
 							>
 								Migrate
