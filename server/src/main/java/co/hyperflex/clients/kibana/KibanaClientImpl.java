@@ -28,7 +28,7 @@ public class KibanaClientImpl extends RestApiClient implements co.hyperflex.clie
 
   @Override
   public boolean isKibanaReady(String host) {
-    String url = protocol + host + ":5601/api/kibana/settings";
+    String url = protocol + host + ":5601/api/status";
     try {
       restClient.get().uri(url).retrieve().toBodilessEntity();
       return true;
