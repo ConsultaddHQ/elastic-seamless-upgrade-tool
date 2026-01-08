@@ -15,7 +15,6 @@ import co.hyperflex.core.models.enums.NodeUpgradeStatus;
 import co.hyperflex.core.repositories.ClusterNodeRepository;
 import co.hyperflex.core.repositories.ClusterRepository;
 import co.hyperflex.core.services.clusters.ClusterService;
-import co.hyperflex.core.services.clusters.dtos.GetClusterNodeResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterResponse;
 import co.hyperflex.core.services.clusters.dtos.GetElasticCloudClusterResponse;
 import co.hyperflex.core.services.clusters.lock.ClusterLockService;
@@ -275,8 +274,8 @@ public class ClusterUpgradeService {
 
   private void syncUpgradeJobStatus(SelfManagedClusterEntity cluster, String clusterUpgradeJobId) {
     final ClusterUpgradeJobEntity clusterUpgradeJob = clusterUpgradeJobService.getUpgradeJobById(clusterUpgradeJobId);
-    List<GetClusterNodeResponse> nodes = clusterService.getNodes(cluster.getId(), null).stream()
-        .filter(node -> node.status() != NodeUpgradeStatus.UPGRADED && !clusterUpgradeJob.getTargetVersion().equals(node.version()))
+    var nodes = clusterService.getNodes(cluster.getId(), null).stream()
+        .filter(node -> node.status() != NodeUpgradeStatus.UPGRADED)
         .toList();
     if (nodes.isEmpty()) {
       clusterUpgradeJobService.setJobStatus(clusterUpgradeJob.getId(), ClusterUpgradeStatus.UPDATED);
