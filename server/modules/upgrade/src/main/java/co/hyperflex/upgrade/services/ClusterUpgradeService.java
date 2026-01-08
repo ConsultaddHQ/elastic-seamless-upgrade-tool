@@ -33,6 +33,7 @@ import co.hyperflex.upgrade.planner.UpgradePlanBuilder;
 import co.hyperflex.upgrade.services.dtos.ClusterInfoResponse;
 import co.hyperflex.upgrade.services.dtos.NodeUpgradePlanResponse;
 import co.hyperflex.upgrade.services.migration.FeatureMigrationService;
+import co.hyperflex.upgrade.services.migration.FeatureMigrationStatus;
 import co.hyperflex.upgrade.tasks.Configuration;
 import co.hyperflex.upgrade.tasks.Context;
 import co.hyperflex.upgrade.tasks.Task;
@@ -155,7 +156,7 @@ public class ClusterUpgradeService {
       var deploymentId = cluster instanceof GetElasticCloudClusterResponse elasticCloud ? elasticCloud.getDeploymentId() : null;
       var featureMigration = featureMigrationService.getFeatureMigrationResponse(clusterId);
       return new ClusterInfoResponse(elastic, kibana, precheck, deploymentId, isValidUpgradePath,
-          new ClusterInfoResponse.FeatureMigration(featureMigration.status()));
+          new ClusterInfoResponse.FeatureMigration(isClusterUpgrading ? FeatureMigrationStatus.NO_MIGRATION_NEEDED : featureMigration.status()));
     } catch (Exception e) {
       log.error("Failed to get upgrade info for clusterId: {}", clusterId, e);
       throw new RuntimeException(e);
