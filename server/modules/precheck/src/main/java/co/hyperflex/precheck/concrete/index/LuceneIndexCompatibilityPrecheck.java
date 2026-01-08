@@ -3,7 +3,9 @@ package co.hyperflex.precheck.concrete.index;
 import co.hyperflex.clients.client.ApiRequest;
 import co.hyperflex.precheck.contexts.IndexContext;
 import co.hyperflex.precheck.core.BaseIndexPrecheck;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -11,6 +13,12 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class LuceneIndexCompatibilityPrecheck extends BaseIndexPrecheck {
+
+  private final ObjectMapper objectMapper;
+
+  public LuceneIndexCompatibilityPrecheck(ObjectMapper objectMapper) {
+    this.objectMapper = objectMapper;
+  }
 
   @Override
   public String getName() {
@@ -24,8 +32,13 @@ public class LuceneIndexCompatibilityPrecheck extends BaseIndexPrecheck {
     var clusterUpgradeJob = context.getClusterUpgradeJob();
     int targetLucene = mapEsVersionToLucene(clusterUpgradeJob.getTargetVersion());
 
-    var request = ApiRequest.builder(JsonNode.class).get().uri("/" + indexName + "/_segments").build();
-    JsonNode root = context.getElasticClient().execute(request);
+    var request = ApiRequest.builder(String.class).get().uri("/" + indexName + "/_segments").build();
+    JsonNode root;
+    try {
+      root = objectMapper.readTree(context.getElasticClient().execute(request));
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
     JsonNode segmentsNode = root.path("indices").path(indexName).path("shards");
 
     Set<Integer> luceneVersions = new TreeSet<>();

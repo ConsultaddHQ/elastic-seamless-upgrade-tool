@@ -9,6 +9,7 @@ import co.hyperflex.clients.elastic.dto.cat.indices.IndicesRecord;
 import co.hyperflex.clients.elastic.dto.cat.master.MasterRecord;
 import co.hyperflex.clients.elastic.dto.cat.shards.ShardsRecord;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -26,10 +27,12 @@ import org.springframework.web.client.RestClient;
 public class ElasticClientImpl extends AbstractElasticClient {
   private static final Logger LOG = LoggerFactory.getLogger(ElasticClientImpl.class);
   private final RestClient restClient;
+  private final ObjectMapper objectMapper;
 
-  public ElasticClientImpl(RestApiClient apiClient) {
+  public ElasticClientImpl(RestApiClient apiClient, ObjectMapper objectMapper) {
     super(apiClient);
     this.restClient = apiClient.getRestClient();
+    this.objectMapper = objectMapper;
   }
 
   @Override
@@ -56,12 +59,12 @@ public class ElasticClientImpl extends AbstractElasticClient {
   @Override
   public List<GetElasticsearchSnapshotResponse> getValidSnapshots(String version) {
     try {
-      ResponseEntity<JsonNode> repoResponse = restClient.get()
+      ResponseEntity<String> repoResponseString = restClient.get()
           .uri("/_snapshot")
           .retrieve()
-          .toEntity(JsonNode.class);
+          .toEntity(String.class);
 
-      JsonNode repoResult = repoResponse.getBody();
+      JsonNode repoResult = objectMapper.readTree(repoResponseString.getBody());
       if (repoResult == null || repoResult.isEmpty()) {
         return Collections.emptyList();
       }
@@ -79,12 +82,12 @@ public class ElasticClientImpl extends AbstractElasticClient {
       List<GetElasticsearchSnapshotResponse> allValidSnapshots =
           repositories.stream().parallel().flatMap(repository -> {
             try {
-              ResponseEntity<JsonNode> snapshotResponse = restClient.get()
+              ResponseEntity<String> snapshotResponse = restClient.get()
                   .uri("/_snapshot/{repo}/_all", repository)
                   .retrieve()
-                  .toEntity(JsonNode.class);
+                  .toEntity(String.class);
 
-              JsonNode body = snapshotResponse.getBody();
+              JsonNode body = objectMapper.readTree(snapshotResponse.getBody());
               if (body == null || !body.has("snapshots")) {
                 return Stream.empty();
               }

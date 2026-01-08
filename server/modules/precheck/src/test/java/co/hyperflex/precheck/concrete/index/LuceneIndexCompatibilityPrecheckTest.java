@@ -8,14 +8,13 @@ import co.hyperflex.clients.kibana.KibanaClient;
 import co.hyperflex.core.entites.clusters.ClusterEntity;
 import co.hyperflex.core.upgrade.ClusterUpgradeJobEntity;
 import co.hyperflex.precheck.contexts.IndexContext;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 
@@ -101,37 +100,31 @@ class LuceneIndexCompatibilityPrecheckTest {
   @Mock
   private ElasticClient elasticClient;
 
+  @Spy
+  private ObjectMapper objectMapper = new ObjectMapper();
+
   @Test
-  void shouldPass() throws JsonProcessingException {
+  void shouldPass() {
     IndexContext context = new IndexContext(clusterEntity, elasticClient, kibanaClient, index, clusterUpgradeJobEntity, logger);
-    ObjectMapper mapper = new ObjectMapper();
     when(clusterUpgradeJobEntity.getTargetVersion()).thenReturn("7.0.0");
-    JsonNode responseNode = mapper.readTree(segmentResponse);
-
-    when(elasticClient.execute(any())).thenReturn(responseNode);
+    when(elasticClient.execute(any())).thenReturn(segmentResponse);
     Assertions.assertDoesNotThrow(() -> precheck.run(context));
   }
 
   @Test
-  void shouldPass1() throws JsonProcessingException {
+  void shouldPass1() {
     IndexContext context = new IndexContext(clusterEntity, elasticClient, kibanaClient, index, clusterUpgradeJobEntity, logger);
-    ObjectMapper mapper = new ObjectMapper();
     when(clusterUpgradeJobEntity.getTargetVersion()).thenReturn("8.0.0");
-    JsonNode responseNode = mapper.readTree(segmentResponse);
-
-    when(elasticClient.execute(any())).thenReturn(responseNode);
+    when(elasticClient.execute(any())).thenReturn(segmentResponse);
     Assertions.assertDoesNotThrow(() -> precheck.run(context));
   }
 
 
   @Test
-  void shouldFail() throws JsonProcessingException {
+  void shouldFail() {
     IndexContext context = new IndexContext(clusterEntity, elasticClient, kibanaClient, index, clusterUpgradeJobEntity, logger);
-    ObjectMapper mapper = new ObjectMapper();
     when(clusterUpgradeJobEntity.getTargetVersion()).thenReturn("9.0.0");
-    JsonNode responseNode = mapper.readTree(segmentResponse);
-
-    when(elasticClient.execute(any())).thenReturn(responseNode);
+    when(elasticClient.execute(any())).thenReturn(segmentResponse);
     Assertions.assertThrows(Exception.class, () -> precheck.run(context));
   }
 }

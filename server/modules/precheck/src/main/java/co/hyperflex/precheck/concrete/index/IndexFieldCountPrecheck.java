@@ -4,7 +4,9 @@ import co.hyperflex.clients.client.ApiRequest;
 import co.hyperflex.precheck.contexts.IndexContext;
 import co.hyperflex.precheck.core.BaseIndexPrecheck;
 import co.hyperflex.precheck.core.enums.PrecheckSeverity;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
 import java.util.Set;
 import org.slf4j.Logger;
@@ -14,6 +16,11 @@ import org.springframework.stereotype.Component;
 public class IndexFieldCountPrecheck extends BaseIndexPrecheck {
 
   private static final int FIELD_LIMIT = 1000;
+  private final ObjectMapper objectMapper;
+
+  public IndexFieldCountPrecheck(ObjectMapper objectMapper) {
+    this.objectMapper = objectMapper;
+  }
 
   @Override
   public String getName() {
@@ -26,14 +33,15 @@ public class IndexFieldCountPrecheck extends BaseIndexPrecheck {
     Logger logger = context.getLogger();
     var uri = "/" + indexName + "/_mapping";
 
-    var request = ApiRequest
-        .builder(JsonNode.class)
-        .get()
-        .uri(uri)
-        .build();
+    var request = ApiRequest.builder(String.class).get().uri(uri).build();
 
 
-    JsonNode root = context.getElasticClient().execute(request);
+    JsonNode root;
+    try {
+      root = objectMapper.readTree(context.getElasticClient().execute(request));
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
     JsonNode propertiesNode = root.path(indexName).path("mappings").path("properties");
     if (propertiesNode.isMissingNode() || propertiesNode.isEmpty()) {
       logger.info("Index [{}] has no properties defined.", indexName);
@@ -44,10 +52,8 @@ public class IndexFieldCountPrecheck extends BaseIndexPrecheck {
     logger.info("Index [{}] has {} mapped fields.", indexName, fieldCount);
 
     if (fieldCount > FIELD_LIMIT) {
-      logger.warn(
-          "Index [{}] exceeds the recommended field count ({} > {}). Consider flattening mappings.",
-          indexName, fieldCount, FIELD_LIMIT
-      );
+      logger.warn("Index [{}] exceeds the recommended field count ({} > {}). Consider flattening mappings.", indexName, fieldCount,
+          FIELD_LIMIT);
     }
 
   }

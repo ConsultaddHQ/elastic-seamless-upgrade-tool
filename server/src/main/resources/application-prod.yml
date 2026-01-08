@@ -1,8 +1,7 @@
 spring:
-  data:
-    mongodb:
-      uri: mongodb://admin:admin123@seamless-upgrade-mongodb:27017/admin
-      database: seamless-upgrade
+  mongodb:
+    uri: mongodb://admin:admin123@seamless-upgrade-mongodb:27017/admin
+    database: seamless-upgrade
 logging:
   level:
     root: WARN

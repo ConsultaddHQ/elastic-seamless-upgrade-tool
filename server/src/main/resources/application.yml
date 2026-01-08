@@ -1,14 +1,11 @@
 spring:
   main:
     banner-mode: "off"
-  output:
-    ansi-enabled: "never"
   application:
     name: Elastic Seamless Upgrade Tool
-  data:
-    mongodb:
-      uri: mongodb://admin:admin123@localhost:27017/admin
-      database: seamless-upgrade
+  mongodb:
+    uri: mongodb://admin:admin123@localhost:27017/admin
+    database: seamless-upgrade
   servlet:
     multipart:
       max-file-size: 1MB

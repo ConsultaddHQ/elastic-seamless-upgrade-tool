@@ -7,6 +7,7 @@ import co.hyperflex.core.exceptions.NotFoundException;
 import co.hyperflex.core.repositories.ClusterRepository;
 import co.hyperflex.core.services.secret.SecretStoreService;
 import co.hyperflex.core.utils.ClusterAuthUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.constraints.NotNull;
 import java.net.Socket;
 import java.net.http.HttpClient;
@@ -32,10 +33,13 @@ public class ElasticsearchClientProviderImpl implements ElasticsearchClientProvi
   private final Logger logger = LoggerFactory.getLogger(ElasticsearchClientProviderImpl.class);
   private final ClusterRepository clusterRepository;
   private final SecretStoreService secretStoreService;
+  private final ObjectMapper objectMapper;
 
-  public ElasticsearchClientProviderImpl(ClusterRepository clusterRepository, SecretStoreService secretStoreService) {
+  public ElasticsearchClientProviderImpl(ClusterRepository clusterRepository, SecretStoreService secretStoreService,
+                                         ObjectMapper objectMapper) {
     this.clusterRepository = clusterRepository;
     this.secretStoreService = secretStoreService;
+    this.objectMapper = objectMapper;
   }
 
   @Cacheable(value = "elasticClientCache", key = "#p0")
@@ -60,7 +64,7 @@ public class ElasticsearchClientProviderImpl implements ElasticsearchClientProvi
           .requestFactory(new JdkClientHttpRequestFactory(jdkHttpClient))
           .build();
 
-      return new ElasticClientImpl(new RestApiClient(genericClient));
+      return new ElasticClientImpl(new RestApiClient(genericClient), objectMapper);
     } catch (Exception e) {
       logger.error("Failed to create elasticsearch client", e);
       throw new RuntimeException(e);
