@@ -84,8 +84,6 @@ class ClusterUpgradeServiceTest {
     deprecationCounts = new DeprecationCounts(0, 0);
 
     // Common mocks for most tests
-    when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(new GetFeatureMigrationResponse(
-        FeatureMigrationStatus.NO_MIGRATION_NEEDED));
     when(elasticsearchClientProvider.getClient(CLUSTER_ID)).thenReturn(elasticClient);
     when(kibanaClientProvider.getClient(CLUSTER_ID)).thenReturn(kibanaClient);
     when(deprecationService.getKibanaDeprecationCounts(CLUSTER_ID)).thenReturn(deprecationCounts);
@@ -101,6 +99,8 @@ class ClusterUpgradeServiceTest {
     @DisplayName("Should be upgradable when no nodes are upgraded and prechecks are complete")
     void upgradeInfo_when_prechecksCompleteAndNoNodesUpgraded_then_elasticIsUpgradable() {
       // Arrange
+      when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(new GetFeatureMigrationResponse(
+          FeatureMigrationStatus.NO_MIGRATION_NEEDED));
       when(clusterUpgradeJobService.getLatestJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
       when(precheckRunService.getStatusByUpgradeJobId(anyString())).thenReturn(PrecheckStatus.COMPLETED);
       when(elasticClient.getValidSnapshots("8.19.0")).thenReturn(List.of(new GetElasticsearchSnapshotResponse("snapshot", new Date())));
@@ -122,6 +122,8 @@ class ClusterUpgradeServiceTest {
     @DisplayName("Should show failed precheck status correctly")
     void upgradeInfo_when_prechecksFailed_then_showFailedStatus() {
       // Arrange
+      when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(new GetFeatureMigrationResponse(
+          FeatureMigrationStatus.NO_MIGRATION_NEEDED));
       when(clusterUpgradeJobService.getLatestJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
       when(precheckRunService.getStatusByUpgradeJobId(anyString())).thenReturn(PrecheckStatus.FAILED);
       when(elasticClient.getValidSnapshots("8.19.0")).thenReturn(Collections.emptyList());
@@ -142,6 +144,8 @@ class ClusterUpgradeServiceTest {
     @DisplayName("Should make Kibana upgradable after all Elastic nodes are upgraded")
     void upgradeInfo_when_elasticNodesAreUpgraded_then_kibanaIsUpgradable() {
       // Arrange
+      when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(new GetFeatureMigrationResponse(
+          FeatureMigrationStatus.NO_MIGRATION_NEEDED));
       when(clusterUpgradeJobService.getLatestJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
       when(precheckRunService.getStatusByUpgradeJobId(anyString())).thenReturn(PrecheckStatus.COMPLETED);
       when(elasticClient.getValidSnapshots("8.19.0")).thenReturn(Collections.emptyList());
@@ -160,6 +164,8 @@ class ClusterUpgradeServiceTest {
     @DisplayName("Should show nothing is upgradable when all nodes are upgraded")
     void upgradeInfo_when_allNodesAreUpgraded_then_nothingIsUpgradable() {
       // Arrange
+      when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(new GetFeatureMigrationResponse(
+          FeatureMigrationStatus.NO_MIGRATION_NEEDED));
       when(clusterUpgradeJobService.getLatestJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
       when(precheckRunService.getStatusByUpgradeJobId(anyString())).thenReturn(PrecheckStatus.COMPLETED);
       when(elasticClient.getValidSnapshots("8.19.0")).thenReturn(Collections.emptyList());
@@ -180,6 +186,8 @@ class ClusterUpgradeServiceTest {
     void upgradeInfo_when_jobStatusIsUpdated_then_nothingIsUpgradable() {
       // Arrange
       clusterUpgradeJob.setStatus(ClusterUpgradeStatus.UPDATED);
+      when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(new GetFeatureMigrationResponse(
+          FeatureMigrationStatus.NO_MIGRATION_NEEDED));
       when(clusterUpgradeJobService.getLatestJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
       when(precheckRunService.getStatusByUpgradeJobId(anyString())).thenReturn(PrecheckStatus.COMPLETED);
       when(elasticClient.getValidSnapshots("8.19.0")).thenReturn(Collections.emptyList());
@@ -216,6 +224,8 @@ class ClusterUpgradeServiceTest {
     @DisplayName("Should show invalid upgrade path when job has skipped major upgrade")
     void upgradeInfo_when_jobSkippedMajor_then_UpgradePathIsInvalid() {
       // Arrange
+      when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(new GetFeatureMigrationResponse(
+          FeatureMigrationStatus.NO_MIGRATION_NEEDED));
       clusterUpgradeJob.setStatus(ClusterUpgradeStatus.UPDATED);
       clusterUpgradeJob.setTargetVersion("11.0.0");
       when(clusterUpgradeJobService.getLatestJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
