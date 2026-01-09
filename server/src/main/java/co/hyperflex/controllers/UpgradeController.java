@@ -10,6 +10,8 @@ import co.hyperflex.upgrade.services.ClusterUpgradeService;
 import co.hyperflex.upgrade.services.UpgradeLogService;
 import co.hyperflex.upgrade.services.dtos.ClusterInfoResponse;
 import co.hyperflex.upgrade.services.dtos.NodeUpgradePlanResponse;
+import co.hyperflex.upgrade.services.migration.FeatureMigrationResponse;
+import co.hyperflex.upgrade.services.migration.FeatureMigrationService;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,11 +28,13 @@ public class UpgradeController {
   private static final Logger logger = LoggerFactory.getLogger(UpgradeController.class);
   private final ClusterUpgradeService clusterUpgradeService;
   private final UpgradeLogService upgradeLogService;
+  private final FeatureMigrationService featureMigrationService;
 
   public UpgradeController(ClusterUpgradeService clusterUpgradeService,
-                           UpgradeLogService upgradeLogService) {
+                           UpgradeLogService upgradeLogService, FeatureMigrationService featureMigrationService) {
     this.clusterUpgradeService = clusterUpgradeService;
     this.upgradeLogService = upgradeLogService;
+    this.featureMigrationService = featureMigrationService;
   }
 
   @PostMapping()
@@ -62,4 +66,8 @@ public class UpgradeController {
     return upgradeLogService.getLogs(new GetUpgradeLogsRequest(clusterId, nodeId));
   }
 
+  @PostMapping("/migrate-system-features")
+  public FeatureMigrationResponse migrateSystemFeatures(@PathVariable String clusterId) {
+    return featureMigrationService.migrate(clusterId);
+  }
 }
