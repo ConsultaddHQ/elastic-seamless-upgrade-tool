@@ -154,9 +154,11 @@ public class ClusterUpgradeService {
 
       var precheck = new ClusterInfoResponse.Precheck(precheckStatus);
       var deploymentId = cluster instanceof GetElasticCloudClusterResponse elasticCloud ? elasticCloud.getDeploymentId() : null;
-      var featureMigration = featureMigrationService.getFeatureMigrationResponse(clusterId);
+      var featureMigrationStatus = isClusterUpgrading ? FeatureMigrationStatus.NO_MIGRATION_NEEDED :
+          featureMigrationService.getFeatureMigrationResponse(clusterId).status();
       return new ClusterInfoResponse(elastic, kibana, precheck, deploymentId, isValidUpgradePath,
-          new ClusterInfoResponse.FeatureMigration(isClusterUpgrading ? FeatureMigrationStatus.NO_MIGRATION_NEEDED : featureMigration.status()));
+          new ClusterInfoResponse.FeatureMigration(
+              isClusterUpgrading ? FeatureMigrationStatus.NO_MIGRATION_NEEDED : featureMigrationStatus));
     } catch (Exception e) {
       log.error("Failed to get upgrade info for clusterId: {}", clusterId, e);
       throw new RuntimeException(e);
