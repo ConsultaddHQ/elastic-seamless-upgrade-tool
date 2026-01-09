@@ -1,6 +1,7 @@
 package co.hyperflex.clients.elastic.dto.cat.indices;
 
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.annotation.Nullable;
 
 public class IndicesRecord {
@@ -12,6 +13,14 @@ public class IndicesRecord {
 
   @Nullable
   private String index;
+
+  @Nullable
+  @JsonProperty("docs.count")
+  private String docsCount;
+
+  @Nullable
+  @JsonProperty("store.size")
+  private String docsSize;
 
   @Nullable
   public String getHealth() {
@@ -34,6 +43,24 @@ public class IndicesRecord {
   @Nullable
   public String getIndex() {
     return index;
+  }
+
+  @Nullable
+  public String getDocsCount() {
+    return docsCount;
+  }
+
+  public void setDocsCount(@Nullable String docsCount) {
+    this.docsCount = docsCount;
+  }
+
+  @Nullable
+  public String getDocsSize() {
+    return docsSize;
+  }
+
+  public void setDocsSize(@Nullable String docsSize) {
+    this.docsSize = docsSize;
   }
 
   public void setIndex(@Nullable String index) {
