@@ -1,6 +1,6 @@
 import { Skeleton } from "@heroui/react"
 import { Box, Typography } from "@mui/material"
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { Camera, Flash } from "iconsax-react"
 import moment from "moment"
 import { useEffect, useState } from "react"
@@ -32,6 +32,10 @@ function UpgradeAssistant() {
 	const setElasticNodeUpgradeAllowed = useSafeRouteStore((state) => state.setElasticNodeUpgradeAllowed)
 	const setKibanaNodeUpgradeAllowed = useSafeRouteStore((state) => state.setKibanaNodeUpgradeAllowed)
 	const setPrecheckAllowed = useSafeRouteStore((state) => state.setPrecheckAllowed)
+
+	const { isPending: isMigratingSystemFeatures, mutate: migrateSystemFeatures } = useMutation({
+		mutationFn: (data: { clusterId: string }) => clusterUpgradeApi.migrateSystemFeatures(data.clusterId),
+	})
 
 	// Format remaining time in HH:MM:SS
 	const formatTime = (milliseconds: number | null): string => {
@@ -68,12 +72,27 @@ function UpgradeAssistant() {
 		if (upgradeInfo?.elastic?.snapshot?.snapshot) {
 			startTimer(moment.utc(upgradeInfo?.elastic?.snapshot?.snapshot.createdAt).local().valueOf())
 		}
-		const { elastic, kibana, precheck, isValidUpgradePath: isValidUpgradePath1 } = upgradeInfo ?? {}
+		const {
+			elastic,
+			kibana,
+			precheck,
+			isValidUpgradePath: isValidUpgradePath1,
+			featureMigration,
+		} = upgradeInfo ?? {}
 		const step1Status = elastic?.snapshot?.snapshot ? "COMPLETED" : "PENDING"
 		setIsValidUpgradePath(isValidUpgradePath1)
 
 		const step2Status =
-			step1Status !== "COMPLETED" ? "NOTVISITED" : precheck?.status === "COMPLETED" ? "COMPLETED" : "PENDING"
+			step1Status !== "COMPLETED"
+				? "NOTVISITED"
+				: featureMigration?.status === "MIGRATION_NEEDED" || featureMigration?.status === "ERROR"
+				? "PENDING"
+				: featureMigration?.status === "IN_PROGRESS"
+				? "INPROGRESS"
+				: "COMPLETED"
+
+		const step3Status =
+			step2Status !== "COMPLETED" ? "NOTVISITED" : precheck?.status === "COMPLETED" ? "COMPLETED" : "PENDING"
 
 		// Helper function to sum deprecations safely
 		const sumDeprecations = (type: string) =>
@@ -83,8 +102,8 @@ function UpgradeAssistant() {
 		const criticalDeprecations = sumDeprecations("critical")
 		const warningDeprecations = sumDeprecations("warning")
 
-		const step3Status =
-			step2Status !== "COMPLETED"
+		const step4Status =
+			step3Status !== "COMPLETED"
 				? "NOTVISITED"
 				: criticalDeprecations > 0 || warningDeprecations > 0
 				? "INPROGRESS"
@@ -98,8 +117,8 @@ function UpgradeAssistant() {
 				? "PENDING"
 				: "COMPLETED"
 
-		const step4Status = getNextStepStatus(step3Status, elastic?.isUpgradable)
-		const step5Status = getNextStepStatus(step4Status, kibana?.isUpgradable)
+		const step5Status = getNextStepStatus(step4Status, elastic?.isUpgradable)
+		const step6Status = getNextStepStatus(step5Status, kibana?.isUpgradable)
 
 		setStepStatus({
 			"1": step1Status,
@@ -107,14 +126,15 @@ function UpgradeAssistant() {
 			"3": step3Status,
 			"4": step4Status,
 			"5": step5Status,
+			"6": step6Status,
 		})
 
 		if (step2Status !== "NOTVISITED") {
 			setPrecheckAllowed(true)
 		}
-		handleRoutingStates(step3Status, setDeprecationChangesAllowed)
-		handleRoutingStates(step4Status, setElasticNodeUpgradeAllowed)
-		handleRoutingStates(step5Status, setKibanaNodeUpgradeAllowed)
+		handleRoutingStates(step4Status, setDeprecationChangesAllowed)
+		handleRoutingStates(step5Status, setElasticNodeUpgradeAllowed)
+		handleRoutingStates(step6Status, setKibanaNodeUpgradeAllowed)
 		setDeploymentId(upgradeInfo?.deploymentId ?? "")
 		return upgradeInfo
 	}
@@ -130,6 +150,7 @@ function UpgradeAssistant() {
 	const step3Data = getStepIndicatorData("03", stepStatus["3"])
 	const step4Data = getStepIndicatorData("04", stepStatus["4"])
 	const step5Data = getStepIndicatorData("05", stepStatus["5"])
+	const step6Data = getStepIndicatorData("06", stepStatus["6"])
 
 	if (isLoading || isRefetching) {
 		return (
@@ -138,13 +159,13 @@ function UpgradeAssistant() {
 					<Box height="88px" />
 				</Skeleton>
 				<Skeleton className="w-full rounded-[20px]">
+					<Box height="88px" />
+				</Skeleton>
+				<Skeleton className="w-full rounded-[20px]">
 					<Box height="108px" />
 				</Skeleton>
 				<Skeleton className="w-full rounded-[20px]">
 					<Box height="229.5px" />
-				</Skeleton>
-				<Skeleton className="w-full rounded-[20px]">
-					<Box height="108px" />
 				</Skeleton>
 				<Skeleton className="w-full rounded-[20px]">
 					<Box height="108px" />
@@ -242,6 +263,58 @@ function UpgradeAssistant() {
 				<Box className="flex flex-row gap-3 items-center rounded-[20px] justify-between w-full">
 					<Box className="flex flex-col gap-[6px]">
 						<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
+							Migrate system indices
+						</Typography>
+						<Typography
+							color="#6E6E6E"
+							fontSize="13px"
+							fontWeight="400"
+							lineHeight="20px"
+							letterSpacing="0.26px"
+						>
+							Prepare the system indices that store internal information for the upgrade. This step is
+							required only for major version upgrades.
+						</Typography>
+					</Box>
+					{stepStatus["2"] === "COMPLETED" || stepStatus["2"] === "INPROGRESS" ? null : (
+						<Box className="flex items-start">
+							<OutlinedBorderButton
+								disabled={isMigratingSystemFeatures || stepStatus["1"] !== "COMPLETED"}
+								onClick={() => migrateSystemFeatures({ clusterId: clusterId! })}
+							>
+								Migrate
+							</OutlinedBorderButton>
+						</Box>
+					)}
+					{stepStatus["2"] === "INPROGRESS" && (
+						<Box className="flex items-start">
+							<Typography
+								color="#6E6E6E"
+								textAlign="right"
+								fontSize="13px"
+								fontWeight="400"
+								lineHeight="20px"
+								letterSpacing="0.26px"
+							>
+								Migrating system features...
+							</Typography>
+						</Box>
+					)}
+				</Box>
+			</StepBox>
+			<StepBox
+				currentStepStatus={stepStatus["3"]}
+				nextStepStatus={stepStatus["4"]}
+				boxBackground={step3Data?.boxBackground}
+				background={step3Data?.background}
+				boxShadow={step3Data?.boxShadow}
+				internalBackground={step3Data?.internalBackground}
+				textColor={step3Data?.textColor}
+				stepValue={step3Data?.stepValue}
+			>
+				<Box className="flex flex-row gap-3 items-center rounded-[20px] justify-between w-full">
+					<Box className="flex flex-col gap-[6px]">
+						<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
 							Prechecks
 						</Typography>
 						<Typography
@@ -261,7 +334,7 @@ function UpgradeAssistant() {
 					<OutlinedBorderButton
 						component={Link}
 						to={`/${clusterId}/prechecks`}
-						disabled={stepStatus["2"] === "NOTVISITED"}
+						disabled={stepStatus["3"] === "NOTVISITED"}
 						borderRadius="50%"
 						sx={{ minWidth: "38px !important", minHeight: "38px !important", padding: "0px" }}
 					>
@@ -270,14 +343,14 @@ function UpgradeAssistant() {
 				</Box>
 			</StepBox>
 			<StepBox
-				currentStepStatus={stepStatus["3"]}
-				nextStepStatus={stepStatus["4"]}
-				boxBackground={step3Data?.boxBackground}
-				background={step3Data?.background}
-				boxShadow={step3Data?.boxShadow}
-				internalBackground={step3Data?.internalBackground}
-				textColor={step3Data?.textColor}
-				stepValue={step3Data?.stepValue}
+				currentStepStatus={stepStatus["4"]}
+				nextStepStatus={stepStatus["5"]}
+				boxBackground={step4Data?.boxBackground}
+				background={step4Data?.background}
+				boxShadow={step4Data?.boxShadow}
+				internalBackground={step4Data?.internalBackground}
+				textColor={step4Data?.textColor}
+				stepValue={step4Data?.stepValue}
 			>
 				<Box className="flex flex-col gap-[10px] rounded-[20px] w-full">
 					<Box className="flex flex-col gap-[6px]">
@@ -302,28 +375,28 @@ function UpgradeAssistant() {
 							title="Elastic search"
 							criticalValue={data?.elastic?.deprecationCounts.critical ?? "NaN"}
 							warningValue={data?.elastic?.deprecationCounts.warning ?? "NaN"}
-							isDisabled={step3Data?.isDisabled}
+							isDisabled={step4Data?.isDisabled}
 							to={`/${clusterId}/elastic/deprecation-logs`}
 						/>
 						<DeprectedSettings
 							title="Kibana"
 							criticalValue={data?.kibana?.deprecationCounts.critical ?? "NaN"}
 							warningValue={data?.kibana?.deprecationCounts.warning ?? "NaN"}
-							isDisabled={step3Data?.isDisabled}
+							isDisabled={step4Data?.isDisabled}
 							to={`/${clusterId}/kibana/deprecation-logs`}
 						/>
 					</Box>
 				</Box>
 			</StepBox>
 			<StepBox
-				currentStepStatus={stepStatus["4"]}
-				nextStepStatus={stepStatus["5"]}
-				boxBackground={step4Data?.boxBackground}
-				background={step4Data?.background}
-				boxShadow={step4Data?.boxShadow}
-				internalBackground={step4Data?.internalBackground}
-				textColor={step4Data?.textColor}
-				stepValue={step4Data?.stepValue}
+				currentStepStatus={stepStatus["5"]}
+				nextStepStatus={stepStatus["6"]}
+				boxBackground={step5Data?.boxBackground}
+				background={step5Data?.background}
+				boxShadow={step5Data?.boxShadow}
+				internalBackground={step5Data?.internalBackground}
+				textColor={step5Data?.textColor}
+				stepValue={step5Data?.stepValue}
 				lastNode={infraType === "ELASTIC_CLOUD" ? true : false}
 			>
 				<Box className="flex flex-row gap-3 items-center rounded-[20px] justify-between w-full">
@@ -355,7 +428,7 @@ function UpgradeAssistant() {
 								}}
 							>
 								<OutlinedBorderButton
-									disabled={step4Data?.isDisabled || !isValidUpgradePath}
+									disabled={step5Data?.isDisabled || !isValidUpgradePath}
 									borderRadius="50%"
 									sx={{
 										minWidth: "38px !important",
@@ -371,7 +444,7 @@ function UpgradeAssistant() {
 						<OutlinedBorderButton
 							component={Link}
 							to={`/${clusterId}/elastic/upgrade`}
-							disabled={step4Data?.isDisabled || !isValidUpgradePath}
+							disabled={step5Data?.isDisabled || !isValidUpgradePath}
 							icon={Flash}
 							filledIcon={Flash}
 						>
@@ -383,12 +456,12 @@ function UpgradeAssistant() {
 			{infraType != "ELASTIC_CLOUD" && (
 				<StepBox
 					lastNode={true}
-					boxBackground={step5Data?.boxBackground}
-					background={step5Data?.background}
-					boxShadow={step5Data?.boxShadow}
-					internalBackground={step5Data?.internalBackground}
-					textColor={step5Data?.textColor}
-					stepValue={step5Data?.stepValue}
+					boxBackground={step6Data?.boxBackground}
+					background={step6Data?.background}
+					boxShadow={step6Data?.boxShadow}
+					internalBackground={step6Data?.internalBackground}
+					textColor={step6Data?.textColor}
+					stepValue={step6Data?.stepValue}
 				>
 					<Box className="flex flex-row gap-3 items-center rounded-[20px] justify-between w-full">
 						<Box className="flex flex-col gap-[6px]">
@@ -411,7 +484,7 @@ function UpgradeAssistant() {
 						<OutlinedBorderButton
 							component={Link}
 							to={`/${clusterId}/kibana/upgrade`}
-							disabled={step5Data?.isDisabled || !isValidUpgradePath}
+							disabled={step6Data?.isDisabled || !isValidUpgradePath}
 							icon={Flash}
 							filledIcon={Flash}
 						>
@@ -420,7 +493,7 @@ function UpgradeAssistant() {
 					</Box>
 				</StepBox>
 			)}
-			{stepStatus["5"] === "COMPLETED" ? (
+			{stepStatus["6"] === "COMPLETED" ? (
 				<Box className="sticky bottom-0 z-50">
 					<Box
 						className="flex p-[0.4px] w-full rounded-[14px]"

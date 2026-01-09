@@ -55,6 +55,11 @@ class ClusterUpgradeApi {
 		}>(`/clusters/${clusterId}/upgrades/jobs/status`)
 		return response.data
 	}
+
+	async migrateSystemFeatures(clusterId: string) {
+		const response = await axiosJSON.post(`/clusters/${clusterId}/upgrades/migrate-system-features`)
+		return response.data
+	}
 }
 
 export const clusterUpgradeApi = new ClusterUpgradeApi()
