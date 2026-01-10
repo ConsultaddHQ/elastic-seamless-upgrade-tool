@@ -127,15 +127,6 @@ public class ClusterUpgradeJobService {
     return clusterUpgradeJobRepository.findById(clusterUpgradeJobId).orElseThrow();
   }
 
-  public void setCheckPoint(final String jobId, final String nodeId, final int checkPoint) {
-    Update update = new Update().set("nodeCheckPoints." + nodeId, checkPoint);
-    clusterUpgradeJobRepository.updateById(jobId, update);
-  }
-
-  public int getCheckPoint(final String jobId, final String nodeId) {
-    return getUpgradeJobById(jobId).getNodeCheckPoints().getOrDefault(nodeId, 0);
-  }
-
   public GetTargetVersionResponse getTargetVersionInfo(String clusterId) {
     String targetVersion = null;
     boolean underUpgrade = false;

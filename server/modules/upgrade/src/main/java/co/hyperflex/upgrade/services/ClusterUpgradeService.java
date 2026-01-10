@@ -30,6 +30,7 @@ import co.hyperflex.precheck.core.enums.PrecheckStatus;
 import co.hyperflex.precheck.services.PrecheckRunService;
 import co.hyperflex.upgrade.entities.UpgradeLogEntity;
 import co.hyperflex.upgrade.planner.UpgradePlanBuilder;
+import co.hyperflex.upgrade.services.checkpoint.UpgradeCheckpointService;
 import co.hyperflex.upgrade.services.dtos.ClusterInfoResponse;
 import co.hyperflex.upgrade.services.dtos.NodeUpgradePlanResponse;
 import co.hyperflex.upgrade.services.migration.FeatureMigrationService;
@@ -66,6 +67,7 @@ public class ClusterUpgradeService {
   private final UpgradePlanBuilder upgradePlanBuilder;
   private final UpgradeNotificationService upgradeNotificationService;
   private final FeatureMigrationService featureMigrationService;
+  private final UpgradeCheckpointService upgradeCheckpointService;
 
   public ClusterUpgradeService(ElasticsearchClientProvider elasticsearchClientProvider,
                                ClusterNodeRepository clusterNodeRepository,
@@ -77,7 +79,8 @@ public class ClusterUpgradeService {
                                PrecheckRunService precheckRunService,
                                ClusterLockService clusterLockService,
                                UpgradePlanBuilder upgradePlanBuilder,
-                               UpgradeNotificationService upgradeNotificationService, FeatureMigrationService featureMigrationService) {
+                               UpgradeNotificationService upgradeNotificationService, FeatureMigrationService featureMigrationService,
+                               UpgradeCheckpointService upgradeCheckpointService) {
     this.elasticsearchClientProvider = elasticsearchClientProvider;
     this.clusterNodeRepository = clusterNodeRepository;
     this.clusterService = clusterService;
@@ -91,6 +94,7 @@ public class ClusterUpgradeService {
     this.upgradePlanBuilder = upgradePlanBuilder;
     this.upgradeNotificationService = upgradeNotificationService;
     this.featureMigrationService = featureMigrationService;
+    this.upgradeCheckpointService = upgradeCheckpointService;
   }
 
   public ClusterNodeUpgradeResponse upgradeNode(ClusterNodeUpgradeRequest request, Map<String, Boolean> flags) {
@@ -206,7 +210,7 @@ public class ClusterUpgradeService {
 
           List<Task> tasks = upgradePlanBuilder.buildPlanFor(node, clusterUpgradeJobService.getUpgradeJobById(clusterUpgradeJobId));
 
-          int checkPoint = clusterUpgradeJobService.getCheckPoint(clusterUpgradeJobId, node.getId());
+          int checkPoint = upgradeCheckpointService.getCheckPoint(clusterUpgradeJobId, node.getId());
 
           node.setStatus(NodeUpgradeStatus.UPGRADING);
           updateNodeProgress(node, 0);
@@ -234,7 +238,7 @@ public class ClusterUpgradeService {
               }
 
               checkPoint++;
-              clusterUpgradeJobService.setCheckPoint(clusterUpgradeJobId, node.getId(), checkPoint);
+              upgradeCheckpointService.setCheckPoint(clusterUpgradeJobId, node.getId(), checkPoint);
 
               int progress = (int) ((checkPoint * 100.0) / tasks.size());
               updateNodeProgress(node, progress);
