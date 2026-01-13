@@ -7,6 +7,7 @@ import co.hyperflex.precheck.services.dtos.IndexReindexInfo;
 import co.hyperflex.precheck.utils.IndexUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -24,8 +25,11 @@ public class IndexUpgradeCompatibilityService {
   public List<IndexReindexInfo> getReindexIndexesMetadata(String clusterId) {
     var client = elasticsearchClientProvider.getClient(clusterId);
     var indices = client.getIndices();
+    var upgradeJob = clusterUpgradeJobService.getLatestJobByClusterId(clusterId);
+    int targetLucene = IndexUtils.mapEsVersionToLucene(upgradeJob.getTargetVersion());
+
     return indices.stream()
-        .filter(indicesRecord -> !isLuceneCompatible(clusterId, indicesRecord.getIndex()))
+        .filter(indicesRecord -> !isLuceneCompatible(clusterId, indicesRecord.getIndex(), targetLucene))
         .map(indicesRecord -> new IndexReindexInfo(
             indicesRecord.getIndex(),
             indicesRecord.getDocsSize(),
@@ -33,17 +37,14 @@ public class IndexUpgradeCompatibilityService {
         )).toList();
   }
 
-  public boolean isLuceneCompatible(String clusterId, String indexName) {
+  public boolean isLuceneCompatible(String clusterId, String indexName, int targetLucene) {
     var request = ApiRequest.builder(JsonNode.class).get().uri("/" + indexName + "/_segments").build();
     var root = elasticsearchClientProvider.getClient(clusterId).execute(request);
-    var upgradeJob = clusterUpgradeJobService.getLatestJobByClusterId(clusterId);
-    int targetLucene = IndexUtils.mapEsVersionToLucene(upgradeJob.getTargetVersion());
+    AtomicInteger minLuceneVersions = new AtomicInteger(Integer.MAX_VALUE);
 
     JsonNode segmentsNode = root.path("indices").path(indexName).path("shards");
-
-    final int[] minLuceneVersions = {Integer.MAX_VALUE};
-
-    // Iterate over shards and fin min Lucene versions
+    
+    // Iterate over shards and find min Lucene version
     segmentsNode.properties().forEach(entry -> {
       entry.getValue().forEach(shard -> {
         JsonNode segments = shard.path("segments");
@@ -52,14 +53,15 @@ public class IndexUpgradeCompatibilityService {
           String versionStr = segment.path("version").asText(); // e.g. "8.11.1"
           if (!versionStr.isEmpty()) {
             int major = Integer.parseInt(versionStr.split("\\.")[0]);
-            minLuceneVersions[0] = Math.min(major, minLuceneVersions[0]);
+            minLuceneVersions.set(Math.min(minLuceneVersions.get(), major));
           }
         });
       });
     });
 
     //validate minimum lucene version
-    return minLuceneVersions[0] == Integer.MAX_VALUE || minLuceneVersions[0] >= targetLucene - 1;
+    // ES supports indices created with at most one major Lucene version older => targetLucene - 1
+    return minLuceneVersions.get() == Integer.MAX_VALUE || minLuceneVersions.get() >= targetLucene - 1;
   }
 
 }
