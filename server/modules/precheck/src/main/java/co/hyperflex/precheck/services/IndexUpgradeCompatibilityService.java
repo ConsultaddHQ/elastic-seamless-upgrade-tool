@@ -40,10 +40,10 @@ public class IndexUpgradeCompatibilityService {
   public boolean isLuceneCompatible(String clusterId, String indexName, int targetLucene) {
     var request = ApiRequest.builder(JsonNode.class).get().uri("/" + indexName + "/_segments").build();
     var root = elasticsearchClientProvider.getClient(clusterId).execute(request);
-    AtomicInteger minLuceneVersions = new AtomicInteger(Integer.MAX_VALUE);
+    AtomicInteger minLuceneVersion = new AtomicInteger(Integer.MAX_VALUE);
 
     JsonNode segmentsNode = root.path("indices").path(indexName).path("shards");
-    
+
     // Iterate over shards and find min Lucene version
     segmentsNode.properties().forEach(entry -> {
       entry.getValue().forEach(shard -> {
@@ -53,7 +53,7 @@ public class IndexUpgradeCompatibilityService {
           String versionStr = segment.path("version").asText(); // e.g. "8.11.1"
           if (!versionStr.isEmpty()) {
             int major = Integer.parseInt(versionStr.split("\\.")[0]);
-            minLuceneVersions.set(Math.min(minLuceneVersions.get(), major));
+            minLuceneVersion.set(Math.min(minLuceneVersion.get(), major));
           }
         });
       });
@@ -61,7 +61,7 @@ public class IndexUpgradeCompatibilityService {
 
     //validate minimum lucene version
     // ES supports indices created with at most one major Lucene version older => targetLucene - 1
-    return minLuceneVersions.get() == Integer.MAX_VALUE || minLuceneVersions.get() >= targetLucene - 1;
+    return minLuceneVersion.get() == Integer.MAX_VALUE || minLuceneVersion.get() >= targetLucene - 1;
   }
 
 }
