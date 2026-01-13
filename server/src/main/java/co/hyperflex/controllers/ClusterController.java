@@ -25,6 +25,8 @@ import co.hyperflex.core.services.clusters.dtos.UpdateClusterSshDetailRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateNodeConfigurationRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateNodeConfigurationResponse;
 import co.hyperflex.core.services.clusters.dtos.UploadCertificateResponse;
+import co.hyperflex.precheck.services.IndexUpgradeCompatibilityService;
+import co.hyperflex.precheck.services.dtos.IndexReindexInfo;
 import co.hyperflex.upgrade.services.NodeUpgradeService;
 import jakarta.validation.Valid;
 import java.io.IOException;
@@ -50,17 +52,20 @@ public class ClusterController {
   private final DeprecationService deprecationService;
   private final NodeUpgradeService nodeUpgradeService;
   private final NodeConfigurationService nodeConfigurationService;
+  private final IndexUpgradeCompatibilityService indexUpgradeCompatibilityService;
 
   public ClusterController(ClusterService clusterService,
                            CertificatesService certificatesService,
                            DeprecationService deprecationService,
                            NodeUpgradeService nodeUpgradeService,
-                           NodeConfigurationService nodeConfigurationService) {
+                           NodeConfigurationService nodeConfigurationService,
+                           IndexUpgradeCompatibilityService indexUpgradeCompatibilityService) {
     this.clusterService = clusterService;
     this.certificatesService = certificatesService;
     this.deprecationService = deprecationService;
     this.nodeUpgradeService = nodeUpgradeService;
     this.nodeConfigurationService = nodeConfigurationService;
+    this.indexUpgradeCompatibilityService = indexUpgradeCompatibilityService;
   }
 
   @PostMapping
@@ -161,5 +166,10 @@ public class ClusterController {
   @GetMapping("/{clusterId}/allocation-explanations")
   public List<GetAllocationExplanationResponse> getAllocationExplanation(@PathVariable String clusterId) {
     return clusterService.getAllocationExplanation(clusterId);
+  }
+
+  @GetMapping("/{clusterId}/upgrade/reindex-indices")
+  public List<IndexReindexInfo> getAllIndexReIndexInfo(@PathVariable String clusterId) {
+    return indexUpgradeCompatibilityService.getReindexIndexesMetadata(clusterId);
   }
 }
