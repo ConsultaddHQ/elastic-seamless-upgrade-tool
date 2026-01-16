@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class IndexUtils {
-  private static final Map<String, Integer> esToLucene = Map.of("5", 6, "6", 7, "7", 8, "8", 9, "9", 10);
+  private static final Map<String, Integer> ES_TO_LUCENE = Map.of("5", 6, "6", 7, "7", 8, "8", 9, "9", 10);
   private final ElasticsearchClientProvider elasticsearchClientProvider;
 
   public IndexUtils(ElasticsearchClientProvider elasticsearchClientProvider) {
@@ -18,7 +18,7 @@ public class IndexUtils {
 
   public static int mapEsVersionToLucene(String elasticVersion) {
     String major = elasticVersion.split("\\.")[0];
-    return esToLucene.getOrDefault(major, -1);
+    return ES_TO_LUCENE.getOrDefault(major, -1);
   }
 
   public boolean isLuceneCompatible(String clusterId, String indexName, int targetLucene) {
