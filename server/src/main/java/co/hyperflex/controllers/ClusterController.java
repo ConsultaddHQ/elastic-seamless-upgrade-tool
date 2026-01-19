@@ -25,7 +25,7 @@ import co.hyperflex.core.services.clusters.dtos.UpdateClusterSshDetailRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateNodeConfigurationRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateNodeConfigurationResponse;
 import co.hyperflex.core.services.clusters.dtos.UploadCertificateResponse;
-import co.hyperflex.precheck.services.dtos.IndexReindexInfo;
+import co.hyperflex.upgrade.services.dtos.IndexReindexInfo;
 import co.hyperflex.upgrade.services.NodeUpgradeService;
 import co.hyperflex.upgrade.services.migration.IndexMigrationService;
 import jakarta.validation.Valid;

@@ -4,7 +4,7 @@ import co.hyperflex.clients.client.ApiRequest;
 import co.hyperflex.clients.elastic.ElasticsearchClientProvider;
 import co.hyperflex.core.services.upgrade.ClusterUpgradeJobService;
 import co.hyperflex.core.utils.VersionUtils;
-import co.hyperflex.precheck.services.dtos.IndexReindexInfo;
+import co.hyperflex.upgrade.services.dtos.IndexReindexInfo;
 import co.hyperflex.precheck.utils.IndexUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;

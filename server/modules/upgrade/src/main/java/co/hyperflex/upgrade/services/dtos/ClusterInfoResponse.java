@@ -41,12 +41,13 @@ public record ClusterInfoResponse(
 
   public record FeatureMigration(
       @NotNull FeatureMigrationStatus status
-      ) {
+  ) {
 
   }
+
   public record CustomIndexMigration(
       @NotNull CustomIndexMigrationStatus status
-      ) {
+  ) {
 
   }
 

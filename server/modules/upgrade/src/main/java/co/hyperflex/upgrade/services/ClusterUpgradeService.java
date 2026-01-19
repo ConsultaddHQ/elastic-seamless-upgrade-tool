@@ -165,7 +165,9 @@ public class ClusterUpgradeService {
 
       var indicesToBeReIndexed = indexMigrationService.getReindexIndexesMetadata(clusterId);
 
-      var customIndexMigrationStatus = (isClusterUpgrading || indicesToBeReIndexed.isEmpty()) ? CustomIndexMigrationStatus.NO_MIGRATION_NEEDED : CustomIndexMigrationStatus.MIGRATION_NEEDED;
+      var customIndexMigrationStatus =
+          (isClusterUpgrading || indicesToBeReIndexed.isEmpty()) ? CustomIndexMigrationStatus.NO_MIGRATION_NEEDED :
+              CustomIndexMigrationStatus.MIGRATION_NEEDED;
       return new ClusterInfoResponse(elastic, kibana, precheck, deploymentId, isValidUpgradePath,
           new ClusterInfoResponse.FeatureMigration(
               isClusterUpgrading ? FeatureMigrationStatus.NO_MIGRATION_NEEDED : featureMigrationStatus),
