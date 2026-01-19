@@ -41,7 +41,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.mongodb.core.index.Index;
 
 @ExtendWith(MockitoExtension.class)
 class ClusterUpgradeServiceTest {
@@ -106,8 +105,8 @@ class ClusterUpgradeServiceTest {
     void upgradeInfo_when_prechecksCompleteAndNoNodesUpgraded_then_elasticIsUpgradable() {
       // Arrange
       when(indexMigrationService.getReindexIndexesMetadata(CLUSTER_ID)).thenReturn(new ArrayList<>());
-      when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(new GetFeatureMigrationResponse(
-          FeatureMigrationStatus.NO_MIGRATION_NEEDED));
+      when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(
+          new GetFeatureMigrationResponse(FeatureMigrationStatus.NO_MIGRATION_NEEDED));
       when(clusterUpgradeJobService.getLatestJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
       when(precheckRunService.getStatusByUpgradeJobId(anyString())).thenReturn(PrecheckStatus.COMPLETED);
       when(elasticClient.getValidSnapshots("8.19.0")).thenReturn(List.of(new GetElasticsearchSnapshotResponse("snapshot", new Date())));
@@ -130,8 +129,8 @@ class ClusterUpgradeServiceTest {
     void upgradeInfo_when_prechecksFailed_then_showFailedStatus() {
       // Arrange
       when(indexMigrationService.getReindexIndexesMetadata(CLUSTER_ID)).thenReturn(new ArrayList<>());
-      when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(new GetFeatureMigrationResponse(
-          FeatureMigrationStatus.NO_MIGRATION_NEEDED));
+      when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(
+          new GetFeatureMigrationResponse(FeatureMigrationStatus.NO_MIGRATION_NEEDED));
       when(clusterUpgradeJobService.getLatestJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
       when(precheckRunService.getStatusByUpgradeJobId(anyString())).thenReturn(PrecheckStatus.FAILED);
       when(elasticClient.getValidSnapshots("8.19.0")).thenReturn(Collections.emptyList());
@@ -153,8 +152,8 @@ class ClusterUpgradeServiceTest {
     void upgradeInfo_when_elasticNodesAreUpgraded_then_kibanaIsUpgradable() {
       // Arrange
       when(indexMigrationService.getReindexIndexesMetadata(CLUSTER_ID)).thenReturn(new ArrayList<>());
-      when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(new GetFeatureMigrationResponse(
-          FeatureMigrationStatus.NO_MIGRATION_NEEDED));
+      when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(
+          new GetFeatureMigrationResponse(FeatureMigrationStatus.NO_MIGRATION_NEEDED));
       when(clusterUpgradeJobService.getLatestJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
       when(precheckRunService.getStatusByUpgradeJobId(anyString())).thenReturn(PrecheckStatus.COMPLETED);
       when(elasticClient.getValidSnapshots("8.19.0")).thenReturn(Collections.emptyList());
@@ -174,8 +173,8 @@ class ClusterUpgradeServiceTest {
     void upgradeInfo_when_allNodesAreUpgraded_then_nothingIsUpgradable() {
       // Arrange
       when(indexMigrationService.getReindexIndexesMetadata(CLUSTER_ID)).thenReturn(new ArrayList<>());
-      when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(new GetFeatureMigrationResponse(
-          FeatureMigrationStatus.NO_MIGRATION_NEEDED));
+      when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(
+          new GetFeatureMigrationResponse(FeatureMigrationStatus.NO_MIGRATION_NEEDED));
       when(clusterUpgradeJobService.getLatestJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
       when(precheckRunService.getStatusByUpgradeJobId(anyString())).thenReturn(PrecheckStatus.COMPLETED);
       when(elasticClient.getValidSnapshots("8.19.0")).thenReturn(Collections.emptyList());
@@ -197,8 +196,8 @@ class ClusterUpgradeServiceTest {
       // Arrange
       clusterUpgradeJob.setStatus(ClusterUpgradeStatus.UPDATED);
       when(indexMigrationService.getReindexIndexesMetadata(CLUSTER_ID)).thenReturn(new ArrayList<>());
-      when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(new GetFeatureMigrationResponse(
-          FeatureMigrationStatus.NO_MIGRATION_NEEDED));
+      when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(
+          new GetFeatureMigrationResponse(FeatureMigrationStatus.NO_MIGRATION_NEEDED));
       when(clusterUpgradeJobService.getLatestJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
       when(precheckRunService.getStatusByUpgradeJobId(anyString())).thenReturn(PrecheckStatus.COMPLETED);
       when(elasticClient.getValidSnapshots("8.19.0")).thenReturn(Collections.emptyList());
@@ -236,8 +235,8 @@ class ClusterUpgradeServiceTest {
     void upgradeInfo_when_jobSkippedMajor_then_UpgradePathIsInvalid() {
       // Arrange
       when(indexMigrationService.getReindexIndexesMetadata(CLUSTER_ID)).thenReturn(new ArrayList<>());
-      when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(new GetFeatureMigrationResponse(
-          FeatureMigrationStatus.NO_MIGRATION_NEEDED));
+      when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(
+          new GetFeatureMigrationResponse(FeatureMigrationStatus.NO_MIGRATION_NEEDED));
       clusterUpgradeJob.setStatus(ClusterUpgradeStatus.UPDATED);
       clusterUpgradeJob.setTargetVersion("11.0.0");
       when(clusterUpgradeJobService.getLatestJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
