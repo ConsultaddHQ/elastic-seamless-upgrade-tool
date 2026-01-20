@@ -4,6 +4,7 @@ export default [
 	layout("layouts/data.tsx", [route("add-cluster", "routes/setup.tsx"), route("/login", "routes/login.tsx")]),
 	layout("layouts/common.tsx", [
 		index("routes/clusterListing.tsx"),
+		route(":clusterId/migrate/customIndices", "routes/migrate.customIndices.tsx"),
 		route("plugins", "routes/pluginListing.tsx"),
 		route(":clusterId/nodes", "routes/clusterNodes.tsx"),
 		layout("layouts/config.tsx", [

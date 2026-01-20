@@ -60,6 +60,16 @@ class ClusterUpgradeApi {
 		const response = await axiosJSON.post(`/clusters/${clusterId}/upgrades/migrate-system-features`)
 		return response.data
 	}
+
+	async getCustomIndicesToMigrate(clusterId: string) {
+		const response = await axiosJSON.get(`/clusters/${clusterId}/upgrade/reindex-indices`)
+		return response.data
+	}
+
+	async reindexIndices(clusterId: string) {
+		const response = await axiosJSON.post(`/clusters/${clusterId}/upgrade/reindex-indices`)
+		return response.data
+	}
 }
 
 export const clusterUpgradeApi = new ClusterUpgradeApi()

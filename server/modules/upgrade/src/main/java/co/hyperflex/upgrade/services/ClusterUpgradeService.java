@@ -32,8 +32,10 @@ import co.hyperflex.upgrade.entities.UpgradeLogEntity;
 import co.hyperflex.upgrade.planner.UpgradePlanBuilder;
 import co.hyperflex.upgrade.services.dtos.ClusterInfoResponse;
 import co.hyperflex.upgrade.services.dtos.NodeUpgradePlanResponse;
+import co.hyperflex.upgrade.services.migration.CustomIndexMigrationStatus;
 import co.hyperflex.upgrade.services.migration.FeatureMigrationService;
 import co.hyperflex.upgrade.services.migration.FeatureMigrationStatus;
+import co.hyperflex.upgrade.services.migration.IndexMigrationService;
 import co.hyperflex.upgrade.tasks.Configuration;
 import co.hyperflex.upgrade.tasks.Context;
 import co.hyperflex.upgrade.tasks.Task;
@@ -66,6 +68,7 @@ public class ClusterUpgradeService {
   private final UpgradePlanBuilder upgradePlanBuilder;
   private final UpgradeNotificationService upgradeNotificationService;
   private final FeatureMigrationService featureMigrationService;
+  private final IndexMigrationService indexMigrationService;
 
   public ClusterUpgradeService(ElasticsearchClientProvider elasticsearchClientProvider,
                                ClusterNodeRepository clusterNodeRepository,
@@ -77,7 +80,9 @@ public class ClusterUpgradeService {
                                PrecheckRunService precheckRunService,
                                ClusterLockService clusterLockService,
                                UpgradePlanBuilder upgradePlanBuilder,
-                               UpgradeNotificationService upgradeNotificationService, FeatureMigrationService featureMigrationService) {
+                               UpgradeNotificationService upgradeNotificationService, FeatureMigrationService featureMigrationService,
+                               IndexMigrationService indexMigrationService
+  ) {
     this.elasticsearchClientProvider = elasticsearchClientProvider;
     this.clusterNodeRepository = clusterNodeRepository;
     this.clusterService = clusterService;
@@ -91,6 +96,7 @@ public class ClusterUpgradeService {
     this.upgradePlanBuilder = upgradePlanBuilder;
     this.upgradeNotificationService = upgradeNotificationService;
     this.featureMigrationService = featureMigrationService;
+    this.indexMigrationService = indexMigrationService;
   }
 
   public ClusterNodeUpgradeResponse upgradeNode(ClusterNodeUpgradeRequest request, Map<String, Boolean> flags) {
@@ -156,9 +162,16 @@ public class ClusterUpgradeService {
       var deploymentId = cluster instanceof GetElasticCloudClusterResponse elasticCloud ? elasticCloud.getDeploymentId() : null;
       var featureMigrationStatus = isClusterUpgrading ? FeatureMigrationStatus.NO_MIGRATION_NEEDED :
           featureMigrationService.getFeatureMigrationResponse(clusterId).status();
+
+      var indicesToBeReIndexed = indexMigrationService.getReindexIndexesMetadata(clusterId);
+
+      var customIndexMigrationStatus =
+          (isClusterUpgrading || indicesToBeReIndexed.isEmpty()) ? CustomIndexMigrationStatus.NO_MIGRATION_NEEDED :
+              CustomIndexMigrationStatus.MIGRATION_NEEDED;
       return new ClusterInfoResponse(elastic, kibana, precheck, deploymentId, isValidUpgradePath,
           new ClusterInfoResponse.FeatureMigration(
-              isClusterUpgrading ? FeatureMigrationStatus.NO_MIGRATION_NEEDED : featureMigrationStatus));
+              isClusterUpgrading ? FeatureMigrationStatus.NO_MIGRATION_NEEDED : featureMigrationStatus),
+          new ClusterInfoResponse.CustomIndexMigration(customIndexMigrationStatus));
     } catch (Exception e) {
       log.error("Failed to get upgrade info for clusterId: {}", clusterId, e);
       throw new RuntimeException(e);
