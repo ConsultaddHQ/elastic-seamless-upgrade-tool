@@ -57,7 +57,12 @@ class ClusterUpgradeApi {
 	}
 
 	async migrateSystemFeatures(clusterId: string) {
-		const response = await axiosJSON.post(`/clusters/${clusterId}/upgrades/migrate-system-features`)
+		const response = await axiosJSON.post(`/clusters/${clusterId}/migrations/migrate-system-features`)
+		return response.data
+	}
+
+	async getMigrationInfo(clusterId: string) {
+		const response = await axiosJSON.get(`/clusters/${clusterId}/migrations/info`)
 		return response.data
 	}
 
@@ -67,7 +72,7 @@ class ClusterUpgradeApi {
 	}
 
 	async reindexIndices(clusterId: string) {
-		const response = await axiosJSON.post(`/clusters/${clusterId}/upgrade/reindex-indices`)
+		const response = await axiosJSON.post(`/clusters/${clusterId}/migrations/reindex-indices`)
 		return response.data
 	}
 }
