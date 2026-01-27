@@ -27,3 +27,5 @@ type TStepData = {
 type TStepStatus = {
 	[Key: string]: "COMPLETED" | "INPROGRESS" | "PENDING" | "NOTVISITED"
 }
+
+type FeatureMigrationStatus = "NO_MIGRATION_NEEDED" | "MIGRATION_NEEDED" | "IN_PROGRESS" | "ERROR"

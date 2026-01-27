@@ -29,6 +29,7 @@ type TPrecheck = {
 	logs: string[]
 	startTime: string
 	endTime?: string
+	skippable: boolean
 }
 
 type TIndexData = {

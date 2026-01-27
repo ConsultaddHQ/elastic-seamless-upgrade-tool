@@ -1,7 +1,7 @@
 package co.hyperflex.clients.kibana;
 
-import co.hyperflex.common.client.ClientConnectionDetail;
-import co.hyperflex.common.exceptions.NotFoundException;
+import co.hyperflex.clients.client.ClientConnectionDetail;
+import co.hyperflex.core.exceptions.NotFoundException;
 import co.hyperflex.core.repositories.ClusterRepository;
 import co.hyperflex.core.services.secret.SecretStoreService;
 import co.hyperflex.core.utils.ClusterAuthUtils;

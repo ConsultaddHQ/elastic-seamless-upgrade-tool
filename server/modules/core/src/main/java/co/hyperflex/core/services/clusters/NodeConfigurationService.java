@@ -1,10 +1,10 @@
 package co.hyperflex.core.services.clusters;
 
-import co.hyperflex.common.exceptions.BadRequestException;
 import co.hyperflex.core.entites.clusters.ClusterEntity;
 import co.hyperflex.core.entites.clusters.SelfManagedClusterEntity;
 import co.hyperflex.core.entites.clusters.nodes.ClusterNodeEntity;
 import co.hyperflex.core.entites.clusters.nodes.ElasticNodeEntity;
+import co.hyperflex.core.exceptions.BadRequestException;
 import co.hyperflex.core.repositories.ClusterNodeRepository;
 import co.hyperflex.core.repositories.ClusterRepository;
 import co.hyperflex.core.services.clusters.dtos.GetNodeConfigurationResponse;
@@ -33,11 +33,11 @@ public class NodeConfigurationService {
   }
 
   public GetNodeConfigurationResponse getNodeConfiguration(String clusterId, String nodeId) {
+    ClusterEntity cluster = clusterRepository.findById(clusterId).orElseThrow();
+    if (!(cluster instanceof SelfManagedClusterEntity selfManagedCluster)) {
+      throw new BadRequestException("This operation is not supported for cluster type: " + cluster.getType().getDisplayName());
+    }
     try {
-      ClusterEntity cluster = clusterRepository.findById(clusterId).orElseThrow();
-      if (!(cluster instanceof SelfManagedClusterEntity selfManagedCluster)) {
-        throw new BadRequestException("This operation is not supported for cluster type: " + cluster.getType().getDisplayName());
-      }
       ClusterNodeEntity clusterNode = clusterNodeRepository.findById(nodeId).orElseThrow();
       String configFilePath = getNodeConfigFilePath(clusterNode);
       var configCommand = "sudo cat " + configFilePath;

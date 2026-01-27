@@ -1,7 +1,7 @@
 package co.hyperflex.security;
 
-import co.hyperflex.common.services.ConfigurationService;
-import co.hyperflex.common.utils.SecretUtil;
+import co.hyperflex.core.services.ConfigurationService;
+import co.hyperflex.core.utils.SecretUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;

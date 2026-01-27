@@ -31,17 +31,48 @@ class ClusterUpgradeApi {
 		const response = await axiosJSON.post(`/clusters/${clusterId}/upgrades/nodes/${nodeId}`)
 		return response.data
 	}
+	async nodeUpgradePlan(clusterId: string, nodeId: string) {
+		const response = await axiosJSON.get(`/clusters/${clusterId}/upgrades/nodes/${nodeId}/plan`)
+		return response.data
+	}
 
-  async upgradeAllNodes(clusterId: string, nodeType: string) {
-    const response = await axiosJSON.post(`/clusters/${clusterId}/upgrades?nodeType=${nodeType}`);
-    return response.data;
-  }
-	
-  async getUpgradeJobStatus(clusterId: string) {
+	async retryNodeUpgrade(clusterId: string, nodeId: string, flags: { skipHealth: boolean }) {
+		const response = await axiosJSON.post(
+			`/clusters/${clusterId}/upgrades/nodes/${nodeId}?skipHealth=${flags.skipHealth}`
+		)
+		return response.data
+	}
+
+	async upgradeAllNodes(clusterId: string, nodeType: string) {
+		const response = await axiosJSON.post(`/clusters/${clusterId}/upgrades?nodeType=${nodeType}`)
+		return response.data
+	}
+
+	async getUpgradeJobStatus(clusterId: string) {
 		const response = await axiosJSON.get<{
 			isStopping: true
 			status: string
 		}>(`/clusters/${clusterId}/upgrades/jobs/status`)
+		return response.data
+	}
+
+	async migrateSystemFeatures(clusterId: string) {
+		const response = await axiosJSON.post(`/clusters/${clusterId}/migrations/migrate-system-features`)
+		return response.data
+	}
+
+	async getMigrationInfo(clusterId: string) {
+		const response = await axiosJSON.get(`/clusters/${clusterId}/migrations/info`)
+		return response.data
+	}
+
+	async getCustomIndicesToMigrate(clusterId: string) {
+		const response = await axiosJSON.get(`/clusters/${clusterId}/upgrade/reindex-indices`)
+		return response.data
+	}
+
+	async reindexIndices(clusterId: string) {
+		const response = await axiosJSON.post(`/clusters/${clusterId}/migrations/reindex-indices`)
 		return response.data
 	}
 }

@@ -22,7 +22,7 @@ public abstract class AbstractAnsibleTask implements Task {
           context.config().sshInfo().username(),
           context.config().sshInfo().keyPath(),
           true,
-          "root"
+          context.config().sshInfo().becomeUser()
       );
 
       int exitCode = ansibleCommandExecutor.run(executionContext, cmd, consumer, consumer);

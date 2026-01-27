@@ -1,9 +1,9 @@
 package co.hyperflex.clients.elastic;
 
 import co.hyperflex.clients.RestApiClient;
-import co.hyperflex.common.client.ClientConnectionDetail;
-import co.hyperflex.common.client.ClientConnectionDetailProvider;
-import co.hyperflex.common.exceptions.NotFoundException;
+import co.hyperflex.clients.client.ClientConnectionDetail;
+import co.hyperflex.clients.client.ClientConnectionDetailProvider;
+import co.hyperflex.core.exceptions.NotFoundException;
 import co.hyperflex.core.repositories.ClusterRepository;
 import co.hyperflex.core.services.secret.SecretStoreService;
 import co.hyperflex.core.utils.ClusterAuthUtils;

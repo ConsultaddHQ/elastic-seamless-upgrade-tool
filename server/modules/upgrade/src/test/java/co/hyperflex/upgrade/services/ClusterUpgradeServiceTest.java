@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
+import co.hyperflex.breakingchanges.services.deprecations.DeprecationService;
+import co.hyperflex.breakingchanges.services.deprecations.dtos.DeprecationCounts;
 import co.hyperflex.clients.elastic.ElasticClient;
 import co.hyperflex.clients.elastic.ElasticsearchClientProvider;
 import co.hyperflex.clients.elastic.dto.GetElasticsearchSnapshotResponse;
@@ -17,14 +19,17 @@ import co.hyperflex.core.models.enums.ClusterUpgradeStatus;
 import co.hyperflex.core.repositories.ClusterNodeRepository;
 import co.hyperflex.core.repositories.ClusterRepository;
 import co.hyperflex.core.services.clusters.ClusterService;
-import co.hyperflex.core.services.deprecations.DeprecationService;
-import co.hyperflex.core.services.deprecations.dtos.DeprecationCounts;
 import co.hyperflex.core.services.notifications.NotificationService;
 import co.hyperflex.core.services.upgrade.ClusterUpgradeJobService;
 import co.hyperflex.core.upgrade.ClusterUpgradeJobEntity;
 import co.hyperflex.precheck.core.enums.PrecheckStatus;
 import co.hyperflex.precheck.services.PrecheckRunService;
 import co.hyperflex.upgrade.services.dtos.ClusterInfoResponse;
+import co.hyperflex.upgrade.services.migration.FeatureMigrationService;
+import co.hyperflex.upgrade.services.migration.FeatureMigrationStatus;
+import co.hyperflex.upgrade.services.migration.GetFeatureMigrationResponse;
+import co.hyperflex.upgrade.services.migration.IndexMigrationService;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -63,6 +68,10 @@ class ClusterUpgradeServiceTest {
   private ElasticClient elasticClient;
   @Mock
   private KibanaClient kibanaClient;
+  @Mock
+  private FeatureMigrationService featureMigrationService;
+  @Mock
+  private IndexMigrationService indexMigrationService;
   @InjectMocks
   private ClusterUpgradeService clusterUpgradeService;
   private ClusterUpgradeJobEntity clusterUpgradeJob;
@@ -73,7 +82,9 @@ class ClusterUpgradeServiceTest {
     clusterUpgradeJob = new ClusterUpgradeJobEntity();
     clusterUpgradeJob.setId("jobId");
     clusterUpgradeJob.setStatus(ClusterUpgradeStatus.PENDING);
-    clusterUpgradeJob.setCurrentVersion("8.0.0");
+    clusterUpgradeJob.setCurrentVersion("8.19.0");
+    clusterUpgradeJob.setTargetVersion("9.0.0");
+
 
     deprecationCounts = new DeprecationCounts(0, 0);
 
@@ -93,9 +104,12 @@ class ClusterUpgradeServiceTest {
     @DisplayName("Should be upgradable when no nodes are upgraded and prechecks are complete")
     void upgradeInfo_when_prechecksCompleteAndNoNodesUpgraded_then_elasticIsUpgradable() {
       // Arrange
-      when(clusterUpgradeJobService.getActiveJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
+      when(indexMigrationService.getReindexIndexesMetadata(CLUSTER_ID)).thenReturn(new ArrayList<>());
+      when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(
+          new GetFeatureMigrationResponse(FeatureMigrationStatus.NO_MIGRATION_NEEDED));
+      when(clusterUpgradeJobService.getLatestJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
       when(precheckRunService.getStatusByUpgradeJobId(anyString())).thenReturn(PrecheckStatus.COMPLETED);
-      when(elasticClient.getValidSnapshots("8.0.0")).thenReturn(List.of(new GetElasticsearchSnapshotResponse("snapshot", new Date())));
+      when(elasticClient.getValidSnapshots("8.19.0")).thenReturn(List.of(new GetElasticsearchSnapshotResponse("snapshot", new Date())));
       when(clusterService.isNodesUpgraded(CLUSTER_ID, ClusterNodeType.ELASTIC)).thenReturn(false);
       when(clusterService.isNodesUpgraded(CLUSTER_ID, ClusterNodeType.KIBANA)).thenReturn(false);
 
@@ -114,9 +128,12 @@ class ClusterUpgradeServiceTest {
     @DisplayName("Should show failed precheck status correctly")
     void upgradeInfo_when_prechecksFailed_then_showFailedStatus() {
       // Arrange
-      when(clusterUpgradeJobService.getActiveJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
+      when(indexMigrationService.getReindexIndexesMetadata(CLUSTER_ID)).thenReturn(new ArrayList<>());
+      when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(
+          new GetFeatureMigrationResponse(FeatureMigrationStatus.NO_MIGRATION_NEEDED));
+      when(clusterUpgradeJobService.getLatestJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
       when(precheckRunService.getStatusByUpgradeJobId(anyString())).thenReturn(PrecheckStatus.FAILED);
-      when(elasticClient.getValidSnapshots("8.0.0")).thenReturn(Collections.emptyList());
+      when(elasticClient.getValidSnapshots("8.19.0")).thenReturn(Collections.emptyList());
 
       // Act
       ClusterInfoResponse response = clusterUpgradeService.upgradeInfo(CLUSTER_ID);
@@ -134,9 +151,12 @@ class ClusterUpgradeServiceTest {
     @DisplayName("Should make Kibana upgradable after all Elastic nodes are upgraded")
     void upgradeInfo_when_elasticNodesAreUpgraded_then_kibanaIsUpgradable() {
       // Arrange
-      when(clusterUpgradeJobService.getActiveJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
+      when(indexMigrationService.getReindexIndexesMetadata(CLUSTER_ID)).thenReturn(new ArrayList<>());
+      when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(
+          new GetFeatureMigrationResponse(FeatureMigrationStatus.NO_MIGRATION_NEEDED));
+      when(clusterUpgradeJobService.getLatestJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
       when(precheckRunService.getStatusByUpgradeJobId(anyString())).thenReturn(PrecheckStatus.COMPLETED);
-      when(elasticClient.getValidSnapshots("8.0.0")).thenReturn(Collections.emptyList());
+      when(elasticClient.getValidSnapshots("8.19.0")).thenReturn(Collections.emptyList());
       when(clusterService.isNodesUpgraded(CLUSTER_ID, ClusterNodeType.ELASTIC)).thenReturn(true);
       when(clusterService.isNodesUpgraded(CLUSTER_ID, ClusterNodeType.KIBANA)).thenReturn(false);
 
@@ -152,9 +172,12 @@ class ClusterUpgradeServiceTest {
     @DisplayName("Should show nothing is upgradable when all nodes are upgraded")
     void upgradeInfo_when_allNodesAreUpgraded_then_nothingIsUpgradable() {
       // Arrange
-      when(clusterUpgradeJobService.getActiveJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
+      when(indexMigrationService.getReindexIndexesMetadata(CLUSTER_ID)).thenReturn(new ArrayList<>());
+      when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(
+          new GetFeatureMigrationResponse(FeatureMigrationStatus.NO_MIGRATION_NEEDED));
+      when(clusterUpgradeJobService.getLatestJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
       when(precheckRunService.getStatusByUpgradeJobId(anyString())).thenReturn(PrecheckStatus.COMPLETED);
-      when(elasticClient.getValidSnapshots("8.0.0")).thenReturn(Collections.emptyList());
+      when(elasticClient.getValidSnapshots("8.19.0")).thenReturn(Collections.emptyList());
       when(clusterService.isNodesUpgraded(CLUSTER_ID, ClusterNodeType.ELASTIC)).thenReturn(true);
       when(clusterService.isNodesUpgraded(CLUSTER_ID, ClusterNodeType.KIBANA)).thenReturn(true);
 
@@ -163,6 +186,7 @@ class ClusterUpgradeServiceTest {
 
       // Assert
       assertFalse(response.elastic().isUpgradable());
+      assertTrue(response.isValidUpgradePath());
       assertFalse(response.kibana().isUpgradable());
     }
 
@@ -171,9 +195,12 @@ class ClusterUpgradeServiceTest {
     void upgradeInfo_when_jobStatusIsUpdated_then_nothingIsUpgradable() {
       // Arrange
       clusterUpgradeJob.setStatus(ClusterUpgradeStatus.UPDATED);
-      when(clusterUpgradeJobService.getActiveJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
+      when(indexMigrationService.getReindexIndexesMetadata(CLUSTER_ID)).thenReturn(new ArrayList<>());
+      when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(
+          new GetFeatureMigrationResponse(FeatureMigrationStatus.NO_MIGRATION_NEEDED));
+      when(clusterUpgradeJobService.getLatestJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
       when(precheckRunService.getStatusByUpgradeJobId(anyString())).thenReturn(PrecheckStatus.COMPLETED);
-      when(elasticClient.getValidSnapshots("8.0.0")).thenReturn(Collections.emptyList());
+      when(elasticClient.getValidSnapshots("8.19.0")).thenReturn(Collections.emptyList());
 
       // Act
       ClusterInfoResponse response = clusterUpgradeService.upgradeInfo(CLUSTER_ID);
@@ -181,6 +208,7 @@ class ClusterUpgradeServiceTest {
       // Assert
       assertFalse(response.elastic().isUpgradable());
       assertFalse(response.kibana().isUpgradable());
+      assertTrue(response.isValidUpgradePath());
     }
 
     @Test
@@ -188,8 +216,8 @@ class ClusterUpgradeServiceTest {
     void upgradeInfo_when_jobStatusIsUpdating_then_precheckIsCompleted() {
       // Arrange
       clusterUpgradeJob.setStatus(ClusterUpgradeStatus.UPGRADING);
-      when(clusterUpgradeJobService.getActiveJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
-      when(elasticClient.getValidSnapshots("8.0.0")).thenReturn(Collections.emptyList());
+      when(clusterUpgradeJobService.getLatestJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
+      when(elasticClient.getValidSnapshots("8.19.0")).thenReturn(Collections.emptyList());
       when(clusterService.isNodesUpgraded(CLUSTER_ID, ClusterNodeType.ELASTIC)).thenReturn(false);
 
       // Act
@@ -199,6 +227,29 @@ class ClusterUpgradeServiceTest {
       assertTrue(response.elastic().isUpgradable());
       assertFalse(response.kibana().isUpgradable());
       assertEquals(PrecheckStatus.COMPLETED, response.precheck().status());
+      assertTrue(response.isValidUpgradePath());
+    }
+
+    @Test
+    @DisplayName("Should show invalid upgrade path when job has skipped major upgrade")
+    void upgradeInfo_when_jobSkippedMajor_then_UpgradePathIsInvalid() {
+      // Arrange
+      when(indexMigrationService.getReindexIndexesMetadata(CLUSTER_ID)).thenReturn(new ArrayList<>());
+      when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(
+          new GetFeatureMigrationResponse(FeatureMigrationStatus.NO_MIGRATION_NEEDED));
+      clusterUpgradeJob.setStatus(ClusterUpgradeStatus.UPDATED);
+      clusterUpgradeJob.setTargetVersion("11.0.0");
+      when(clusterUpgradeJobService.getLatestJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
+      when(precheckRunService.getStatusByUpgradeJobId(anyString())).thenReturn(PrecheckStatus.COMPLETED);
+      when(elasticClient.getValidSnapshots("8.19.0")).thenReturn(Collections.emptyList());
+
+      // Act
+      ClusterInfoResponse response = clusterUpgradeService.upgradeInfo(CLUSTER_ID);
+
+      // Assert
+      assertFalse(response.elastic().isUpgradable());
+      assertFalse(response.kibana().isUpgradable());
+      assertFalse(response.isValidUpgradePath());
     }
   }
 }

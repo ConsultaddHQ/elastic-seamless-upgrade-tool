@@ -9,16 +9,14 @@ import co.hyperflex.clients.kibana.KibanaClient;
 import co.hyperflex.clients.kibana.KibanaClientProvider;
 import co.hyperflex.clients.kibana.dto.GetKibanaStatusResponse;
 import co.hyperflex.clients.kibana.dto.OsStats;
-import co.hyperflex.common.exceptions.BadRequestException;
-import co.hyperflex.common.exceptions.NotFoundException;
-import co.hyperflex.common.utils.HashUtil;
-import co.hyperflex.common.utils.UrlUtils;
 import co.hyperflex.core.entites.clusters.ClusterEntity;
 import co.hyperflex.core.entites.clusters.ElasticCloudClusterEntity;
 import co.hyperflex.core.entites.clusters.SelfManagedClusterEntity;
 import co.hyperflex.core.entites.clusters.nodes.ClusterNodeEntity;
 import co.hyperflex.core.entites.clusters.nodes.ElasticNodeEntity;
 import co.hyperflex.core.entites.clusters.nodes.KibanaNodeEntity;
+import co.hyperflex.core.exceptions.BadRequestException;
+import co.hyperflex.core.exceptions.NotFoundException;
 import co.hyperflex.core.mappers.ClusterMapper;
 import co.hyperflex.core.models.clusters.Distro;
 import co.hyperflex.core.models.clusters.OperatingSystemInfo;
@@ -36,6 +34,7 @@ import co.hyperflex.core.services.clusters.dtos.ClusterOverviewResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterKibanaNodeResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterNodeResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterResponse;
+import co.hyperflex.core.services.clusters.dtos.SyncClusterNodesResponse;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterCredentialRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterCredentialResponse;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterRequest;
@@ -46,7 +45,9 @@ import co.hyperflex.core.services.clusters.dtos.UpdateSelfManagedClusterRequest;
 import co.hyperflex.core.services.secret.SecretStoreService;
 import co.hyperflex.core.services.ssh.SshKeyService;
 import co.hyperflex.core.utils.ClusterAuthUtils;
+import co.hyperflex.core.utils.HashUtil;
 import co.hyperflex.core.utils.NodeRoleRankerUtils;
+import co.hyperflex.core.utils.UrlUtils;
 import jakarta.validation.constraints.NotNull;
 import java.io.File;
 import java.io.IOException;
@@ -148,6 +149,13 @@ public class ClusterServiceImpl implements ClusterService {
     clusterRepository.save(cluster);
     syncElasticNodes(cluster);
     return new UpdateClusterResponse();
+  }
+
+  @Override
+  public SyncClusterNodesResponse syncClusterNodes(String clusterId) {
+    ClusterEntity clusterEntity = clusterRepository.getCluster(clusterId);
+    syncElasticNodes(clusterEntity);
+    return new SyncClusterNodesResponse();
   }
 
   @Override
@@ -271,7 +279,7 @@ public class ClusterServiceImpl implements ClusterService {
       String healthStatus = elasticClient.getHealthStatus();
       var counts = elasticClient.getEntitiesCounts();
       return new ClusterOverviewResponse(cluster.getName(), info.getClusterUuid(), healthStatus, info.getVersion().getNumber(), false,
-          counts.dataNodes(), counts.totalNodes(), activeMasters.size(),
+          counts.dataNodes(), counts.totalNodes(), counts.masterNodes(),
           activeMasters.stream().map(MasterRecord::getId).collect(Collectors.joining(",")), adaptiveReplicaEnabled, indicesCount,
           counts.activePrimaryShards(), counts.activeShards(), counts.unassignedShards(), counts.initializingShards(),
           counts.relocatingShards(), cluster.getType().getDisplayName());

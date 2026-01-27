@@ -30,7 +30,7 @@ public class AddYumRepositoryTask extends AbstractAnsibleTask {
         .yumRepository()
         .args(Map.of(
             "name", "elasticsearch",
-            "description", description,
+            "description", "'" + description + "'",
             "baseurl", baseUrl,
             "gpgcheck", "1",
             "gpgkey", GPG_KEY_URL,

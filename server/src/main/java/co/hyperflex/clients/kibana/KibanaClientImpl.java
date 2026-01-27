@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
-public class KibanaClientImpl extends RestApiClient implements KibanaClient {
+public class KibanaClientImpl extends RestApiClient implements co.hyperflex.clients.kibana.KibanaClient {
 
   private static final Logger logger = LoggerFactory.getLogger(KibanaClientImpl.class);
   private final String kibanaUrl;
@@ -28,7 +28,7 @@ public class KibanaClientImpl extends RestApiClient implements KibanaClient {
 
   @Override
   public boolean isKibanaReady(String host) {
-    String url = protocol + host + ":5601/api/kibana/settings";
+    String url = protocol + host + ":5601/api/status";
     try {
       restClient.get().uri(url).retrieve().toBodilessEntity();
       return true;

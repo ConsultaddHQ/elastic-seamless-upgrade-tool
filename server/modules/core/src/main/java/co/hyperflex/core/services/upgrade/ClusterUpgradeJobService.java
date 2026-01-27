@@ -3,8 +3,8 @@ package co.hyperflex.core.services.upgrade;
 import co.hyperflex.clients.elastic.ElasticClient;
 import co.hyperflex.clients.elastic.ElasticsearchClientProvider;
 import co.hyperflex.clients.elastic.dto.info.InfoResponse;
-import co.hyperflex.common.exceptions.ConflictException;
-import co.hyperflex.common.exceptions.NotFoundException;
+import co.hyperflex.core.exceptions.ConflictException;
+import co.hyperflex.core.exceptions.NotFoundException;
 import co.hyperflex.core.models.enums.ClusterUpgradeStatus;
 import co.hyperflex.core.repositories.ClusterUpgradeJobRepository;
 import co.hyperflex.core.services.clusters.ClusterService;
@@ -18,6 +18,7 @@ import co.hyperflex.core.services.upgrade.dtos.GetUpgradeJobStatusResponse;
 import co.hyperflex.core.services.upgrade.dtos.StopClusterUpgradeResponse;
 import co.hyperflex.core.upgrade.ClusterUpgradeJobEntity;
 import co.hyperflex.core.utils.UpgradePathUtils;
+import co.hyperflex.core.utils.VersionUtils;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import org.slf4j.Logger;
@@ -104,8 +105,8 @@ public class ClusterUpgradeJobService {
     clusterService.resetUpgradeStatus(clusterId);
 
     notificationService.sendNotification(new UpgradeJobCreatedEvent(existingJob.getId(), clusterId));
-
-    return new CreateClusterUpgradeJobResponse("Cluster upgrade job created successfully", existingJob.getId());
+    boolean isValidUpgradePath = VersionUtils.isValidUpgrade(currentVersion, request.targetVersion());
+    return new CreateClusterUpgradeJobResponse("Cluster upgrade job created successfully", existingJob.getId(), isValidUpgradePath);
   }
 
   public StopClusterUpgradeResponse stopClusterUpgrade(@NotNull String clusterId) {

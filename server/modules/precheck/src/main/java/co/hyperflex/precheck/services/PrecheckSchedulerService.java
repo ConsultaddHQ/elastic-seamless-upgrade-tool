@@ -3,13 +3,13 @@ package co.hyperflex.precheck.services;
 import co.hyperflex.clients.elastic.ElasticClient;
 import co.hyperflex.clients.elastic.ElasticsearchClientProvider;
 import co.hyperflex.clients.elastic.dto.cat.indices.IndicesRecord;
-import co.hyperflex.common.utils.HashUtil;
 import co.hyperflex.core.services.clusters.ClusterService;
 import co.hyperflex.core.services.clusters.dtos.GetClusterNodeResponse;
 import co.hyperflex.core.services.notifications.NotificationService;
 import co.hyperflex.core.services.notifications.UpgradeJobCreatedEvent;
 import co.hyperflex.core.services.upgrade.ClusterUpgradeJobService;
 import co.hyperflex.core.upgrade.ClusterUpgradeJobEntity;
+import co.hyperflex.core.utils.HashUtil;
 import co.hyperflex.precheck.contexts.IndexContext;
 import co.hyperflex.precheck.contexts.NodeContext;
 import co.hyperflex.precheck.contexts.PrecheckContext;
@@ -80,6 +80,7 @@ public class PrecheckSchedulerService {
           precheckRun.setSeverity(precheck.getSeverity());
           precheckRun.setClusterId(clusterId);
           precheckRun.setName(precheck.getName());
+          precheckRun.setSkippable(precheck.skippable());
           return precheckRun;
         }).filter(precheckRun -> {
           PrecheckContext context = precheckContextResolver.resolveContext(precheckRun);
@@ -97,6 +98,7 @@ public class PrecheckSchedulerService {
       precheckRun.setSeverity(precheck.getSeverity());
       precheckRun.setClusterId(clusterId);
       precheckRun.setName(precheck.getName());
+      precheckRun.setSkippable(precheck.skippable());
       return precheckRun;
     }).forEach(precheckRunRepository::save);
   }
@@ -112,13 +114,14 @@ public class PrecheckSchedulerService {
             .stream()
             .map(index -> {
               IndexPrecheckRunEntity precheckRun = new IndexPrecheckRunEntity();
-              precheckRun.setId(HashUtil.generateHash(precheck.getId() + ":" + upgradeJobId + ":" + index));
+              precheckRun.setId(HashUtil.generateHash(precheck.getId() + ":" + upgradeJobId + ":" + index.getIndex()));
               precheckRun.setIndex(new IndexPrecheckRunEntity.IndexInfo(index.getIndex()));
               precheckRun.setPrecheckId(precheck.getId());
               precheckRun.setClusterUpgradeJobId(upgradeJobId);
               precheckRun.setSeverity(precheck.getSeverity());
               precheckRun.setName(precheck.getName());
               precheckRun.setClusterId(clusterId);
+              precheckRun.setSkippable(precheck.skippable());
               return precheckRun;
             }).filter(precheckRun -> {
               PrecheckContext context = precheckContextResolver.resolveContext(precheckRun);
@@ -137,10 +140,7 @@ public class PrecheckSchedulerService {
   public void postConstruct() {
     notificationService.addNotificationListener(notification -> {
       if (notification instanceof UpgradeJobCreatedEvent event) {
-        boolean precheckExists = precheckRunService.precheckExistsForJob(event.getUpgradeJobId());
-        if (!precheckExists) {
-          schedule(event.getClusterId());
-        }
+        schedule(event.getClusterId());
       }
     });
   }

@@ -1,6 +1,6 @@
 package co.hyperflex.precheck.concrete.index;
 
-import co.hyperflex.common.client.ApiRequest;
+import co.hyperflex.clients.client.ApiRequest;
 import co.hyperflex.precheck.contexts.IndexContext;
 import co.hyperflex.precheck.core.BaseIndexPrecheck;
 import co.hyperflex.precheck.core.enums.PrecheckSeverity;

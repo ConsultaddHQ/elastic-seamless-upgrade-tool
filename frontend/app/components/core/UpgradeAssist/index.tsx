@@ -18,6 +18,7 @@ import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
 function UpgradeAssistant() {
 	const { clusterId } = useParams()
 	const [infraType, setInfraType] = useState<string>("")
+	const [isValidUpgradePath, setIsValidUpgradePath] = useState<boolean>(false)
 	useEffect(() => {
 		if (clusterId) {
 			clusterApi.getCluster(clusterId).then((cluster) => {
@@ -31,6 +32,8 @@ function UpgradeAssistant() {
 	const setElasticNodeUpgradeAllowed = useSafeRouteStore((state) => state.setElasticNodeUpgradeAllowed)
 	const setKibanaNodeUpgradeAllowed = useSafeRouteStore((state) => state.setKibanaNodeUpgradeAllowed)
 	const setPrecheckAllowed = useSafeRouteStore((state) => state.setPrecheckAllowed)
+
+
 
 	// Format remaining time in HH:MM:SS
 	const formatTime = (milliseconds: number | null): string => {
@@ -50,6 +53,7 @@ function UpgradeAssistant() {
 		"3": "NOTVISITED",
 		"4": "NOTVISITED",
 		"5": "NOTVISITED",
+		"6": "NOTVISITED",
 	})
 
 	const handleRoutingStates = (
@@ -67,30 +71,46 @@ function UpgradeAssistant() {
 		if (upgradeInfo?.elastic?.snapshot?.snapshot) {
 			startTimer(moment.utc(upgradeInfo?.elastic?.snapshot?.snapshot.createdAt).local().valueOf())
 		}
-		const { elastic, kibana, precheck } = upgradeInfo ?? {}
+		const {
+			elastic,
+			kibana,
+			precheck,
+			isValidUpgradePath: isValidUpgradePath1,
+			featureMigration,
+			customIndexMigration,
+		} = upgradeInfo ?? {}
 		const step1Status = elastic?.snapshot?.snapshot ? "COMPLETED" : "PENDING"
+		setIsValidUpgradePath(isValidUpgradePath1)
 
 		const step2Status =
-			step1Status !== "COMPLETED" ? "NOTVISITED" : precheck?.status === "COMPLETED" ? "COMPLETED" : "PENDING"
-
-		// Helper function to sum deprecations safely
-		const sumDeprecations = (type: string) =>
-			(elastic?.deprecationCounts?.[type] ?? 1) + (kibana?.deprecationCounts?.[type] ?? 1)
-
-		// Step 2 calculations
-		const criticalDeprecations = sumDeprecations("critical")
-		const warningDeprecations = sumDeprecations("warning")
-
-		const step3Status =
-			step2Status !== "COMPLETED"
+			step1Status !== "COMPLETED"
 				? "NOTVISITED"
-				: criticalDeprecations > 0
+				: (featureMigration?.status === "MIGRATION_NEEDED" || featureMigration?.status === "ERROR" ||
+				  customIndexMigration?.status === "MIGRATION_NEEDED" || customIndexMigration?.status === "ERROR")
 				? "PENDING"
-				: warningDeprecations > 0
+				: (featureMigration?.status === "IN_PROGRESS" || customIndexMigration?.status === "IN_PROGRESS")
 				? "INPROGRESS"
 				: "COMPLETED"
 
-		// Helper for subsequent steps
+		const step3Status =
+			step2Status === "NOTVISITED" ? "NOTVISITED" : precheck?.status === "COMPLETED" ? "COMPLETED" : "PENDING"
+
+
+		const sumDeprecations = (type: string) =>
+			(elastic?.deprecationCounts?.[type] ?? 1) + (kibana?.deprecationCounts?.[type] ?? 1)
+
+		
+		const criticalDeprecations = sumDeprecations("critical")
+		const warningDeprecations = sumDeprecations("warning")
+
+		const step4Status =
+			step3Status !== "COMPLETED"
+				? "NOTVISITED"
+				: criticalDeprecations > 0 || warningDeprecations > 0
+				? "INPROGRESS"
+				: "COMPLETED"
+
+		
 		const getNextStepStatus = (prevStatus: string, isUpgradable: boolean) =>
 			prevStatus === "PENDING" || prevStatus === "NOTVISITED"
 				? "NOTVISITED"
@@ -98,9 +118,8 @@ function UpgradeAssistant() {
 				? "PENDING"
 				: "COMPLETED"
 
-		const step4Status = getNextStepStatus(step3Status, elastic?.isUpgradable)
-		const step5Status = getNextStepStatus(step4Status, kibana?.isUpgradable)
-		// const step5Status = "NOTVISITED"
+		const step5Status = getNextStepStatus(step4Status, elastic?.isUpgradable)
+		const step6Status = getNextStepStatus(step5Status, kibana?.isUpgradable)
 
 		setStepStatus({
 			"1": step1Status,
@@ -108,14 +127,15 @@ function UpgradeAssistant() {
 			"3": step3Status,
 			"4": step4Status,
 			"5": step5Status,
+			"6": step6Status,
 		})
 
 		if (step2Status !== "NOTVISITED") {
 			setPrecheckAllowed(true)
 		}
-		handleRoutingStates(step3Status, setDeprecationChangesAllowed)
-		handleRoutingStates(step4Status, setElasticNodeUpgradeAllowed)
-		handleRoutingStates(step5Status, setKibanaNodeUpgradeAllowed)
+		handleRoutingStates(step4Status, setDeprecationChangesAllowed)
+		handleRoutingStates(step5Status, setElasticNodeUpgradeAllowed)
+		handleRoutingStates(step6Status, setKibanaNodeUpgradeAllowed)
 		setDeploymentId(upgradeInfo?.deploymentId ?? "")
 		return upgradeInfo
 	}
@@ -131,6 +151,7 @@ function UpgradeAssistant() {
 	const step3Data = getStepIndicatorData("03", stepStatus["3"])
 	const step4Data = getStepIndicatorData("04", stepStatus["4"])
 	const step5Data = getStepIndicatorData("05", stepStatus["5"])
+	const step6Data = getStepIndicatorData("06", stepStatus["6"])
 
 	if (isLoading || isRefetching) {
 		return (
@@ -139,13 +160,16 @@ function UpgradeAssistant() {
 					<Box height="88px" />
 				</Skeleton>
 				<Skeleton className="w-full rounded-[20px]">
-					<Box height="108px" />
+					<Box height="88px" />
+				</Skeleton>
+				<Skeleton className="w-full rounded-[20px]">
+					<Box height="88px" />
+				</Skeleton>
+				<Skeleton className="w-full rounded-[20px]">
+					<Box height="88px" />
 				</Skeleton>
 				<Skeleton className="w-full rounded-[20px]">
 					<Box height="229.5px" />
-				</Skeleton>
-				<Skeleton className="w-full rounded-[20px]">
-					<Box height="108px" />
 				</Skeleton>
 				<Skeleton className="w-full rounded-[20px]">
 					<Box height="108px" />
@@ -181,19 +205,9 @@ function UpgradeAssistant() {
 							Make sure you have a current snapshot before making an changes.
 						</Typography>
 					</Box>
-					{!(stepStatus["01"] === "COMPLETED") ? (
+					{!(stepStatus["1"] === "COMPLETED") ? (
 						data?.elastic?.snapshot?.snapshot ? (
 							<Box className="flex flex-col gap-[6px] items-end">
-								{/* <Tooltip
-									content={"You have to take snapshot again after the time ends."}
-									closeDelay={0}
-									color="foreground"
-									size="sm"
-									radius="sm"
-									placement="left"
-								>
-									<InfoCircle size="14px" color="#6E6E6E" />
-								</Tooltip> */}
 								<Typography
 									fontSize="14px"
 									fontWeight="400"
@@ -243,7 +257,7 @@ function UpgradeAssistant() {
 				<Box className="flex flex-row gap-3 items-center rounded-[20px] justify-between w-full">
 					<Box className="flex flex-col gap-[6px]">
 						<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
-							Prechecks
+							Migrate Indices
 						</Typography>
 						<Typography
 							color="#6E6E6E"
@@ -252,22 +266,20 @@ function UpgradeAssistant() {
 							lineHeight="20px"
 							letterSpacing="0.26px"
 						>
-							Prechecks verify your cluster's readiness for upgrade by running essential health and
-							configuration checks. Your Cluster needs to pass all the Prechecks to be eligible for
-							upgrade.
+							Manage system and custom indices to ensure compatibility with the new version.
 						</Typography>
 					</Box>
-				</Box>
-				<Box className="flex items-start">
-					<OutlinedBorderButton
-						component={Link}
-						to={`/${clusterId}/prechecks`}
-						disabled={stepStatus["2"] === "NOTVISITED"}
-						borderRadius="50%"
-						sx={{ minWidth: "38px !important", minHeight: "38px !important", padding: "0px" }}
-					>
-						<FiArrowUpRight size="20px" color="#FFF" />
-					</OutlinedBorderButton>
+					<Box className="flex items-start">
+						<OutlinedBorderButton
+							component={Link}
+							to={`/${clusterId}/migrate-indices`}
+							disabled={stepStatus["1"] !== "COMPLETED"}
+							borderRadius="50%"
+							sx={{ minWidth: "38px !important", minHeight: "38px !important", padding: "0px" }}
+						>
+							<FiArrowUpRight size="20px" color="#FFF" />
+						</OutlinedBorderButton>
+					</Box>
 				</Box>
 			</StepBox>
 			<StepBox
@@ -279,6 +291,46 @@ function UpgradeAssistant() {
 				internalBackground={step3Data?.internalBackground}
 				textColor={step3Data?.textColor}
 				stepValue={step3Data?.stepValue}
+			>
+				<Box className="flex flex-row gap-3 items-center rounded-[20px] justify-between w-full">
+					<Box className="flex flex-col gap-[6px]">
+						<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
+							Prechecks
+						</Typography>
+						<Typography
+							color="#6E6E6E"
+							fontSize="13px"
+							fontWeight="400"
+							lineHeight="20px"
+							letterSpacing="0.26px"
+						>
+							Prechecks ensure your cluster is ready for an upgrade by performing key health and
+							configuration validations. Your cluster must pass all Prechecks to qualify for the
+							upgrade.Prechecks verify
+						</Typography>
+					</Box>
+				</Box>
+				<Box className="flex items-start">
+					<OutlinedBorderButton
+						component={Link}
+						to={`/${clusterId}/prechecks`}
+						disabled={stepStatus["3"] === "NOTVISITED"}
+						borderRadius="50%"
+						sx={{ minWidth: "38px !important", minHeight: "38px !important", padding: "0px" }}
+					>
+						<FiArrowUpRight size="20px" color="#FFF" />
+					</OutlinedBorderButton>
+				</Box>
+			</StepBox>
+			<StepBox
+				currentStepStatus={stepStatus["4"]}
+				nextStepStatus={stepStatus["5"]}
+				boxBackground={step4Data?.boxBackground}
+				background={step4Data?.background}
+				boxShadow={step4Data?.boxShadow}
+				internalBackground={step4Data?.internalBackground}
+				textColor={step4Data?.textColor}
+				stepValue={step4Data?.stepValue}
 			>
 				<Box className="flex flex-col gap-[10px] rounded-[20px] w-full">
 					<Box className="flex flex-col gap-[6px]">
@@ -292,10 +344,10 @@ function UpgradeAssistant() {
 							lineHeight="20px"
 							letterSpacing="0.26px"
 						>
-							You must resolve any critical Elasticsearch and Kibana configuration issues before upgrading
-							to Elastic 8.x. Ignoring warnings might result in differences in behavior after you upgrade.
-							If you have application code that calls Elasticsearch APIs, review the Elasticsearch
-							deprecation logs to make sure you are not using deprecated APIs.
+							You must resolve all critical Elasticsearch and Kibana configuration issues before
+							performing any upgrade. Ignoring warnings may lead to unexpected behavior after the upgrade.
+							If your application uses Elasticsearch APIs, review the deprecation logs to ensure it does
+							not rely on deprecated endpoints or features.
 						</Typography>
 					</Box>
 					<Box className="flex flex-row gap-8 flex-grow w-full" flexWrap={{ xs: "wrap", md: "nowrap" }}>
@@ -303,28 +355,28 @@ function UpgradeAssistant() {
 							title="Elastic search"
 							criticalValue={data?.elastic?.deprecationCounts.critical ?? "NaN"}
 							warningValue={data?.elastic?.deprecationCounts.warning ?? "NaN"}
-							isDisabled={step3Data?.isDisabled}
+							isDisabled={step4Data?.isDisabled}
 							to={`/${clusterId}/elastic/deprecation-logs`}
 						/>
 						<DeprectedSettings
 							title="Kibana"
 							criticalValue={data?.kibana?.deprecationCounts.critical ?? "NaN"}
 							warningValue={data?.kibana?.deprecationCounts.warning ?? "NaN"}
-							isDisabled={step3Data?.isDisabled}
+							isDisabled={step4Data?.isDisabled}
 							to={`/${clusterId}/kibana/deprecation-logs`}
 						/>
 					</Box>
 				</Box>
 			</StepBox>
 			<StepBox
-				currentStepStatus={stepStatus["4"]}
-				nextStepStatus={stepStatus["5"]}
-				boxBackground={step4Data?.boxBackground}
-				background={step4Data?.background}
-				boxShadow={step4Data?.boxShadow}
-				internalBackground={step4Data?.internalBackground}
-				textColor={step4Data?.textColor}
-				stepValue={step4Data?.stepValue}
+				currentStepStatus={stepStatus["5"]}
+				nextStepStatus={stepStatus["6"]}
+				boxBackground={step5Data?.boxBackground}
+				background={step5Data?.background}
+				boxShadow={step5Data?.boxShadow}
+				internalBackground={step5Data?.internalBackground}
+				textColor={step5Data?.textColor}
+				stepValue={step5Data?.stepValue}
 				lastNode={infraType === "ELASTIC_CLOUD" ? true : false}
 			>
 				<Box className="flex flex-row gap-3 items-center rounded-[20px] justify-between w-full">
@@ -339,8 +391,9 @@ function UpgradeAssistant() {
 							lineHeight="20px"
 							letterSpacing="0.26px"
 						>
-							Once you've resolved all critical issues and verified that your applications are ready, you
-							can upgrade to Elastic 8.x. Be sure to back up your data again before upgrading.
+							Once you’ve resolved all critical issues and confirmed that your applications are ready, you
+							can proceed with the upgrade. Make sure to take a fresh backup of your data before starting
+							the upgrade process.
 						</Typography>
 					</Box>
 					{infraType == "ELASTIC_CLOUD" ? (
@@ -348,11 +401,20 @@ function UpgradeAssistant() {
 							<a
 								target="_blank"
 								href={`https://cloud.elastic.co/deployments/${deploymentId}?show_upgrade=true`}
+								onClick={(e) => {
+									if (!isValidUpgradePath) {
+										e.preventDefault()
+									}
+								}}
 							>
 								<OutlinedBorderButton
-									disabled={stepStatus["2"] === "NOTVISITED"}
+									disabled={step5Data?.isDisabled || !isValidUpgradePath}
 									borderRadius="50%"
-									sx={{ minWidth: "38px !important", minHeight: "38px !important", padding: "0px" }}
+									sx={{
+										minWidth: "38px !important",
+										minHeight: "38px !important",
+										padding: "0px",
+									}}
 								>
 									<FiArrowUpRight size="20px" color="#FFF" />
 								</OutlinedBorderButton>
@@ -362,7 +424,7 @@ function UpgradeAssistant() {
 						<OutlinedBorderButton
 							component={Link}
 							to={`/${clusterId}/elastic/upgrade`}
-							disabled={step4Data?.isDisabled}
+							disabled={step5Data?.isDisabled || !isValidUpgradePath}
 							icon={Flash}
 							filledIcon={Flash}
 						>
@@ -374,12 +436,12 @@ function UpgradeAssistant() {
 			{infraType != "ELASTIC_CLOUD" && (
 				<StepBox
 					lastNode={true}
-					boxBackground={step5Data?.boxBackground}
-					background={step5Data?.background}
-					boxShadow={step5Data?.boxShadow}
-					internalBackground={step5Data?.internalBackground}
-					textColor={step5Data?.textColor}
-					stepValue={step5Data?.stepValue}
+					boxBackground={step6Data?.boxBackground}
+					background={step6Data?.background}
+					boxShadow={step6Data?.boxShadow}
+					internalBackground={step6Data?.internalBackground}
+					textColor={step6Data?.textColor}
+					stepValue={step6Data?.stepValue}
 				>
 					<Box className="flex flex-row gap-3 items-center rounded-[20px] justify-between w-full">
 						<Box className="flex flex-col gap-[6px]">
@@ -393,14 +455,16 @@ function UpgradeAssistant() {
 								lineHeight="20px"
 								letterSpacing="0.26px"
 							>
-								Once you've resolved all critical issues and verified that your applications are ready,
-								you can upgrade to Elastic 8.x. Be sure to back up your data again before upgrading.
+								Once you’ve resolved all critical issues and confirmed that your applications are ready,
+								you can proceed with the upgrade. Make sure to take a fresh backup of your data before
+								starting the upgrade process.
 							</Typography>
 						</Box>
+
 						<OutlinedBorderButton
 							component={Link}
 							to={`/${clusterId}/kibana/upgrade`}
-							disabled={step5Data?.isDisabled}
+							disabled={step6Data?.isDisabled || !isValidUpgradePath}
 							icon={Flash}
 							filledIcon={Flash}
 						>
@@ -409,7 +473,7 @@ function UpgradeAssistant() {
 					</Box>
 				</StepBox>
 			)}
-			{stepStatus["5"] === "COMPLETED" ? (
+			{stepStatus["6"] === "COMPLETED" ? (
 				<Box className="sticky bottom-0 z-50">
 					<Box
 						className="flex p-[0.4px] w-full rounded-[14px]"

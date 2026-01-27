@@ -1,0 +1,148 @@
+version: "3.8"
+
+services:
+  es01:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
+    container_name: es01
+    environment:
+      - node.name=es01
+      - cluster.name=es-docker-7x
+      - network.host=0.0.0.0
+
+      # Discovery / bootstrap
+      - discovery.seed_hosts=es01,es02,es03
+      - cluster.initial_master_nodes=es01
+
+      # Roles: master + ingest (no data)
+      - node.master=true
+      - node.data=false
+      - node.ingest=true
+
+      # Allow FS snapshot repo path
+      - path.repo=/usr/share/elasticsearch/snapshots
+
+      # Memory / bootstrap
+      - bootstrap.memory_lock=true
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+
+      # Security ON (no TLS for local/dev)
+      - xpack.security.enabled=true
+      - xpack.security.transport.ssl.enabled=false
+      - xpack.security.http.ssl.enabled=false
+
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata01:/usr/share/elasticsearch/data
+      - essnapshots:/usr/share/elasticsearch/snapshots
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - esnet
+
+  es02:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
+    container_name: es02
+    environment:
+      - node.name=es02
+      - cluster.name=es-docker-7x
+      - network.host=0.0.0.0
+
+      - discovery.seed_hosts=es01,es02,es03
+      - cluster.initial_master_nodes=es01
+
+      # Roles: data node
+      - node.master=false
+      - node.data=true
+      - node.ingest=false
+
+      - path.repo=/usr/share/elasticsearch/snapshots
+
+      - bootstrap.memory_lock=true
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+
+      - xpack.security.enabled=true
+      - xpack.security.transport.ssl.enabled=false
+      - xpack.security.http.ssl.enabled=false
+
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata02:/usr/share/elasticsearch/data
+      - essnapshots:/usr/share/elasticsearch/snapshots
+    networks:
+      - esnet
+
+  es03:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
+    container_name: es03
+    environment:
+      - node.name=es03
+      - cluster.name=es-docker-7x
+      - network.host=0.0.0.0
+
+      - discovery.seed_hosts=es01,es02,es03
+      - cluster.initial_master_nodes=es01
+
+      # Roles: data node
+      - node.master=false
+      - node.data=true
+      - node.ingest=false
+
+      - path.repo=/usr/share/elasticsearch/snapshots
+
+      - bootstrap.memory_lock=true
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+
+      - xpack.security.enabled=true
+      - xpack.security.transport.ssl.enabled=false
+      - xpack.security.http.ssl.enabled=false
+
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata03:/usr/share/elasticsearch/data
+      - essnapshots:/usr/share/elasticsearch/snapshots
+    networks:
+      - esnet
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.10.2
+    container_name: kibana
+    depends_on:
+      - es01
+      - es02
+      - es03
+    environment:
+      - SERVER_NAME=kibana
+      - SERVER_HOST=0.0.0.0
+
+      # Kibana -> ES (use docker DNS)
+      - ELASTICSEARCH_HOSTS=http://es01:9200
+
+      # For initial setup, use elastic superuser.
+      # After you create "hyperflex", you can switch Kibana to that user if you want.
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=hyperflex
+
+    ports:
+      - "5601:5601"
+    networks:
+      - esnet
+
+volumes:
+  esdata01:
+  esdata02:
+  esdata03:
+  essnapshots:
+
+networks:
+  esnet:
+    driver: bridge

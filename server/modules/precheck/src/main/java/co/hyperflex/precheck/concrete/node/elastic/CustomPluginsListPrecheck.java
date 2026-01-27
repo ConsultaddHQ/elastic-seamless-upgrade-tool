@@ -2,7 +2,7 @@ package co.hyperflex.precheck.concrete.node.elastic;
 
 
 import co.hyperflex.clients.elastic.dto.nodes.PluginStats;
-import co.hyperflex.common.exceptions.NotFoundException;
+import co.hyperflex.core.exceptions.NotFoundException;
 import co.hyperflex.pluginmanager.PluginManagerFactory;
 import co.hyperflex.precheck.contexts.NodeContext;
 import co.hyperflex.precheck.core.BaseElasticNodePrecheck;

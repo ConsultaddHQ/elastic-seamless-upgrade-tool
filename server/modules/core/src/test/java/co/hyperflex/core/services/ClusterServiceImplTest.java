@@ -9,15 +9,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import co.hyperflex.clients.client.ClientConnectionDetail;
 import co.hyperflex.clients.elastic.ElasticClient;
 import co.hyperflex.clients.elastic.ElasticsearchClientProvider;
 import co.hyperflex.clients.elastic.dto.nodes.NodesInfoResponse;
 import co.hyperflex.clients.kibana.KibanaClient;
 import co.hyperflex.clients.kibana.KibanaClientProvider;
-import co.hyperflex.common.client.ClientConnectionDetail;
-import co.hyperflex.common.exceptions.BadRequestException;
-import co.hyperflex.common.exceptions.NotFoundException;
 import co.hyperflex.core.entites.clusters.SelfManagedClusterEntity;
+import co.hyperflex.core.exceptions.BadRequestException;
+import co.hyperflex.core.exceptions.NotFoundException;
 import co.hyperflex.core.mappers.ClusterMapper;
 import co.hyperflex.core.repositories.ClusterNodeRepository;
 import co.hyperflex.core.repositories.ClusterRepository;

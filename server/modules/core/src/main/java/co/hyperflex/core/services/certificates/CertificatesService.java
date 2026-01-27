@@ -1,6 +1,6 @@
 package co.hyperflex.core.services.certificates;
 
-import co.hyperflex.common.exceptions.BadRequestException;
+import co.hyperflex.core.exceptions.BadRequestException;
 import co.hyperflex.core.services.clusters.dtos.UploadCertificateResponse;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;

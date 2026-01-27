@@ -8,6 +8,7 @@ import co.hyperflex.core.services.clusters.dtos.ClusterListItemResponse;
 import co.hyperflex.core.services.clusters.dtos.ClusterOverviewResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterNodeResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterResponse;
+import co.hyperflex.core.services.clusters.dtos.SyncClusterNodesResponse;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterCredentialRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterCredentialResponse;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterRequest;
@@ -44,4 +45,6 @@ public interface ClusterService {
   List<GetAllocationExplanationResponse> getAllocationExplanation(String clusterId);
 
   void deleteCluster(String clusterId);
+
+  SyncClusterNodesResponse syncClusterNodes(String clusterId);
 }

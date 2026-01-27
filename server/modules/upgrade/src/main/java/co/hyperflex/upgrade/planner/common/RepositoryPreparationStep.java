@@ -1,9 +1,9 @@
 package co.hyperflex.upgrade.planner.common;
 
-import co.hyperflex.common.utils.VersionUtils;
 import co.hyperflex.core.entites.clusters.nodes.ClusterNodeEntity;
 import co.hyperflex.core.models.enums.PackageManager;
 import co.hyperflex.core.upgrade.ClusterUpgradeJobEntity;
+import co.hyperflex.core.utils.VersionUtils;
 import co.hyperflex.upgrade.tasks.Task;
 import co.hyperflex.upgrade.tasks.common.repository.AddRepositoryTask;
 import co.hyperflex.upgrade.tasks.common.repository.InstallAptTransportHttpsTask;

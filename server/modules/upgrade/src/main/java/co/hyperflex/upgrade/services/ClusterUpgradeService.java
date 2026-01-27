@@ -1,27 +1,23 @@
 package co.hyperflex.upgrade.services;
 
+import co.hyperflex.breakingchanges.services.deprecations.DeprecationService;
 import co.hyperflex.clients.elastic.ElasticClient;
 import co.hyperflex.clients.elastic.ElasticsearchClientProvider;
-import co.hyperflex.clients.elastic.dto.GetElasticsearchSnapshotResponse;
 import co.hyperflex.clients.kibana.KibanaClient;
 import co.hyperflex.clients.kibana.KibanaClientProvider;
-import co.hyperflex.common.exceptions.BadRequestException;
-import co.hyperflex.common.utils.VersionUtils;
 import co.hyperflex.core.entites.clusters.ClusterEntity;
 import co.hyperflex.core.entites.clusters.SelfManagedClusterEntity;
 import co.hyperflex.core.entites.clusters.nodes.ClusterNodeEntity;
+import co.hyperflex.core.exceptions.BadRequestException;
 import co.hyperflex.core.models.enums.ClusterNodeType;
 import co.hyperflex.core.models.enums.ClusterUpgradeStatus;
 import co.hyperflex.core.models.enums.NodeUpgradeStatus;
 import co.hyperflex.core.repositories.ClusterNodeRepository;
 import co.hyperflex.core.repositories.ClusterRepository;
 import co.hyperflex.core.services.clusters.ClusterService;
-import co.hyperflex.core.services.clusters.dtos.GetClusterNodeResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterResponse;
 import co.hyperflex.core.services.clusters.dtos.GetElasticCloudClusterResponse;
 import co.hyperflex.core.services.clusters.lock.ClusterLockService;
-import co.hyperflex.core.services.deprecations.DeprecationService;
-import co.hyperflex.core.services.deprecations.dtos.DeprecationCounts;
 import co.hyperflex.core.services.notifications.NotificationService;
 import co.hyperflex.core.services.notifications.UpgradeProgressChangeEvent;
 import co.hyperflex.core.services.upgrade.ClusterUpgradeJobService;
@@ -29,17 +25,25 @@ import co.hyperflex.core.services.upgrade.dtos.ClusterNodeUpgradeRequest;
 import co.hyperflex.core.services.upgrade.dtos.ClusterNodeUpgradeResponse;
 import co.hyperflex.core.services.upgrade.dtos.ClusterUpgradeResponse;
 import co.hyperflex.core.upgrade.ClusterUpgradeJobEntity;
+import co.hyperflex.core.utils.VersionUtils;
 import co.hyperflex.precheck.core.enums.PrecheckStatus;
 import co.hyperflex.precheck.services.PrecheckRunService;
 import co.hyperflex.upgrade.entities.UpgradeLogEntity;
 import co.hyperflex.upgrade.planner.UpgradePlanBuilder;
 import co.hyperflex.upgrade.services.dtos.ClusterInfoResponse;
+import co.hyperflex.upgrade.services.dtos.NodeUpgradePlanResponse;
+import co.hyperflex.upgrade.services.migration.CustomIndexMigrationStatus;
+import co.hyperflex.upgrade.services.migration.FeatureMigrationService;
+import co.hyperflex.upgrade.services.migration.FeatureMigrationStatus;
+import co.hyperflex.upgrade.services.migration.IndexMigrationService;
 import co.hyperflex.upgrade.tasks.Configuration;
 import co.hyperflex.upgrade.tasks.Context;
 import co.hyperflex.upgrade.tasks.Task;
 import co.hyperflex.upgrade.tasks.TaskResult;
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.slf4j.Logger;
@@ -63,6 +67,8 @@ public class ClusterUpgradeService {
   private final ClusterLockService clusterLockService;
   private final UpgradePlanBuilder upgradePlanBuilder;
   private final UpgradeNotificationService upgradeNotificationService;
+  private final FeatureMigrationService featureMigrationService;
+  private final IndexMigrationService indexMigrationService;
 
   public ClusterUpgradeService(ElasticsearchClientProvider elasticsearchClientProvider,
                                ClusterNodeRepository clusterNodeRepository,
@@ -74,7 +80,9 @@ public class ClusterUpgradeService {
                                PrecheckRunService precheckRunService,
                                ClusterLockService clusterLockService,
                                UpgradePlanBuilder upgradePlanBuilder,
-                               UpgradeNotificationService upgradeNotificationService) {
+                               UpgradeNotificationService upgradeNotificationService, FeatureMigrationService featureMigrationService,
+                               IndexMigrationService indexMigrationService
+  ) {
     this.elasticsearchClientProvider = elasticsearchClientProvider;
     this.clusterNodeRepository = clusterNodeRepository;
     this.clusterService = clusterService;
@@ -87,15 +95,17 @@ public class ClusterUpgradeService {
     this.clusterLockService = clusterLockService;
     this.upgradePlanBuilder = upgradePlanBuilder;
     this.upgradeNotificationService = upgradeNotificationService;
+    this.featureMigrationService = featureMigrationService;
+    this.indexMigrationService = indexMigrationService;
   }
 
-  public ClusterNodeUpgradeResponse upgradeNode(ClusterNodeUpgradeRequest request) {
+  public ClusterNodeUpgradeResponse upgradeNode(ClusterNodeUpgradeRequest request, Map<String, Boolean> flags) {
 
     ClusterEntity cluster = clusterRepository.findById(request.clusterId()).orElseThrow();
     if (cluster instanceof SelfManagedClusterEntity selfManagedCluster) {
       ClusterUpgradeJobEntity clusterUpgradeJob = clusterUpgradeJobService.getActiveJobByClusterId(request.clusterId());
       ClusterNodeEntity clusterNode = clusterNodeRepository.findById(request.nodeId()).orElseThrow();
-      upgradeNodes(selfManagedCluster, List.of(clusterNode), clusterUpgradeJob.getId());
+      upgradeNodes(selfManagedCluster, List.of(clusterNode), clusterUpgradeJob.getId(), flags);
     } else {
       throw new BadRequestException("Upgrade not supported for cluster");
     }
@@ -110,7 +120,7 @@ public class ClusterUpgradeService {
           clusterNodeRepository.findByClusterId(clusterId).stream().filter(node -> node.getType() == nodeType)
               .sorted(Comparator.comparingInt(ClusterNodeEntity::getRank)).toList();
 
-      upgradeNodes(selfManagedCluster, clusterNodes, clusterUpgradeJob.getId());
+      upgradeNodes(selfManagedCluster, clusterNodes, clusterUpgradeJob.getId(), Map.of());
     } else {
       throw new BadRequestException("Upgrade not supported for cluster");
     }
@@ -118,55 +128,59 @@ public class ClusterUpgradeService {
   }
 
   public ClusterInfoResponse upgradeInfo(String clusterId) {
-    ClusterUpgradeJobEntity activeUpgradeJob = clusterUpgradeJobService.getActiveJobByClusterId(clusterId);
+    var upgradeJob = clusterUpgradeJobService.getLatestJobByClusterId(clusterId);
     try {
       ElasticClient client = elasticsearchClientProvider.getClient(clusterId);
       KibanaClient kibanaClient = kibanaClientProvider.getClient(clusterId);
       GetClusterResponse cluster = clusterService.getClusterById(clusterId);
-      PrecheckStatus precheckStatus = null;
-      if (activeUpgradeJob != null) {
-        boolean isClusterUpgrading = activeUpgradeJob.getStatus() == ClusterUpgradeStatus.UPGRADING
-            || activeUpgradeJob.getStatus() == ClusterUpgradeStatus.PARTIALLY_UPDATED
-            || activeUpgradeJob.getStatus() == ClusterUpgradeStatus.FAILED;
-        if (isClusterUpgrading) {
-          precheckStatus = PrecheckStatus.COMPLETED;
-        } else {
-          precheckStatus = precheckRunService.getStatusByUpgradeJobId(activeUpgradeJob.getId());
-        }
-      } else {
-        precheckStatus = PrecheckStatus.COMPLETED;
-      }
+      boolean isClusterUpgrading = upgradeJob.getStatus() == ClusterUpgradeStatus.UPGRADING
+          || upgradeJob.getStatus() == ClusterUpgradeStatus.PARTIALLY_UPDATED
+          || upgradeJob.getStatus() == ClusterUpgradeStatus.FAILED;
 
-      List<GetElasticsearchSnapshotResponse> snapshots = client.getValidSnapshots(activeUpgradeJob.getCurrentVersion());
+      PrecheckStatus precheckStatus =
+          isClusterUpgrading ? PrecheckStatus.COMPLETED : precheckRunService.getStatusByUpgradeJobId(upgradeJob.getId());
 
-      DeprecationCounts kibanaDeprecationCounts = deprecationService.getKibanaDeprecationCounts(clusterId);
-      DeprecationCounts elasticDeprecationCounts = deprecationService.getElasticDeprecationCounts(clusterId);
+      var snapshots = client.getValidSnapshots(upgradeJob.getCurrentVersion());
+      var kibanaDeprecationCounts = deprecationService.getKibanaDeprecationCounts(clusterId);
+      var elasticDeprecationCounts = deprecationService.getElasticDeprecationCounts(clusterId);
 
-      boolean isClusterUpgraded = activeUpgradeJob.getStatus() == ClusterUpgradeStatus.UPDATED;
+      boolean isClusterUpgraded = upgradeJob.getStatus() == ClusterUpgradeStatus.UPDATED;
       // Evaluate upgrade status
       boolean isESUpgraded = isClusterUpgraded || clusterService.isNodesUpgraded(clusterId, ClusterNodeType.ELASTIC);
       boolean isKibanaUpgraded = isClusterUpgraded || clusterService.isNodesUpgraded(clusterId, ClusterNodeType.KIBANA);
-
+      boolean isValidUpgradePath = VersionUtils.isValidUpgrade(upgradeJob.getCurrentVersion(), upgradeJob.getTargetVersion());
       boolean isElasticUpgradable = !isESUpgraded;
       boolean isKibanaUpgradable = !isKibanaUpgraded && isESUpgraded;
 
-      ClusterInfoResponse.Elastic elastic = new ClusterInfoResponse.Elastic(isElasticUpgradable, elasticDeprecationCounts,
+      var elastic = new ClusterInfoResponse.Elastic(isElasticUpgradable, elasticDeprecationCounts,
           new ClusterInfoResponse.Elastic.SnapshotWrapper(snapshots.isEmpty() ? null : snapshots.getFirst(),
               kibanaClient.getSnapshotCreationPageUrl()));
 
-      ClusterInfoResponse.Kibana kibana = new ClusterInfoResponse.Kibana(isKibanaUpgradable, kibanaDeprecationCounts);
+      var kibana = new ClusterInfoResponse.Kibana(isKibanaUpgradable, kibanaDeprecationCounts);
 
-      ClusterInfoResponse.Precheck precheck = new ClusterInfoResponse.Precheck(precheckStatus);
-      String deploymentId = cluster instanceof GetElasticCloudClusterResponse elasticCloud ? elasticCloud.getDeploymentId() : null;
-      return new ClusterInfoResponse(elastic, kibana, precheck, deploymentId);
+      var precheck = new ClusterInfoResponse.Precheck(precheckStatus);
+      var deploymentId = cluster instanceof GetElasticCloudClusterResponse elasticCloud ? elasticCloud.getDeploymentId() : null;
+      var featureMigrationStatus = isClusterUpgrading ? FeatureMigrationStatus.NO_MIGRATION_NEEDED :
+          featureMigrationService.getFeatureMigrationResponse(clusterId).status();
+
+      var indicesToBeReIndexed = indexMigrationService.getReindexIndexesMetadata(clusterId);
+
+      var customIndexMigrationStatus =
+          (isClusterUpgrading || indicesToBeReIndexed.isEmpty()) ? CustomIndexMigrationStatus.NO_MIGRATION_NEEDED :
+              CustomIndexMigrationStatus.MIGRATION_NEEDED;
+      return new ClusterInfoResponse(elastic, kibana, precheck, deploymentId, isValidUpgradePath,
+          new ClusterInfoResponse.FeatureMigration(
+              isClusterUpgrading ? FeatureMigrationStatus.NO_MIGRATION_NEEDED : featureMigrationStatus),
+          new ClusterInfoResponse.CustomIndexMigration(customIndexMigrationStatus));
     } catch (Exception e) {
       log.error("Failed to get upgrade info for clusterId: {}", clusterId, e);
       throw new RuntimeException(e);
     }
   }
 
-  private void upgradeNodes(SelfManagedClusterEntity cluster, List<ClusterNodeEntity> nodes, String clusterUpgradeJobId) {
-
+  private void upgradeNodes(SelfManagedClusterEntity cluster, List<ClusterNodeEntity> nodes, String clusterUpgradeJobId,
+                            Map<String, Boolean> flags) {
+    validateUpgradePath(clusterUpgradeJobId);
     executorService.submit(() -> {
       try {
         final Logger log = LoggerFactory.getLogger(UpgradeLogService.class);
@@ -217,15 +231,19 @@ public class ClusterUpgradeService {
               continue;
             }
             try {
-              log.info("Starting task [name: {}] for node [ip: {}]", task.getName(), node.getIp());
-              TaskResult result = task.run(context);
-              log.info("Task [name: {}] completed for node [ip: {}] [success: {}] [result: {}] [progress: {}%]", task.getName(),
-                  node.getIp(),
-                  result.success(), result.message(), (index * 100) / tasks.size());
+              if (task.skip(flags)) {
+                log.error("Task [name: {}] skipped by user for node [ip: {}]", task.getName(), node.getIp());
+              } else {
+                log.info("Starting task [name: {}] for node [ip: {}]", task.getName(), node.getIp());
+                TaskResult result = task.run(context);
+                log.info("Task [name: {}] completed for node [ip: {}] [success: {}] [result: {}] [progress: {}%]", task.getName(),
+                    node.getIp(),
+                    result.success(), result.message(), (index * 100) / tasks.size());
 
-              if (!result.success()) {
-                log.error("Task [name: {}] failed for node [ip: {}] — {}", task.getName(), node.getIp(), result.message());
-                throw new RuntimeException(result.message());
+                if (!result.success()) {
+                  log.error("Task [name: {}] failed for node [ip: {}] — {}", task.getName(), node.getIp(), result.message());
+                  throw new RuntimeException(result.message());
+                }
               }
 
               checkPoint++;
@@ -272,8 +290,8 @@ public class ClusterUpgradeService {
 
   private void syncUpgradeJobStatus(SelfManagedClusterEntity cluster, String clusterUpgradeJobId) {
     final ClusterUpgradeJobEntity clusterUpgradeJob = clusterUpgradeJobService.getUpgradeJobById(clusterUpgradeJobId);
-    List<GetClusterNodeResponse> nodes = clusterService.getNodes(cluster.getId(), null).stream()
-        .filter(node -> node.status() != NodeUpgradeStatus.UPGRADED && !clusterUpgradeJob.getTargetVersion().equals(node.version()))
+    var nodes = clusterService.getNodes(cluster.getId(), null).stream()
+        .filter(node -> node.status() != NodeUpgradeStatus.UPGRADED)
         .toList();
     if (nodes.isEmpty()) {
       clusterUpgradeJobService.setJobStatus(clusterUpgradeJob.getId(), ClusterUpgradeStatus.UPDATED);
@@ -292,5 +310,39 @@ public class ClusterUpgradeService {
     node.setProgress(progress);
     clusterNodeRepository.save(node);
     notificationService.sendNotification(new UpgradeProgressChangeEvent());
+  }
+
+  public NodeUpgradePlanResponse clusterNodeUpgradePlan(String clusterId, String nodeId) {
+    ClusterNodeEntity node = clusterNodeRepository.findById(nodeId).orElseThrow();
+    ClusterUpgradeJobEntity upgradeJob = clusterUpgradeJobService.getActiveJobByClusterId(clusterId);
+    List<Task> tasks = upgradePlanBuilder.buildPlanFor(node, upgradeJob);
+    int index = 0;
+    int checkpoint = upgradeJob.getNodeCheckPoints().getOrDefault(nodeId, 0);
+    List<NodeUpgradePlanResponse.Task> planTasks = new LinkedList<>();
+    for (Task task : tasks) {
+      var status = NodeUpgradeStatus.AVAILABLE;
+      if (checkpoint == index) {
+        status = node.getStatus();
+      } else if (checkpoint > index) {
+        status = NodeUpgradeStatus.UPGRADED;
+      }
+
+      planTasks.add(
+          new NodeUpgradePlanResponse.Task(
+              task.getId() + "-" + index,
+              task.getName(),
+              status));
+
+      index++;
+    }
+    return new NodeUpgradePlanResponse(planTasks);
+  }
+
+  private void validateUpgradePath(String upgradeJobId) {
+    var job = clusterUpgradeJobService.getUpgradeJobById(upgradeJobId);
+    if (!VersionUtils.isValidUpgrade(job.getCurrentVersion(), job.getTargetVersion())) {
+      throw new BadRequestException("Direct upgrades across multiple major versions are not allowed."
+          + " Please complete intermediate upgrades before proceeding.");
+    }
   }
 }

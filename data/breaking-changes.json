@@ -3114,5 +3114,403 @@
         ]
       }
     ]
+  },
+  {
+    "version": "9.0",
+    "url": "https://www.elastic.co/docs/release-notes/elasticsearch/breaking-changes",
+    "breaking_changes": [
+      {
+        "category": "Aggregations",
+        "changes": [
+          {
+            "change": "Remove date histogram boolean support",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          }
+        ]
+      },
+      {
+        "category": "Allocation",
+        "changes": [
+          {
+            "change": "Increase minimum threshold in shard balancer",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          },
+          {
+            "change": "Remove cluster.routing.allocation.disk.watermark.enable_for_single_data_node setting",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          },
+          {
+            "change": "Remove cluster state from /_cluster/reroute response",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          }
+        ]
+      },
+      {
+        "category": "Analysis",
+        "changes": [
+          {
+            "change": "Snowball stemmers have been upgraded",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          },
+          {
+            "change": "The 'german2' stemmer is now an alias for the 'german' snowball stemmer",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          },
+          {
+            "change": "The 'persian' analyzer has stemmer by default",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          },
+          {
+            "change": "The Korean dictionary for Nori has been updated",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          }
+        ]
+      },
+      {
+        "category": "Authentication",
+        "changes": [
+          {
+            "change": "Configuring a bind DN in an LDAP or Active Directory (AD) realm without a corresponding bind password will prevent node from starting",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          }
+        ]
+      },
+      {
+        "category": "Cluster Coordination",
+        "changes": [
+          {
+            "change": "Remove unsupported legacy value for discovery.type",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          }
+        ]
+      },
+      {
+        "category": "EQL",
+        "changes": [
+          {
+            "change": "Set allow_partial_search_results=true by default",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          }
+        ]
+      },
+      {
+        "category": "Extract&Transform",
+        "changes": [
+          {
+            "change": "Restrict Connector APIs to manage/monitor_connector privileges",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          }
+        ]
+      },
+      {
+        "category": "Highlighting",
+        "changes": [
+          {
+            "change": "Remove support for deprecated force_source highlighting parameter",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          }
+        ]
+      },
+      {
+        "category": "Indices APIs",
+        "changes": [
+          {
+            "change": "Apply more strict parsing of actions in bulk API",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          },
+          {
+            "change": "Remove deprecated local attribute from alias APIs",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          },
+          {
+            "change": "Remove the ability to read frozen indices",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          },
+          {
+            "change": "Remove unfreeze REST endpoint",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          }
+        ]
+      },
+      {
+        "category": "Infra/Core",
+        "changes": [
+          {
+            "change": "Change Elasticsearch timeouts to 429 response instead of 5xx",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          },
+          {
+            "change": "Limit ByteSizeUnit to 2 decimals",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          },
+          {
+            "change": "Remove client.type setting",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          },
+          {
+            "change": "Remove any references to org.elasticsearch.core.RestApiVersion#V_7",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          }
+        ]
+      },
+      {
+        "category": "Infra/Logging",
+        "changes": [
+          {
+            "change": "Change deprecation.elasticsearch keyword to elasticsearch.deprecation",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          },
+          {
+            "change": "Rename deprecation index template",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          }
+        ]
+      },
+      {
+        "category": "Infra/Metrics",
+        "changes": [
+          {
+            "change": "Deprecated tracing.apm.* settings got removed.",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          }
+        ]
+      },
+      {
+        "category": "Infra/REST API",
+        "changes": [
+          {
+            "change": "Output a consistent format when generating error json",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          }
+        ]
+      },
+      {
+        "category": "Ingest Node",
+        "changes": [
+          {
+            "change": "Remove ecs option on user_agent processor",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          },
+          {
+            "change": "Remove ignored fallback option on GeoIP processor",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          }
+        ]
+      },
+      {
+        "category": "Logs",
+        "changes": [
+          {
+            "change": "Conditionally enable logsdb by default for data streams matching with logs- - pattern.",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          }
+        ]
+      },
+      {
+        "category": "Machine Learning",
+        "changes": [
+          {
+            "change": "Disable machine learning on macOS x86_64",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          }
+        ]
+      },
+      {
+        "category": "Mapping",
+        "changes": [
+          {
+            "change": "Remove support for type, fields, copy_to and boost in metadata field definition",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          },
+          {
+            "change": "Turn _source meta fieldmapper's mode attribute into a no-op",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          }
+        ]
+      },
+      {
+        "category": "Search",
+        "changes": [
+          {
+            "change": "Adjust random_score default field to _seq_no field",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          },
+          {
+            "change": "Change Semantic Text To Act Like A Normal Text Field",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          },
+          {
+            "change": "Remove legacy params from range query",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          }
+        ]
+      },
+      {
+        "category": "TLS",
+        "changes": [
+          {
+            "change": "Drop TLS_RSA cipher support for JDK 24",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          },
+          {
+            "change": "Remove TLSv1.1 from default protocols",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          }
+        ]
+      },
+      {
+        "category": "Transform",
+        "changes": [
+          {
+            "change": "Remove data_frame_transforms roles",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          }
+        ]
+      },
+      {
+        "category": "Vector Search",
+        "changes": [
+          {
+            "change": "Remove old _knn_search tech preview API in v9",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          }
+        ]
+      },
+      {
+        "category": "Watcher",
+        "changes": [
+          {
+            "change": "Removing support for types field in watcher search",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "9.1",
+    "url": "https://www.elastic.co/docs/release-notes/elasticsearch/breaking-changes",
+    "breaking_changes": [
+      {
+        "category": "Discovery-Plugins",
+        "changes": [
+          {
+            "change": "Migrates `discovery-ec2` plugin to AWS SDK v2",
+            "details": "The discovery-ec2 plugin now uses AWS SDK v2 instead of v1, as AWS plans to deprecate SDK v1 before the end of Elasticsearch 8.19â€™s support period. AWS SDK v2 introduces several behavior changes that affect configuration.",
+            "impact": "If you use the discovery-ec2 plugin, your existing settings may no longer be compatible. Notable changes include, but may not be limited to: AWS SDK v2 does not support the EC2 IMDSv1 protocol. AWS SDK v2 does not support the aws.secretKey or com.amazonaws.sdk.ec2MetadataServiceEndpointOverride system properties. AWS SDK v2 does not permit specifying a choice between HTTP and HTTPS so the discovery.ec2.protocol setting is no longer effective. AWS SDK v2 does not accept an access key without a secret key or vice versa. Action: Test the upgrade in a non-production environment. Adapt your configuration to the new SDK functionality. This includes, but may not be limited to, the following items: If you use IMDS to determine the availability zone of a node or to obtain credentials for accessing the EC2 API, ensure that it supports the IMDSv2 protocol. If applicable, discontinue use of the aws.secretKey and com.amazonaws.sdk.ec2MetadataServiceEndpointOverride system properties. If applicable, specify that you wish to use the insecure HTTP protocol to access the EC2 API by setting discovery.ec2.endpoint to a URL which starts with http:// . Either supply both an access key and a secret key using the discovery.ec2.access_key and discovery.ec2.secret_key keystore settings, or configure neither of these settings. For more information, view #122062 ."
+          }
+        ]
+      },
+      {
+        "category": "ES|QL",
+        "changes": [
+          {
+            "change": "ES|QL now returns partial results by default",
+            "details": "In previous versions, ES|QL queries failed entirely when any error occurred. As of 8.19.0, ES|QL returns partial results instead.",
+            "impact": "Callers must check the is_partial flag in the response to determine whether the result is complete. Relying on full results without checking this flag may lead to incorrect assumptions about the response. Action: If partial results are not acceptable for your use case, you can disable this behavior by: Setting allow_partial_results=false in the query URL per request, or Setting the esql.query.allow_partial_results cluster setting to false . For more information, view #127351 (issue: #122802 )"
+          },
+          {
+            "change": "Disallows parentheses in unquoted index patterns in ES|QL",
+            "details": "To avoid ambiguity with subquery syntax, ES|QL no longer allows the use of ( and ) in unquoted index patterns.",
+            "impact": "Queries that include parentheses in unquoted index names will now result in a parsing exception. Action: Update affected queries to quote index names that contain parentheses. For example, use FROM \"(\"foo\")\" instead of FROM (foo) . For more information, view #130427 (issue: #130378 )"
+          },
+          {
+            "change": "Disallows mixing quoted and unquoted components in `FROM` index patterns",
+            "details": "ES|QL no longer allows mixing quoted and unquoted parts in FROM index patterns (e.g. FROM remote:\"index\" ). Previously, such patterns were parsed inconsistently and could result in misleading runtime errors.",
+            "impact": "Queries using partially quoted index patternsâ€”such as quoting only the index or only the remote clusterâ€”will now be rejected at parse time. This change simplifies grammar handling and avoids confusing validation failures. Action: Ensure index patterns are either fully quoted or fully unquoted. For example: Valid: FROM \"remote:index\" or FROM remote:index Invalid: FROM remote:\"index\" , FROM \"remote\":index For more information, view #127636 (issue: #122651 )"
+          },
+          {
+            "change": "`skip_unavailable` now catches all remote cluster runtime errors in ES|QL",
+            "details": "When skip_unavailable is set to true , ES|QL now treats all runtime errors from that cluster as non-fatal. Previously, this setting only applied to connectivity issues (i.e. when a cluster was unavailable).",
+            "impact": "Errors such as missing indices on a remote cluster will no longer cause the query to fail. Instead, the cluster will appear in the response metadata as skipped or partial . Action: If your workflows rely on detecting remote cluster errors, review your use of skip_unavailable and adjust error handling as needed. For more information, view #128163"
+          }
+        ]
+      },
+      {
+        "category": "Snapshot/Restore",
+        "changes": [
+          {
+            "change": "Upgrades `repository-s3` plugin to AWS SDK v2",
+            "details": "The repository-s3 plugin now uses AWS SDK v2 instead of v1, as AWS will deprecate SDK v1 before the end of Elasticsearch 8.19â€™s support period. The two SDKs differ in behavior, which may require updates to your configuration.",
+            "impact": "Existing repository-s3 configurations may no longer be compatible. Notable differences in AWS SDK v2 include, but may not be limited to: AWS SDK v2 requires users to specify the region to use for signing requests, or else to run in an environment in which it can determine the correct region automatically. The older SDK used to determine the region based on the endpoint URL as specified with the s3.client.${CLIENT_NAME}.endpoint setting, together with other data drawn from the operating environment, and fell back to us-east-1 if no better value was found. AWS SDK v2 does not support the EC2 IMDSv1 protocol. AWS SDK v2 does not support the com.amazonaws.sdk.ec2MetadataServiceEndpointOverride system property. AWS SDK v2 does not permit specifying a choice between HTTP and HTTPS so the s3.client.${CLIENT_NAME}.protocol setting is deprecated and no longer has any effect. AWS SDK v2 does not permit control over throttling for retries, so the s3.client.${CLIENT_NAME}.use_throttle_retries setting is deprecated and no longer has any effect. AWS SDK v2 requires the use of the V4 signature algorithm, therefore, the s3.client.${CLIENT_NAME}.signer_override setting is deprecated and no longer has any effect. AWS SDK v2 does not support the log-delivery-write canned ACL. AWS SDK v2 counts 4xx responses differently in its metrics reporting. AWS SDK v2 always uses the regional STS endpoint, whereas AWS SDK v2 could use either a regional endpoint or the global https://sts.amazonaws.com one. Action: Test the upgrade in a non-production environment. Adapt your configuration to the new SDK functionality. This includes, but may not be limited to, the following items: Specify the correct signing region using the s3.client.${CLIENT_NAME}.region setting on each node. {es} will try to determine the correct region based on the endpoint URL and other data drawn from the operating environment, but might not do so correctly in all cases. If you use IMDS to determine the availability zone of a node or to obtain credentials for accessing the EC2 API, ensure that it supports the IMDSv2 protocol. If applicable, discontinue use of the com.amazonaws.sdk.ec2MetadataServiceEndpointOverride system property. If applicable, specify that you wish to use the insecure HTTP protocol to access the S3 API by setting s3.client.${CLIENT_NAME}.endpoint to a URL which starts with http:// . If applicable, discontinue use of the log-delivery-write canned ACL. For more information, view #126843 (issue: #120993 )"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "version": "9.2",
+    "url": "https://www.elastic.co/docs/release-notes/elasticsearch/breaking-changes",
+    "breaking_changes": [
+      {
+        "category": "Ingest Node",
+        "changes": [
+          {
+            "change": "Simulate API: Return 400 on invalid processor(s)",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          }
+        ]
+      },
+      {
+        "category": "Mapping",
+        "changes": [
+          {
+            "change": "Don't enable norms for fields of type text when the index mode is LogsDB or TSDB",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          }
+        ]
+      },
+      {
+        "category": "Vector Search",
+        "changes": [
+          {
+            "change": "Enable exclude_source_vectors by default for new indices",
+            "details": "Not explicitly detailed in this document.",
+            "impact": "Not explicitly detailed in this document."
+          }
+        ]
+      }
+    ]
   }
 ]

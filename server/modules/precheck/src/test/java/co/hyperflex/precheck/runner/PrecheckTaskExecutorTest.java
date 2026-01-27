@@ -48,7 +48,7 @@ class PrecheckTaskExecutorTest {
 
     BaseClusterPrecheck precheck = mock(BaseClusterPrecheck.class);
     ClusterContext context = mock(ClusterContext.class);
-
+    when(precheck.preRun(any())).thenReturn(true);
     when(precheckRegistry.getById("precheck-1")).thenReturn(Optional.of(precheck));
     when(precheckContextResolver.resolveContext(record)).thenReturn(context);
 
@@ -74,6 +74,7 @@ class PrecheckTaskExecutorTest {
     BaseClusterPrecheck precheck = mock(BaseClusterPrecheck.class);
     ClusterContext context = mock(ClusterContext.class);
 
+    when(precheck.preRun(any())).thenReturn(true);
     when(precheckRegistry.getById("precheck-1")).thenReturn(Optional.of(precheck));
     when(precheckContextResolver.resolveContext(record)).thenReturn(context);
     doThrow(new RuntimeException("Test error")).when(precheck).run(context);

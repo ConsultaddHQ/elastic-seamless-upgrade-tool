@@ -1,8 +1,9 @@
-name: Build and Push Java Jre18Ansible Docker Image
+name: Build and Push Java Jre21Ansible Docker Image
 
 on:
     push:
         branches:
+          - main
         paths:
             - "dockers/Dockerfile.jre21-ansible" # Only run when this file changes
 
@@ -29,4 +30,5 @@ jobs:
                   context: .
                   file: dockers/Dockerfile.jre21-ansible
                   push: true
+                  platforms: linux/amd64,linux/arm64
                   tags: hyperflex/jre21ansible:latest

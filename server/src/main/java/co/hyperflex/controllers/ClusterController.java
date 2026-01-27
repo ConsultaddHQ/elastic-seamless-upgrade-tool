@@ -1,7 +1,9 @@
 package co.hyperflex.controllers;
 
+import co.hyperflex.breakingchanges.services.deprecations.DeprecationService;
+import co.hyperflex.breakingchanges.services.deprecations.dtos.GetDeprecationsResponse;
 import co.hyperflex.clients.elastic.dto.GetAllocationExplanationResponse;
-import co.hyperflex.common.exceptions.BadRequestException;
+import co.hyperflex.core.exceptions.BadRequestException;
 import co.hyperflex.core.models.enums.ClusterNodeType;
 import co.hyperflex.core.services.certificates.CertificateFile;
 import co.hyperflex.core.services.certificates.CertificatesService;
@@ -13,8 +15,8 @@ import co.hyperflex.core.services.clusters.dtos.ClusterListItemResponse;
 import co.hyperflex.core.services.clusters.dtos.ClusterOverviewResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterNodeResponse;
 import co.hyperflex.core.services.clusters.dtos.GetClusterResponse;
-import co.hyperflex.core.services.clusters.dtos.GetDeprecationsResponse;
 import co.hyperflex.core.services.clusters.dtos.GetNodeConfigurationResponse;
+import co.hyperflex.core.services.clusters.dtos.SyncClusterNodesResponse;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterCredentialRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterCredentialResponse;
 import co.hyperflex.core.services.clusters.dtos.UpdateClusterRequest;
@@ -23,8 +25,9 @@ import co.hyperflex.core.services.clusters.dtos.UpdateClusterSshDetailRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateNodeConfigurationRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateNodeConfigurationResponse;
 import co.hyperflex.core.services.clusters.dtos.UploadCertificateResponse;
-import co.hyperflex.core.services.deprecations.DeprecationService;
 import co.hyperflex.upgrade.services.NodeUpgradeService;
+import co.hyperflex.upgrade.services.dtos.IndexReindexInfo;
+import co.hyperflex.upgrade.services.migration.IndexMigrationService;
 import jakarta.validation.Valid;
 import java.io.IOException;
 import java.util.Arrays;
@@ -49,17 +52,20 @@ public class ClusterController {
   private final DeprecationService deprecationService;
   private final NodeUpgradeService nodeUpgradeService;
   private final NodeConfigurationService nodeConfigurationService;
+  private final IndexMigrationService indexMigrationService;
 
   public ClusterController(ClusterService clusterService,
                            CertificatesService certificatesService,
                            DeprecationService deprecationService,
                            NodeUpgradeService nodeUpgradeService,
-                           NodeConfigurationService nodeConfigurationService) {
+                           NodeConfigurationService nodeConfigurationService,
+                           IndexMigrationService indexMigrationService) {
     this.clusterService = clusterService;
     this.certificatesService = certificatesService;
     this.deprecationService = deprecationService;
     this.nodeUpgradeService = nodeUpgradeService;
     this.nodeConfigurationService = nodeConfigurationService;
+    this.indexMigrationService = indexMigrationService;
   }
 
   @PostMapping
@@ -70,6 +76,11 @@ public class ClusterController {
   @PutMapping("/{clusterId}")
   public UpdateClusterResponse updateCluster(@Valid @RequestBody UpdateClusterRequest request, @PathVariable String clusterId) {
     return clusterService.updateCluster(clusterId, request);
+  }
+
+  @PostMapping("/{clusterId}/sync-nodes")
+  public SyncClusterNodesResponse syncClusterNodes(@PathVariable String clusterId) {
+    return clusterService.syncClusterNodes(clusterId);
   }
 
   @PutMapping("/{clusterId}/ssh")
@@ -155,5 +166,10 @@ public class ClusterController {
   @GetMapping("/{clusterId}/allocation-explanations")
   public List<GetAllocationExplanationResponse> getAllocationExplanation(@PathVariable String clusterId) {
     return clusterService.getAllocationExplanation(clusterId);
+  }
+
+  @GetMapping("/{clusterId}/upgrade/reindex-indices")
+  public List<IndexReindexInfo> getAllIndexReIndexInfo(@PathVariable String clusterId) {
+    return indexMigrationService.getReindexIndexesMetadata(clusterId);
   }
 }

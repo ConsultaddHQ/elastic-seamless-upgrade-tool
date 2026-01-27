@@ -42,7 +42,10 @@ elastic_version_urls = {
     "8.16": "https://www.elastic.co/guide/en/elasticsearch/reference/8.19/migrating-8.16.html",
     "8.17": "https://www.elastic.co/guide/en/elasticsearch/reference/8.19/migrating-8.17.html",
     "8.18": "https://www.elastic.co/guide/en/elasticsearch/reference/8.19/migrating-8.18.html",
-    "8.19": "https://www.elastic.co/guide/en/elasticsearch/reference/8.19/migrating-8.19.html"
+    "8.19": "https://www.elastic.co/guide/en/elasticsearch/reference/8.19/migrating-8.19.html",
+    "9.0": "https://www.elastic.co/docs/release-notes/elasticsearch/breaking-changes",
+    "9.1": "https://www.elastic.co/docs/release-notes/elasticsearch/breaking-changes",
+    "9.2": "https://www.elastic.co/docs/release-notes/elasticsearch/breaking-changes"
 }
 
 
@@ -52,6 +55,7 @@ if __name__ == "__main__":
     version = parser.parse_args().version
     test_url = elastic_version_urls.get(version)   
 
+    print(version)
     result = analyze_url(test_url, version)
     if result:
         append_to_json_file(result, file_path="breaking.json")
