@@ -22,19 +22,17 @@ public class AnsibleCommandExecutor {
       @NotNull Consumer<String> errLogsConsumer) {
     try {
       Process process = getProcess(context, cmd);
-
       BufferedReader stdOut = new BufferedReader(new InputStreamReader(process.getInputStream()));
       BufferedReader stdErr = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-
       String line;
       while ((line = stdOut.readLine()) != null) {
         stdLogsConsumer.accept(line);
       }
-
       while ((line = stdErr.readLine()) != null) {
         errLogsConsumer.accept(line);
       }
-
+      logger.info("Command run: {}", stdLogsConsumer.toString());
+      logger.error("Command Failed due to : {}", errLogsConsumer.toString());
       return process.waitFor();
     } catch (Exception e) {
       logger.error("Failed to run ansible command", e);
@@ -66,6 +64,7 @@ public class AnsibleCommandExecutor {
     command.add("ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'");
     command.add("-b");
     command.add("--become-user=" + context.getBecomeUser());
+    logger.info("Command Executed on node: {}", command);
     ProcessBuilder builder = new ProcessBuilder(command);
     return builder.start();
   }
