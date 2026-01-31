@@ -22,18 +22,38 @@ public class AnsibleCommandExecutor {
       @NotNull Consumer<String> errLogsConsumer) {
     try {
       Process process = getProcess(context, cmd);
-      BufferedReader stdOut = new BufferedReader(new InputStreamReader(process.getInputStream()));
-      BufferedReader stdErr = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+
+      BufferedReader stdOut =
+          new BufferedReader(new InputStreamReader(process.getInputStream()));
+      BufferedReader stdErr =
+          new BufferedReader(new InputStreamReader(process.getErrorStream()));
+
+      StringBuilder stdOutBuf = new StringBuilder();
+      StringBuilder stdErrBuf = new StringBuilder();
+
       String line;
+
       while ((line = stdOut.readLine()) != null) {
+        stdOutBuf.append(line).append('\n');
         stdLogsConsumer.accept(line);
+        logger.warn(line);
       }
+
       while ((line = stdErr.readLine()) != null) {
+        stdErrBuf.append(line).append('\n');
         errLogsConsumer.accept(line);
+        logger.error(line);
       }
-      logger.warn("Command run: {}", stdLogsConsumer.toString());
-      logger.error("Command Failed due to : {}", errLogsConsumer.toString());
-      return process.waitFor();
+
+      int exitCode = process.waitFor();
+
+      if (stdOutBuf.length() > 0) {
+        logger.warn("Command output:\n{}", stdOutBuf);
+      }
+      if (stdErrBuf.length() > 0) {
+        logger.error("Command error:\n{}", stdErrBuf);
+      }
+      return exitCode;
     } catch (Exception e) {
       logger.error("Failed to run ansible command", e);
       throw new AnsibleExecutionException("Failed to run ansible command", e);
