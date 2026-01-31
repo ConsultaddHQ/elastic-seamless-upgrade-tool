@@ -31,7 +31,7 @@ public class AnsibleCommandExecutor {
       while ((line = stdErr.readLine()) != null) {
         errLogsConsumer.accept(line);
       }
-      logger.info("Command run: {}", stdLogsConsumer.toString());
+      logger.warn("Command run: {}", stdLogsConsumer.toString());
       logger.error("Command Failed due to : {}", errLogsConsumer.toString());
       return process.waitFor();
     } catch (Exception e) {
@@ -64,7 +64,7 @@ public class AnsibleCommandExecutor {
     command.add("ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'");
     command.add("-b");
     command.add("--become-user=" + context.getBecomeUser());
-    logger.info("Command Executed on node: {}", command);
+    logger.warn("Command Executed on node: {}", command);
     ProcessBuilder builder = new ProcessBuilder(command);
     return builder.start();
   }
