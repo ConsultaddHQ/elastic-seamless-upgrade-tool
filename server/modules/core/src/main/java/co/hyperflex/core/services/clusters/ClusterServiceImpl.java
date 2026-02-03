@@ -1,5 +1,8 @@
 package co.hyperflex.core.services.clusters;
 
+import co.hyperflex.ansible.AnsibleCommandExecutor;
+import co.hyperflex.ansible.ExecutionContext;
+import co.hyperflex.ansible.commands.AnsibleAdHocCommand;
 import co.hyperflex.clients.elastic.ElasticClient;
 import co.hyperflex.clients.elastic.ElasticsearchClientProvider;
 import co.hyperflex.clients.elastic.dto.GetAllocationExplanationResponse;
@@ -48,6 +51,8 @@ import co.hyperflex.core.utils.ClusterAuthUtils;
 import co.hyperflex.core.utils.HashUtil;
 import co.hyperflex.core.utils.NodeRoleRankerUtils;
 import co.hyperflex.core.utils.UrlUtils;
+import co.hyperflex.ssh.SshCommandExecutor;
+import co.hyperflex.ssh.SudoBecome;
 import jakarta.validation.constraints.NotNull;
 import java.io.File;
 import java.io.IOException;
@@ -57,6 +62,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
@@ -74,13 +80,15 @@ public class ClusterServiceImpl implements ClusterService {
   private final KibanaClientProvider kibanaClientProvider;
   private final SshKeyService sshKeyService;
   private final SecretStoreService secretStoreService;
+  private final AnsibleCommandExecutor ansibleCommandExecutor;
 
   public ClusterServiceImpl(ClusterRepository clusterRepository,
                             ClusterNodeRepository clusterNodeRepository,
                             ClusterMapper clusterMapper,
                             ElasticsearchClientProvider elasticsearchClientProvider,
                             KibanaClientProvider kibanaClientProvider,
-                            SshKeyService sshKeyService, SecretStoreService secretStoreService) {
+                            SshKeyService sshKeyService, SecretStoreService secretStoreService,
+                            AnsibleCommandExecutor ansibleCommandExecutor) {
     this.clusterRepository = clusterRepository;
     this.clusterNodeRepository = clusterNodeRepository;
     this.clusterMapper = clusterMapper;
@@ -88,6 +96,7 @@ public class ClusterServiceImpl implements ClusterService {
     this.kibanaClientProvider = kibanaClientProvider;
     this.sshKeyService = sshKeyService;
     this.secretStoreService = secretStoreService;
+    this.ansibleCommandExecutor = ansibleCommandExecutor;
   }
 
   @Override
@@ -103,6 +112,7 @@ public class ClusterServiceImpl implements ClusterService {
     clusterRepository.save(cluster);
     syncElasticNodes(cluster);
     if (request instanceof AddSelfManagedClusterRequest selfManagedRequest) {
+      validateSSHKey((SelfManagedClusterEntity) cluster, cluster.getId());
       final List<KibanaNodeEntity> clusterNodes = selfManagedRequest.getKibanaNodes().stream().map(kibanaNodeRequest -> {
         KibanaNodeEntity node = clusterMapper.toNodeEntity(kibanaNodeRequest);
         node.setId(HashUtil.generateHash(cluster.getId() + ":" + node.getIp()));
@@ -128,6 +138,7 @@ public class ClusterServiceImpl implements ClusterService {
 
     if (request instanceof UpdateSelfManagedClusterRequest selfManagedRequest
         && cluster instanceof SelfManagedClusterEntity selfManagedCluster) {
+      validateSSHKey((SelfManagedClusterEntity) cluster, cluster.getId());
       if (selfManagedRequest.getKibanaNodes() != null && !selfManagedRequest.getKibanaNodes().isEmpty()) {
         final List<KibanaNodeEntity> clusterNodes = selfManagedRequest.getKibanaNodes().stream().map(kibanaNodeRequest -> {
           KibanaNodeEntity node = clusterMapper.toNodeEntity(kibanaNodeRequest);
@@ -186,6 +197,7 @@ public class ClusterServiceImpl implements ClusterService {
       );
       secretStoreService.putSecret(tempId, secret);
       validateCluster(cluster, tempId);
+
       secretStoreService.putSecret(clusterId, secret);
       return new UpdateClusterCredentialResponse();
     } finally {
@@ -397,6 +409,8 @@ public class ClusterServiceImpl implements ClusterService {
 
   private void validateCluster(ClusterEntity cluster) {
     validateCluster(cluster, cluster.getId());
+    {
+    }
   }
 
   private void validateCluster(ClusterEntity cluster, String secretKey) {
@@ -416,6 +430,50 @@ public class ClusterServiceImpl implements ClusterService {
     } catch (Exception e) {
       log.warn("Error validating cluster credentials", e);
       throw new BadRequestException("Kibana credentials are invalid");
+    }
+
+  }
+
+
+  private void validateSSHKey(SelfManagedClusterEntity cluster, String secretKey) {
+    try {
+      //Vaidating for java based ssh
+      ElasticClient elasticClient = elasticsearchClientProvider.getClient(ClusterAuthUtils.getElasticConnectionDetail(cluster, secretKey));
+      var nodesData = elasticClient.getNodesInfo();
+      var sshInfo = cluster.getSshInfo();
+      nodesData.getNodes().forEach((var nodeId, var clusterNode) -> {
+        try (var executor = new SshCommandExecutor(
+            clusterNode.getIp(),
+            22,
+            sshInfo.username(),
+            sshInfo.keyPath(),
+            new SudoBecome(sshInfo.becomeUser())
+        )) {
+          log.info("SSH connection established via java base(Apache MINA SSHD) and working");
+        } catch (Exception e) {
+          log.error("Error Attempting SSH using input key", e);
+          throw new BadRequestException("There is some problem with the key provided");
+        }
+      });
+
+      nodesData.getNodes().forEach((nodeId, nodeData) -> {
+        AnsibleAdHocCommand command = AnsibleAdHocCommand.builder().build();
+        ExecutionContext context =
+            new ExecutionContext(nodeData.getIp(), sshInfo.username(), sshInfo.keyPath(), true, sshInfo.becomeUser());
+        try {
+          StringBuilder output = new StringBuilder();
+          Consumer<String> consumer = s -> output.append(s).append("\n");
+          ansibleCommandExecutor.run(context, command, consumer, consumer);
+          log.info("SSH connection established via Ansible");
+        } catch (Exception e) {
+          log.error("Error Attempting SSH using input key for ansible", e);
+          throw new BadRequestException("There is some problem with the key provided");
+        }
+      });
+
+    } catch (Exception e) {
+      log.error("Error in SSH Using the Key", e);
+      throw new BadRequestException("There is some problem with the key provided");
     }
   }
 
