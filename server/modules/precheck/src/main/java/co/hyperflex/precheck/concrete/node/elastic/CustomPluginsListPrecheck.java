@@ -70,6 +70,13 @@ public class CustomPluginsListPrecheck extends BaseElasticNodePrecheck {
         verificationFailed = true;
       }
     }
+    //Elastic Plugin binary Check
+    try {
+      var pluginsListThroughBinary = pluginManager.listPlugins();
+      logger.info("Listed plugins through binary {} ", pluginsListThroughBinary);
+    } catch (Exception e) {
+      logger.error("Unable to run commands using elasticsearch-plugin binary: {}", e.getMessage());
+    }
 
     if (verificationFailed) {
       logger.info("One or more plugins are unavailable or could not be verified. Please review logs for details.");
