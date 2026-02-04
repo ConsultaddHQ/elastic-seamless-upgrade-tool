@@ -54,7 +54,8 @@ public class CustomPluginsListPrecheck extends BaseElasticNodePrecheck {
     logger.info("Verifying plugin availability for target version [{}]", targetVersion);
 
     boolean verificationFailed = false;
-    var pluginManager = pluginManagerFactory.create(null, context.getNode().getType());
+
+    var pluginManager = pluginManagerFactory.create(context.getSshExecutor(), context.getNode().getType());
 
     for (var plugin : plugins) {
       try {
@@ -76,6 +77,7 @@ public class CustomPluginsListPrecheck extends BaseElasticNodePrecheck {
       logger.info("Listed plugins through binary {} ", pluginsListThroughBinary);
     } catch (Exception e) {
       logger.error("Unable to run commands using elasticsearch-plugin binary: {}", e.getMessage());
+      verificationFailed = true;
     }
 
     if (verificationFailed) {
