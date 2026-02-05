@@ -119,6 +119,7 @@ public class ClusterServiceImpl implements ClusterService {
         node.setClusterId(cluster.getId());
         return node;
       }).toList();
+      validateKibanaSSHKey((SelfManagedClusterEntity) cluster, clusterNodes);
       syncKibanaNodes((SelfManagedClusterEntity) cluster, clusterNodes);
       clusterNodeRepository.saveAll(clusterNodes);
     }
@@ -146,6 +147,7 @@ public class ClusterServiceImpl implements ClusterService {
           node.setId(HashUtil.generateHash(cluster.getId() + ":" + node.getIp()));
           return node;
         }).toList();
+        validateKibanaSSHKey(selfManagedCluster, clusterNodes);
         syncKibanaNodes(selfManagedCluster, clusterNodes);
         clusterNodeRepository.saveAll(clusterNodes);
       }
@@ -482,4 +484,30 @@ public class ClusterServiceImpl implements ClusterService {
     return elasticsearchClientProvider.getClient(clusterId).getAllocationExplanation();
   }
 
+  private void validateKibanaSSHKey(SelfManagedClusterEntity cluster, List<KibanaNodeEntity> nodes) {
+    var sshInfo = cluster.getSshInfo();
+
+    for (KibanaNodeEntity node : nodes) {
+      String ip = node.getIp();
+
+      // Apache MINA SSH Check
+      try (var executor = new SshCommandExecutor(
+          ip, 22, sshInfo.username(), sshInfo.keyPath(), new SudoBecome(sshInfo.becomeUser())
+      )) {
+        log.info("Pre-save SSH check passed for Kibana IP: {}", ip);
+      } catch (Exception e) {
+        throw new BadRequestException("SSH validation failed for Kibana node: " + ip);
+      }
+
+      // Ansible Check
+      try {
+        ExecutionContext context = new ExecutionContext(ip, sshInfo.username(), sshInfo.keyPath(), true, sshInfo.becomeUser());
+        ansibleCommandExecutor.run(context, AnsibleAdHocCommand.builder().build(), s -> {
+        }, s -> {
+        });
+      } catch (Exception e) {
+        throw new BadRequestException("Ansible validation failed for Kibana node: " + ip);
+      }
+    }
+  }
 }
