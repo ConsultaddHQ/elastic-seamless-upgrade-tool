@@ -23,19 +23,37 @@ public class AnsibleCommandExecutor {
     try {
       Process process = getProcess(context, cmd);
 
-      BufferedReader stdOut = new BufferedReader(new InputStreamReader(process.getInputStream()));
-      BufferedReader stdErr = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+      BufferedReader stdOut =
+          new BufferedReader(new InputStreamReader(process.getInputStream()));
+      BufferedReader stdErr =
+          new BufferedReader(new InputStreamReader(process.getErrorStream()));
+
+      StringBuilder stdOutBuf = new StringBuilder();
+      StringBuilder stdErrBuf = new StringBuilder();
 
       String line;
+
       while ((line = stdOut.readLine()) != null) {
+        stdOutBuf.append(line).append('\n');
         stdLogsConsumer.accept(line);
+        logger.warn(line);
       }
 
       while ((line = stdErr.readLine()) != null) {
+        stdErrBuf.append(line).append('\n');
         errLogsConsumer.accept(line);
+        logger.error(line);
       }
 
-      return process.waitFor();
+      int exitCode = process.waitFor();
+
+      if (stdOutBuf.length() > 0) {
+        logger.warn("Command output:\n{}", stdOutBuf);
+      }
+      if (stdErrBuf.length() > 0) {
+        logger.error("Command error:\n{}", stdErrBuf);
+      }
+      return exitCode;
     } catch (Exception e) {
       logger.error("Failed to run ansible command", e);
       throw new AnsibleExecutionException("Failed to run ansible command", e);
@@ -66,6 +84,7 @@ public class AnsibleCommandExecutor {
     command.add("ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'");
     command.add("-b");
     command.add("--become-user=" + context.getBecomeUser());
+    logger.warn("Command Executed on node: {}", command);
     ProcessBuilder builder = new ProcessBuilder(command);
     return builder.start();
   }
