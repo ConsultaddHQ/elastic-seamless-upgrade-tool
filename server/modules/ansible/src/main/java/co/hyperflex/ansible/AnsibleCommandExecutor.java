@@ -10,7 +10,9 @@ import java.util.List;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
+@Component
 public class AnsibleCommandExecutor {
 
   private static final Logger logger = LoggerFactory.getLogger(AnsibleCommandExecutor.class);
@@ -25,17 +27,30 @@ public class AnsibleCommandExecutor {
 
       BufferedReader stdOut = new BufferedReader(new InputStreamReader(process.getInputStream()));
       BufferedReader stdErr = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-
+      StringBuilder stdOutBuf = new StringBuilder();
+      StringBuilder stdErrBuf = new StringBuilder();
       String line;
+      logger.info("Command Results: ");
       while ((line = stdOut.readLine()) != null) {
+        stdOutBuf.append(line).append('\n');
         stdLogsConsumer.accept(line);
+        logger.info(line);
       }
 
       while ((line = stdErr.readLine()) != null) {
         errLogsConsumer.accept(line);
+        stdErrBuf.append(line).append("\n");
+        logger.error(line);
       }
+      int exitCode = process.waitFor();
 
-      return process.waitFor();
+      if (!stdOutBuf.isEmpty()) {
+        logger.warn("Command output:\n{}", stdOutBuf);
+      }
+      if (!stdErrBuf.isEmpty()) {
+        logger.error("Command error:\n{}", stdErrBuf);
+      }
+      return exitCode;
     } catch (Exception e) {
       logger.error("Failed to run ansible command", e);
       throw new AnsibleExecutionException("Failed to run ansible command", e);
@@ -57,7 +72,6 @@ public class AnsibleCommandExecutor {
       command.add("-a");
       command.add(String.join(" ", args));
     }
-
     command.add("-u");
     command.add(context.getSshUser());
     command.add("--private-key");
@@ -66,6 +80,7 @@ public class AnsibleCommandExecutor {
     command.add("ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'");
     command.add("-b");
     command.add("--become-user=" + context.getBecomeUser());
+    logger.info("Executing Command : {}", String.join(" ", command));
     ProcessBuilder builder = new ProcessBuilder(command);
     return builder.start();
   }

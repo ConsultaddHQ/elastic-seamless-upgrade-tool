@@ -117,6 +117,7 @@ project(":server:modules:core") {
     dependencies {
         implementation project(":server:modules:elastic-client")
         implementation project(":server:modules:ssh-client")
+        implementation project(":server:modules:ansible")
         implementation 'org.yaml:snakeyaml:2.4'
         implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:3.5.6'
     }
