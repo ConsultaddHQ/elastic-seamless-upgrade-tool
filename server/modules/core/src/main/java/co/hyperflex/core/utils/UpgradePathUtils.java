@@ -48,11 +48,25 @@ public class UpgradePathUtils {
     }
     Pair<String, LocalDate> currentVersion = ELASTIC_VERSIONS.stream().filter(p -> p.getFirst().equals(version)).findFirst().orElse(null);
     if (currentVersion == null) {
-      return List.of();
+      //start with 7.x but not present in ELASTIC_VERSIONS List
+      if (version.startsWith("7.")) {
+        currentVersion = Pair.of(version, LEGACY_DATE);
+      } else {
+        //start with 8.x or 9.x but not present in ELASTIC_VERSIONS List
+        LocalDate miniDate = null;
+        for (int i = 0; i < ELASTIC_VERSIONS.size(); i++) {
+          if (VersionUtils.isVersionGt(version, ELASTIC_VERSIONS.get(i).getFirst())) {
+            //Take the previous Date (i-1)
+            miniDate = ELASTIC_VERSIONS.get(i - 1).getSecond();
+            break;
+          }
+        }
+        currentVersion = Pair.of(version, miniDate);
+      }
     }
-    LocalDate currentReleaseDate = currentVersion.getSecond();
+    Pair<String, LocalDate> finalCurrentVersion = currentVersion;
     return ELASTIC_VERSIONS.stream()
-        .filter(v -> VersionUtils.isVersionGtConsideringOOO(v, currentVersion))
+        .filter(v -> VersionUtils.isVersionGtConsideringOOO(v, finalCurrentVersion))
         .sorted((v1, v2) -> VersionUtils.VERSION_COMPARATOR.compare(v2.getFirst(), v1.getFirst())).map(Pair::getFirst).toList();
   }
 }
