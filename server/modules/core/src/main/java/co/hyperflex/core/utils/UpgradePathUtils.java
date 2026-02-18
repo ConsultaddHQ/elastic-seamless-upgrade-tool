@@ -55,7 +55,7 @@ public class UpgradePathUtils {
         //start with 8.x or 9.x but not present in ELASTIC_VERSIONS List
         LocalDate miniDate = null;
         for (int i = 0; i < ELASTIC_VERSIONS.size(); i++) {
-          if (VersionUtils.isVersionGt(version, ELASTIC_VERSIONS.get(i).getFirst())) {
+          if (VersionUtils.isVersionGt(ELASTIC_VERSIONS.get(i).getFirst(), version)) {
             //Take the previous Date (i-1)
             miniDate = ELASTIC_VERSIONS.get(i - 1).getSecond();
             break;
