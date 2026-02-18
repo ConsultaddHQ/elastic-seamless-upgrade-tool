@@ -19,7 +19,6 @@ public class UpgradePathUtils {
           Pair.of("7.13.4", LEGACY_DATE), Pair.of("7.14.0", LEGACY_DATE), Pair.of("7.14.1", LEGACY_DATE), Pair.of("7.14.2", LEGACY_DATE),
           Pair.of("7.15.0", LEGACY_DATE), Pair.of("7.15.1", LEGACY_DATE), Pair.of("7.15.2", LEGACY_DATE), Pair.of("7.16.0", LEGACY_DATE),
           Pair.of("7.16.1", LEGACY_DATE), Pair.of("7.16.2", LEGACY_DATE), Pair.of("7.16.3", LEGACY_DATE), Pair.of("7.17.28", LEGACY_DATE),
-
           // ---- 8.x (real release dates) ----
           Pair.of("8.0.0", LocalDate.of(2022, 2, 10)), Pair.of("8.1.3", LocalDate.of(2022, 4, 4)),
           Pair.of("8.2.3", LocalDate.of(2022, 5, 26)), Pair.of("8.3.3", LocalDate.of(2022, 6, 28)),
@@ -31,7 +30,6 @@ public class UpgradePathUtils {
           Pair.of("8.14.3", LocalDate.of(2024, 6, 6)), Pair.of("8.15.5", LocalDate.of(2024, 8, 13)),
           Pair.of("8.16.4", LocalDate.of(2024, 11, 12)), Pair.of("8.17.2", LocalDate.of(2025, 1, 15)),
           Pair.of("8.18.2", LocalDate.of(2025, 4, 15)), Pair.of("8.19.0", LocalDate.of(2025, 7, 29)),
-
           // ---- 9.x ----
           Pair.of("9.0.0", LocalDate.of(2025, 4, 15)), Pair.of("9.1.8", LocalDate.of(2025, 8, 7)),
           Pair.of("9.2.2", LocalDate.of(2025, 10, 29)));
@@ -48,17 +46,13 @@ public class UpgradePathUtils {
     if (version == null) {
       return List.of();
     }
-
     Pair<String, LocalDate> currentVersion = ELASTIC_VERSIONS.stream().filter(p -> p.getFirst().equals(version)).findFirst().orElse(null);
-
     if (currentVersion == null) {
       return List.of();
     }
-
     LocalDate currentReleaseDate = currentVersion.getSecond();
-
     return ELASTIC_VERSIONS.stream()
-        .filter(v -> VersionUtils.isVersionGtConsideringOOO(v, currentVersion) && v.getSecond().isAfter(currentReleaseDate))
+        .filter(v -> VersionUtils.isVersionGtConsideringOOO(v, currentVersion))
         .sorted((v1, v2) -> VersionUtils.VERSION_COMPARATOR.compare(v2.getFirst(), v1.getFirst())).map(Pair::getFirst).toList();
   }
 }
