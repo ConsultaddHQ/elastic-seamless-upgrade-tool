@@ -32,7 +32,7 @@ public class VersionUtils {
   //Is version Greater considering out of order
   public static boolean isVersionGtConsideringOOO(Pair<String, LocalDate> version1, Pair<String, LocalDate> version2) {
     return VersionUtils.VERSION_COMPARATOR.compare(version2.getFirst(), version1.getFirst()) < 0
-        && (version1.getSecond().isBefore(version2.getSecond())
+        && (version1.getSecond().isAfter(version2.getSecond())
         || version1.getSecond().isEqual(version2.getSecond()));
   }
 
