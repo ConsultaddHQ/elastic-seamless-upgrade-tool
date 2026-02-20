@@ -8,6 +8,7 @@ import NoData from "~/components/core/Precheck/widgets/NoData"
 import { Skeleton, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react"
 import { useParams } from "react-router"
 import { clusterApi } from "~/apis/ClusterApi"
+import { Accordion, AccordionItem } from "@heroui/react"
 
 function AllocationExplainBreadcrumb({ onBack }: { onBack: () => void }) {
 	return (
@@ -50,25 +51,32 @@ function Loading() {
 		</Box>
 	)
 }
+
 function AllocationExplainTable({ data }: { data: IAllocationExplain[] | undefined }) {
-	const columns: TColumn = [
+	const columns = [
 		{
 			key: "index",
 			label: "Index",
 			align: "start",
-			width: 80,
+			width: 120,
 		},
 		{
 			key: "shard",
 			label: "Shard",
 			align: "start",
-			width: 30,
+			width: 60,
 		},
 		{
 			key: "explanation",
-			label: "Allocation Explanation",
+			label: "Brief Explanation",
 			align: "start",
-			width: 400,
+			width: 260,
+		},
+		{
+			key: "fullExplanation",
+			label: "Full Explanation Details",
+			align: "start",
+			width: 500,
 		},
 	]
 
@@ -76,7 +84,7 @@ function AllocationExplainTable({ data }: { data: IAllocationExplain[] | undefin
 		return (
 			<NoData
 				title="No allocation explanations available to display"
-				subtitle="There are no allocation explaination to show at the moment."
+				subtitle="There are no allocation explanations to show at the moment."
 			/>
 		)
 	}
@@ -89,21 +97,20 @@ function AllocationExplainTable({ data }: { data: IAllocationExplain[] | undefin
 				isHeaderSticky
 				classNames={{
 					base: "max-h-[calc(var(--window-height)-212px)] h-[calc(var(--window-height)-212px)] overflow-scroll",
-					// table: "min-h-[400px] min-w-[600px]",
 					th: "text-[#9D90BB] text-xs bg-[#161616] first:rounded-l-xl last:rounded-r-xl",
-					td: "text-sm font-normal leading-normal border-b-[0.5px] border-solid border-[#1E1E1E]",
-					tr: "[&>th]:h-[42px] [&>td]:h-[60px]",
+					td: "text-sm font-normal leading-normal border-b-[0.5px] border-solid border-[#1E1E1E] py-4", // Added padding for multi-line content
+					tr: "[&>th]:h-[42px]",
 				}}
 			>
 				<TableHeader columns={columns}>
 					{(column) => (
-						<TableColumn key={column.key} align={column.align} width={column.width}>
+						<TableColumn key={column.key} align={column.align as any} width={column.width}>
 							{column.label}
 						</TableColumn>
 					)}
 				</TableHeader>
 				<TableBody
-					items={data || []}
+					items={data}
 					loadingContent={<Spinner color="secondary" />}
 					emptyContent="No nodes upgrades found."
 				>
@@ -111,7 +118,31 @@ function AllocationExplainTable({ data }: { data: IAllocationExplain[] | undefin
 						<TableRow key={`${item.index}-${item.shard}`}>
 							{(columnKey) => (
 								<TableCell>
-									<span>{item[columnKey as keyof IAllocationExplain]}</span>
+									{columnKey === "fullExplanation" ? (
+										<Accordion variant="light" className="px-0">
+											<AccordionItem
+												key="explain"
+												aria-label="View Details"
+												title={
+													<span className="text-xs text-secondary">
+														View Details ({item.fullExplanation.length})
+													</span>
+												}
+												classNames={{
+													title: "text-xs",
+													content: "text-tiny text-[#B0B0B0] flex flex-col gap-2 pb-4",
+												}}
+											>
+												{item.fullExplanation.map((text, idx) => (
+													<div key={idx} className="border-l-2 border-[#BDA0FF] pl-2 py-1">
+														{text}
+													</div>
+												))}
+											</AccordionItem>
+										</Accordion>
+									) : (
+										<span>{item[columnKey as keyof IAllocationExplain]}</span>
+									)}
 								</TableCell>
 							)}
 						</TableRow>
