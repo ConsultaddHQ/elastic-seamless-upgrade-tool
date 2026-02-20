@@ -3,8 +3,8 @@ package co.hyperflex.precheck.concrete.index;
 import co.hyperflex.clients.client.ApiRequest;
 import co.hyperflex.precheck.contexts.IndexContext;
 import co.hyperflex.precheck.core.BaseIndexPrecheck;
+import co.hyperflex.precheck.utils.IndexUtils;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import org.springframework.stereotype.Component;
@@ -22,7 +22,7 @@ public class LuceneIndexCompatibilityPrecheck extends BaseIndexPrecheck {
     var logger = context.getLogger();
     var indexName = context.getIndexName();
     var clusterUpgradeJob = context.getClusterUpgradeJob();
-    int targetLucene = mapEsVersionToLucene(clusterUpgradeJob.getTargetVersion());
+    int targetLucene = IndexUtils.mapEsVersionToLucene(clusterUpgradeJob.getTargetVersion());
 
     var request = ApiRequest.builder(JsonNode.class).get().uri("/" + indexName + "/_segments").build();
     JsonNode root = context.getElasticClient().execute(request);
@@ -47,7 +47,7 @@ public class LuceneIndexCompatibilityPrecheck extends BaseIndexPrecheck {
 
     boolean foundUnsupportedLucene = false;
 
-    //Take minimum lucene version and validate for it only
+    //Take a minimum lucene version and validate for it only
     if (!luceneVersions.isEmpty()) {
       Integer minimumLuceneVersionOfASegment = luceneVersions.iterator().next();
       if (minimumLuceneVersionOfASegment < targetLucene - 1) {
@@ -68,19 +68,6 @@ public class LuceneIndexCompatibilityPrecheck extends BaseIndexPrecheck {
     } else {
       logger.info("Index [{}] segments are compatible with target Lucene {}", indexName, targetLucene);
     }
-  }
-
-  private int mapEsVersionToLucene(String elasticVersion) {
-    Map<String, Integer> esToLucene = Map.of(
-        "5", 6,
-        "6", 7,
-        "7", 8,
-        "8", 9,
-        "9", 10
-    );
-
-    String major = elasticVersion.substring(0, 1);
-    return esToLucene.getOrDefault(major, -1);
   }
 
   @Override

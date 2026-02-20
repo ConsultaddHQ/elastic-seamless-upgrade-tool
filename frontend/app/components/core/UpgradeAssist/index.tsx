@@ -1,6 +1,6 @@
 import { Skeleton } from "@heroui/react"
 import { Box, Typography } from "@mui/material"
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { Camera, Flash } from "iconsax-react"
 import moment from "moment"
 import { useEffect, useState } from "react"
@@ -33,9 +33,7 @@ function UpgradeAssistant() {
 	const setKibanaNodeUpgradeAllowed = useSafeRouteStore((state) => state.setKibanaNodeUpgradeAllowed)
 	const setPrecheckAllowed = useSafeRouteStore((state) => state.setPrecheckAllowed)
 
-	const { isPending: isMigratingSystemFeatures, mutate: migrateSystemFeatures } = useMutation({
-		mutationFn: (data: { clusterId: string }) => clusterUpgradeApi.migrateSystemFeatures(data.clusterId),
-	})
+
 
 	// Format remaining time in HH:MM:SS
 	const formatTime = (milliseconds: number | null): string => {
@@ -55,6 +53,7 @@ function UpgradeAssistant() {
 		"3": "NOTVISITED",
 		"4": "NOTVISITED",
 		"5": "NOTVISITED",
+		"6": "NOTVISITED",
 	})
 
 	const handleRoutingStates = (
@@ -78,6 +77,7 @@ function UpgradeAssistant() {
 			precheck,
 			isValidUpgradePath: isValidUpgradePath1,
 			featureMigration,
+			customIndexMigration,
 		} = upgradeInfo ?? {}
 		const step1Status = elastic?.snapshot?.snapshot ? "COMPLETED" : "PENDING"
 		setIsValidUpgradePath(isValidUpgradePath1)
@@ -85,20 +85,21 @@ function UpgradeAssistant() {
 		const step2Status =
 			step1Status !== "COMPLETED"
 				? "NOTVISITED"
-				: featureMigration?.status === "MIGRATION_NEEDED" || featureMigration?.status === "ERROR"
+				: (featureMigration?.status === "MIGRATION_NEEDED" || featureMigration?.status === "ERROR" ||
+				  customIndexMigration?.status === "MIGRATION_NEEDED" || customIndexMigration?.status === "ERROR")
 				? "PENDING"
-				: featureMigration?.status === "IN_PROGRESS"
+				: (featureMigration?.status === "IN_PROGRESS" || customIndexMigration?.status === "IN_PROGRESS")
 				? "INPROGRESS"
 				: "COMPLETED"
 
 		const step3Status =
-			step2Status !== "COMPLETED" ? "NOTVISITED" : precheck?.status === "COMPLETED" ? "COMPLETED" : "PENDING"
+			step2Status === "NOTVISITED" ? "NOTVISITED" : precheck?.status === "COMPLETED" ? "COMPLETED" : "PENDING"
 
-		// Helper function to sum deprecations safely
+
 		const sumDeprecations = (type: string) =>
 			(elastic?.deprecationCounts?.[type] ?? 1) + (kibana?.deprecationCounts?.[type] ?? 1)
 
-		// Step 2 calculations
+		
 		const criticalDeprecations = sumDeprecations("critical")
 		const warningDeprecations = sumDeprecations("warning")
 
@@ -109,7 +110,7 @@ function UpgradeAssistant() {
 				? "INPROGRESS"
 				: "COMPLETED"
 
-		// Helper for subsequent steps
+		
 		const getNextStepStatus = (prevStatus: string, isUpgradable: boolean) =>
 			prevStatus === "PENDING" || prevStatus === "NOTVISITED"
 				? "NOTVISITED"
@@ -162,7 +163,10 @@ function UpgradeAssistant() {
 					<Box height="88px" />
 				</Skeleton>
 				<Skeleton className="w-full rounded-[20px]">
-					<Box height="108px" />
+					<Box height="88px" />
+				</Skeleton>
+				<Skeleton className="w-full rounded-[20px]">
+					<Box height="88px" />
 				</Skeleton>
 				<Skeleton className="w-full rounded-[20px]">
 					<Box height="229.5px" />
@@ -201,19 +205,9 @@ function UpgradeAssistant() {
 							Make sure you have a current snapshot before making an changes.
 						</Typography>
 					</Box>
-					{!(stepStatus["01"] === "COMPLETED") ? (
+					{!(stepStatus["1"] === "COMPLETED") ? (
 						data?.elastic?.snapshot?.snapshot ? (
 							<Box className="flex flex-col gap-[6px] items-end">
-								{/* <Tooltip
-                    content={"You have to take snapshot again after the time ends."}
-                    closeDelay={0}
-                    color="foreground"
-                    size="sm"
-                    radius="sm"
-                    placement="left"
-                >
-                    <InfoCircle size="14px" color="#6E6E6E" />
-                </Tooltip> */}
 								<Typography
 									fontSize="14px"
 									fontWeight="400"
@@ -263,7 +257,7 @@ function UpgradeAssistant() {
 				<Box className="flex flex-row gap-3 items-center rounded-[20px] justify-between w-full">
 					<Box className="flex flex-col gap-[6px]">
 						<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
-							Migrate system indices
+							Migrate Indices
 						</Typography>
 						<Typography
 							color="#6E6E6E"
@@ -272,34 +266,20 @@ function UpgradeAssistant() {
 							lineHeight="20px"
 							letterSpacing="0.26px"
 						>
-							Prepare the system indices that store internal information for the upgrade. This step is
-							required only for major version upgrades.
+							Manage system and custom indices to ensure compatibility with the new version.
 						</Typography>
 					</Box>
-					{stepStatus["2"] === "COMPLETED" || stepStatus["2"] === "INPROGRESS" ? null : (
-						<Box className="flex items-start">
-							<OutlinedBorderButton
-								disabled={isMigratingSystemFeatures || stepStatus["1"] !== "COMPLETED"}
-								onClick={() => migrateSystemFeatures({ clusterId: clusterId! })}
-							>
-								Migrate
-							</OutlinedBorderButton>
-						</Box>
-					)}
-					{stepStatus["2"] === "INPROGRESS" && (
-						<Box className="flex items-start">
-							<Typography
-								color="#6E6E6E"
-								textAlign="right"
-								fontSize="13px"
-								fontWeight="400"
-								lineHeight="20px"
-								letterSpacing="0.26px"
-							>
-								Migrating system features...
-							</Typography>
-						</Box>
-					)}
+					<Box className="flex items-start">
+						<OutlinedBorderButton
+							component={Link}
+							to={`/${clusterId}/migrate-indices`}
+							disabled={stepStatus["1"] !== "COMPLETED"}
+							borderRadius="50%"
+							sx={{ minWidth: "38px !important", minHeight: "38px !important", padding: "0px" }}
+						>
+							<FiArrowUpRight size="20px" color="#FFF" />
+						</OutlinedBorderButton>
+					</Box>
 				</Box>
 			</StepBox>
 			<StepBox
