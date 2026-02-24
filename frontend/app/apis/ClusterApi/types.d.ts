@@ -12,5 +12,6 @@ interface IAllocationExplain {
 	index: string
 	shard: string
 	explanation: string
+	decidersSet: string[]
 	fullExplanation: string[]
 }

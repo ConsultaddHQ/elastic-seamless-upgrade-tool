@@ -136,6 +136,8 @@ public class ElasticClientImpl extends AbstractElasticClient {
       Map data = restClient.post().uri("/_cluster/allocation/explain").body(body).retrieve().body(Map.class);
 
       List<String> fullExplanation = new ArrayList<>();
+      Set<String> deciderSet = new HashSet<>();
+
       List<Map<String, Object>> nodeDecisions = (List<Map<String, Object>>) data.get("node_allocation_decisions");
 
       if (nodeDecisions != null) {
@@ -146,6 +148,7 @@ public class ElasticClientImpl extends AbstractElasticClient {
               // Only add deciders that explicitly said "NO"
               if ("NO".equals(decider.get("decision"))) {
                 fullExplanation.add((String) decider.get("explanation"));
+                deciderSet.add((String) decider.get("decider"));
               }
             }
           }
@@ -156,6 +159,7 @@ public class ElasticClientImpl extends AbstractElasticClient {
           shard.getIndex(),
           shard.getShard() + (isPrimaryShard ? "(primary)" : ""),
           data.get("allocate_explanation").toString(),
+          deciderSet,
           fullExplanation
       );
     }).toList();
