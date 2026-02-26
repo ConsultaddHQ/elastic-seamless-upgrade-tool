@@ -40,11 +40,43 @@ public class VersionUtils {
     return currentVersion.charAt(0) != targetVersion.charAt(0);
   }
 
-  public static boolean isValidUpgrade(String currentVersion, String targetVersion) {
-    boolean isCompatibleMajorVersionChange = (currentVersion.equals("7.17.28")) || (currentVersion.equals("8.19.0"));
-    int currentMajorVersion = Integer.parseInt(currentVersion.substring(0, currentVersion.indexOf('.')));
-    int targetMajorVersion = Integer.parseInt(targetVersion.substring(0, targetVersion.indexOf('.')));
-    return (currentMajorVersion == targetMajorVersion
-        || (isCompatibleMajorVersionChange && (currentMajorVersion + 1 == targetMajorVersion)));
+  private static int getMajor(String version) {
+    return Integer.parseInt(version.split("\\.")[0]);
   }
+
+  private static int getMinor(String version) {
+    return Integer.parseInt(version.split("\\.")[1]);
+  }
+
+  public static boolean isValidUpgrade(String currentVersion, String targetVersion) {
+
+    int curMajor = VersionUtils.getMajor(currentVersion);
+    int curMinor = VersionUtils.getMinor(currentVersion);
+    int tgtMajor = VersionUtils.getMajor(targetVersion);
+    int tgtMinor = VersionUtils.getMinor(targetVersion);
+
+    // Same major upgrades are always allowed (**release-order already checked)
+    if (curMajor == tgtMajor) {
+      return true;
+    }
+
+    // 7.17.x -> 8.x
+    if (curMajor == 7 && curMinor == 17 && tgtMajor == 8) {
+      return true;
+    }
+
+    // 8.18.x -> 9.0.x ONLY
+    if (curMajor == 8 && curMinor == 18 && tgtMajor == 9 && tgtMinor == 0) {
+      return true;
+    }
+
+    // 8.19.x -> 9.1+
+    if (curMajor == 8 && curMinor >= 19 && tgtMajor == 9 && tgtMinor >= 1) {
+      return true;
+    }
+
+    return false;
+  }
+
+
 }
