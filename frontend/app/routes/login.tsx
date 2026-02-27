@@ -45,6 +45,8 @@ export default function LoginPage() {
 	})
 	return (
 		<Box
+			component="form"
+			onSubmit={formik.handleSubmit}
 			className="w-full flex items-center justify-center mt-[50px]" // centers child vertically and horizontally
 			padding={{ xs: "32px 16px", lg: "32px 56px 32px 152px" }}
 			sx={{ minHeight: "100vh" }} // ensures full viewport height for vertical centering
@@ -140,11 +142,7 @@ export default function LoginPage() {
 						</Box>
 						<Box className="flex flex-col gap-[24px]">
 							<Box className="flex flex-col gap-[8px] max-w-[515px]">
-								<Button
-									color="primary"
-									className="bg-white w-full text-[#0A0A0A]"
-									onPress={() => formik.handleSubmit()}
-								>
+								<Button type="submit" color="primary" className="bg-white w-full text-[#0A0A0A]">
 									Login <ArrowRight color="#0A0A0A" size={16} />
 								</Button>
 							</Box>
