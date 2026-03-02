@@ -7,7 +7,8 @@
         "usage/installation",
         "usage/user-management",
         "usage/setup-ssl",
-        "usage/usage-guide"
+        "usage/usage-guide",
+        "usage/upgrade-paths"
       ]
     }
   ],
