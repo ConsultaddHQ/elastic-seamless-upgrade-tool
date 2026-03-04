@@ -265,18 +265,26 @@ public class ClusterServiceImpl implements ClusterService {
 
   @Override
   public List<ClusterListItemResponse> getClusters() {
-    return clusterRepository.findAll().stream().map(cluster -> {
+    return clusterRepository.findAll().parallelStream().map(cluster -> {
       String version = "N/A";
-      String status = null;
+      String status = "Offline";
+
       try {
         ElasticClient client = elasticsearchClientProvider.getClient(cluster.getId());
         version = client.getInfo().getVersion().getNumber();
         status = client.getHealthStatus();
       } catch (Exception e) {
-        log.error("Error getting cluster list from Elasticsearch:", e);
+        log.error("Cluster [{}] at ID {} is unreachable: {}", cluster.getName(), cluster.getId(), e.getMessage());
       }
-      return new ClusterListItemResponse(cluster.getId(), cluster.getName(), cluster.getType().name(), cluster.getType().getDisplayName(),
-          version, status);
+
+      return new ClusterListItemResponse(
+          cluster.getId(),
+          cluster.getName(),
+          cluster.getType().name(),
+          cluster.getType().getDisplayName(),
+          version,
+          status
+      );
     }).toList();
   }
 
