@@ -54,10 +54,10 @@ public class SshCommandExecutor implements AutoCloseable {
     } catch (Exception e) {
       if (e.getCause() instanceof TimeoutException) {
         logger.warn("Timeout waiting for private key verification");
-        throw new SshConnectionException("Unable to establish SSH connection to host (IP: " + host + ").", e);
+        throw new SshConnectionException("Unable to establish SSH connection to host (IP: " + host + ").\nError:" + e.getMessage());
       }
       logger.warn("Unable to establish SSH connection to host", e);
-      throw new SshConnectionException("SSH authentication failed for host (IP: " + host + ").", e);
+      throw new SshConnectionException("SSH authentication failed for host (IP: " + host + ").\nError:" + e.getMessage());
     }
     return session;
   }

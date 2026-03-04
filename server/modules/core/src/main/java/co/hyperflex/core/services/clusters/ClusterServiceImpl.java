@@ -447,7 +447,7 @@ public class ClusterServiceImpl implements ClusterService {
 
   private void validateSSHKey(SelfManagedClusterEntity cluster, String secretKey) {
     try {
-      //Vaidating for java based ssh
+      //Validating for java based ssh
       ElasticClient elasticClient = elasticsearchClientProvider.getClient(ClusterAuthUtils.getElasticConnectionDetail(cluster, secretKey));
       var nodesData = elasticClient.getNodesInfo();
       var sshInfo = cluster.getSshInfo();
@@ -461,7 +461,7 @@ public class ClusterServiceImpl implements ClusterService {
         )) {
           log.info("SSH connection established via java base(Apache MINA SSHD) and working");
         } catch (Exception e) {
-          log.error("Error Attempting SSH using input key", e);
+          log.error("Error Attempting SSH using input key. Error: {}", e.getMessage());
           throw new BadRequestException("There is some problem with the key provided");
         }
       });
@@ -476,13 +476,13 @@ public class ClusterServiceImpl implements ClusterService {
           ansibleCommandExecutor.run(context, command, consumer, consumer);
           log.info("SSH connection established via Ansible");
         } catch (Exception e) {
-          log.error("Error Attempting SSH using input key for ansible", e);
+          log.error("Error Attempting SSH using input key for ansible. Error: {}", e.getMessage());
           throw new BadRequestException("There is some problem with the key provided");
         }
       });
 
     } catch (Exception e) {
-      log.error("Error in SSH Using the Key", e);
+      log.error("Error in SSH Using the Key. Error: {}", e.getMessage());
       throw new BadRequestException("There is some problem with the key provided");
     }
   }
