@@ -2,6 +2,7 @@ package co.hyperflex.ssh;
 
 import jakarta.validation.constraints.NotNull;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.KeyPair;
@@ -39,25 +40,49 @@ public class SshCommandExecutor implements AutoCloseable {
   private ClientSession connect(String host, int port, String username, String privateKeyPath) {
     final ClientSession session;
     try {
+      // Validate a key file first
+      File keyFile = new File(privateKeyPath);
+      if (!keyFile.exists()) {
+        throw new SshConnectionException("SSH key file not found: " + privateKeyPath);
+      }
+      if (!keyFile.canRead()) {
+        throw new SshConnectionException("SSH key file not readable. Check permissions: " + privateKeyPath);
+      }
 
       session = client.connect(username, host, port)
           .verify(timeoutSeconds, TimeUnit.SECONDS)
           .getSession();
 
       try (var stream = new FileInputStream(privateKeyPath)) {
-        Iterable<KeyPair> keyPairs = SecurityUtils.loadKeyPairIdentities(session, null, stream, null);
+        Iterable<KeyPair> keyPairs = SecurityUtils.loadKeyPairIdentities(
+            session,
+            null,
+            stream,
+            null
+        );
+
+        int keyCount = 0;
         for (KeyPair kp : keyPairs) {
           session.addPublicKeyIdentity(kp);
+          keyCount++;
+          logger.info("Added {} key for authentication", kp.getPrivate().getAlgorithm());
+        }
+
+        if (keyCount == 0) {
+          throw new SshConnectionException("No valid SSH keys found in: " + privateKeyPath);
         }
       }
+
       session.auth().verify(timeoutSeconds, TimeUnit.SECONDS);
+
     } catch (Exception e) {
       if (e.getCause() instanceof TimeoutException) {
         logger.warn("Timeout waiting for private key verification. Error {}", e.getMessage());
-        throw new SshConnectionException("Unable to establish SSH connection to host (IP: " + host + ").\nError:" + e.getMessage());
+        throw new SshConnectionException("Timeout: " + e.getMessage());
       }
-      logger.warn("Unable to establish SSH connection to host. Error: {}", e.getMessage());
-      throw new SshConnectionException("SSH authentication failed for host (IP: " + host + ").\nError:" + e.getMessage());
+      logger.error("SSH connection failed for {}@{}:{} - Key: {}. Error: {}",
+          username, host, port, privateKeyPath, e.getMessage(), e);
+      throw new SshConnectionException("SSH authentication failed: " + e.getMessage());
     }
     return session;
   }
