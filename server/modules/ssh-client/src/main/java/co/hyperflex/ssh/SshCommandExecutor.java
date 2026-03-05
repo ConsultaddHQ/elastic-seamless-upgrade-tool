@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.security.KeyPair;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -45,6 +46,7 @@ public class SshCommandExecutor implements AutoCloseable {
     final ClientSession session;
     try {
       // Validate a key file first
+      logger.info("Loading SSH key from: {}", privateKeyPath);
       File keyFile = new File(privateKeyPath);
       if (!keyFile.exists()) {
         throw new SshConnectionException("SSH key file not found: " + privateKeyPath);
@@ -61,7 +63,7 @@ public class SshCommandExecutor implements AutoCloseable {
           SecurityUtils.getKeyPairResourceParser()
               .loadKeyPairs(
                   session,
-                  new PathResource(new File(privateKeyPath).toPath()),
+                  new PathResource(Path.of(privateKeyPath)),
                   FilePasswordProvider.EMPTY
               );
 
