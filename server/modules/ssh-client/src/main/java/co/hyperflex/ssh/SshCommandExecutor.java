@@ -3,9 +3,9 @@ package co.hyperflex.ssh;
 import jakarta.validation.constraints.NotNull;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.KeyPair;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -14,6 +14,7 @@ import org.apache.sshd.client.channel.ClientChannel;
 import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.config.keys.FilePasswordProvider;
+import org.apache.sshd.common.util.io.resource.PathResource;
 import org.apache.sshd.common.util.security.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,24 +57,21 @@ public class SshCommandExecutor implements AutoCloseable {
           .verify(timeoutSeconds, TimeUnit.SECONDS)
           .getSession();
 
-      try (var stream = new FileInputStream(privateKeyPath)) {
-        Iterable<KeyPair> keyPairs = SecurityUtils.loadKeyPairIdentities(
-            session,
-            null,
-            stream,
-            FilePasswordProvider.EMPTY
-        );
+      Collection<KeyPair> keyPairs =
+          SecurityUtils.getKeyPairResourceParser()
+              .loadKeyPairs(
+                  session,
+                  new PathResource(new File(privateKeyPath).toPath()),
+                  FilePasswordProvider.EMPTY
+              );
 
-        int keyCount = 0;
-        for (KeyPair kp : keyPairs) {
-          session.addPublicKeyIdentity(kp);
-          keyCount++;
-          logger.info("Added {} key for authentication", kp.getPrivate().getAlgorithm());
-        }
+      if (keyPairs == null || keyPairs.isEmpty()) {
+        throw new SshConnectionException("No valid SSH keys found in: " + privateKeyPath);
+      }
 
-        if (keyCount == 0) {
-          throw new SshConnectionException("No valid SSH keys found in: " + privateKeyPath);
-        }
+      for (KeyPair kp : keyPairs) {
+        logger.info("Loaded SSH key algorithm: {}", kp.getPrivate().getAlgorithm());
+        session.addPublicKeyIdentity(kp);
       }
 
       session.auth().verify(timeoutSeconds, TimeUnit.SECONDS);
@@ -116,7 +114,7 @@ public class SshCommandExecutor implements AutoCloseable {
       }
     } finally {
       if (client != null && client.isOpen()) {
-        client.close();
+        client.stop();
       }
     }
   }
