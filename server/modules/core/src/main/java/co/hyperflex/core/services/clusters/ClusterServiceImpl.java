@@ -485,7 +485,7 @@ public class ClusterServiceImpl implements ClusterService {
 
     } catch (Exception e) {
       log.error("Error in SSH Using the Key. Error: ", e);
-      throw new BadRequestException("There is some problem with the key provided");
+      throw new BadRequestException("There is some problem with the key provided :- " + e.getMessage());
     }
   }
 
