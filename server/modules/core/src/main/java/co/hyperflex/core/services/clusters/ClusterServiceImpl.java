@@ -467,7 +467,9 @@ public class ClusterServiceImpl implements ClusterService {
       });
 
       nodesData.getNodes().forEach((nodeId, nodeData) -> {
-        AnsibleAdHocCommand command = AnsibleAdHocCommand.builder().build();
+        AnsibleAdHocCommand command = AnsibleAdHocCommand.builder()
+            .module("ping")
+            .build();
         ExecutionContext context =
             new ExecutionContext(nodeData.getIp(), sshInfo.username(), sshInfo.keyPath(), true, sshInfo.becomeUser());
         try {
@@ -510,9 +512,16 @@ public class ClusterServiceImpl implements ClusterService {
       // Ansible Check
       try {
         ExecutionContext context = new ExecutionContext(ip, sshInfo.username(), sshInfo.keyPath(), true, sshInfo.becomeUser());
-        ansibleCommandExecutor.run(context, AnsibleAdHocCommand.builder().build(), s -> {
-        }, s -> {
-        });
+        ansibleCommandExecutor.run(
+            context,
+            AnsibleAdHocCommand.builder()
+                .module("ping")
+                .build(),
+            s -> {
+            },
+            s -> {
+            }
+        );
       } catch (Exception e) {
         throw new BadRequestException("Ansible validation failed for Kibana node: " + ip);
       }
