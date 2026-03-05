@@ -13,12 +13,4 @@ COPY --from=builder /app/server/build/libs/*.jar /app.jar
 COPY data/ data/
 COPY server/scripts/ /scripts
 
-ENTRYPOINT [
-"java",
-"--add-opens=java.base/java.security=ALL-UNNAMED",
-"--add-opens=java.base/sun.security.util=ALL-UNNAMED",
-"--add-opens=java.base/sun.security.rsa=ALL-UNNAMED",
-"-Dspring.profiles.active=prod",
-"-jar",
-"/app.jar"
-]
+ENTRYPOINT ["java","--add-opens=java.base/java.security=ALL-UNNAMED","--add-opens=java.base/sun.security.util=ALL-UNNAMED","--add-opens=java.base/sun.security.rsa=ALL-UNNAMED","-Dspring.profiles.active=prod","-jar","/app.jar"]
