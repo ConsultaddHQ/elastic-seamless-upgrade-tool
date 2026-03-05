@@ -462,7 +462,7 @@ public class ClusterServiceImpl implements ClusterService {
           log.info("SSH connection established via java base(Apache MINA SSHD) and working");
         } catch (Exception e) {
           log.error("Error Attempting SSH using input key. Error: {}", e.getMessage());
-          throw new BadRequestException("There is some problem with the key provided");
+          throw new BadRequestException("There is some problem with the key provided :- " + e.getMessage());
         }
       });
 
@@ -479,7 +479,7 @@ public class ClusterServiceImpl implements ClusterService {
           log.info("SSH connection established via Ansible");
         } catch (Exception e) {
           log.error("Error Attempting SSH using input key for ansible. Error: {}", e.getMessage());
-          throw new BadRequestException("There is some problem with the key provided");
+          throw new BadRequestException("There is some problem with the key provided :- " + e.getMessage());
         }
       });
 
@@ -506,7 +506,7 @@ public class ClusterServiceImpl implements ClusterService {
       )) {
         log.info("Pre-save SSH check passed for Kibana IP: {}", ip);
       } catch (Exception e) {
-        throw new BadRequestException("SSH validation failed for Kibana node: " + ip);
+        throw new BadRequestException("SSH validation failed for Kibana node: " + ip + "\n" + e.getMessage());
       }
 
       // Ansible Check
@@ -523,7 +523,7 @@ public class ClusterServiceImpl implements ClusterService {
             }
         );
       } catch (Exception e) {
-        throw new BadRequestException("Ansible validation failed for Kibana node: " + ip);
+        throw new BadRequestException("Ansible validation failed for Kibana node: " + ip + "\n" + e.getMessage());
       }
     }
   }
