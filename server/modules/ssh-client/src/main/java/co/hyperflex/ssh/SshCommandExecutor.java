@@ -34,6 +34,8 @@ public class SshCommandExecutor implements AutoCloseable {
     this.timeoutSeconds = timeoutSeconds;
     this.becomeStrategy = becomeStrategy;
     this.client = SshClient.setUpDefaultClient();
+    // Disable host key verification (like StrictHostKeyChecking=no)
+    client.setServerKeyVerifier((clientSession, remoteAddress, serverKey) -> true);
     client.start();
     session = connect(host, port, username, privateKeyPath);
   }
