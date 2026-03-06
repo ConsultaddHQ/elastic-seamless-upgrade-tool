@@ -104,47 +104,69 @@ public class ClusterServiceImpl implements ClusterService {
   @Override
   @Transactional
   public AddClusterResponse add(final AddClusterRequest request) {
+
     final ClusterEntity cluster = this.clusterMapper.toEntity(request);
     cluster.setId(new ObjectId().toString());
 
-    // Perform Basic validations
-    validateCluster(cluster);
-
-    List<KibanaNodeEntity> clusterNodes = new ArrayList<>();
-
-    if (request instanceof AddSelfManagedClusterRequest selfManagedRequest) {
-      // Prepare kibana nodes for SSH validation
-      clusterNodes = selfManagedRequest.getKibanaNodes()
-          .stream()
-          .map(kibanaNodeRequest -> {
-            KibanaNodeEntity node = clusterMapper.toNodeEntity(kibanaNodeRequest);
-            node.setId(HashUtil.generateHash(cluster.getId() + ":" + node.getIp()));
-            node.setClusterId(cluster.getId());
-            return node;
-          }).toList();
-
-      // Validate SSH Key
-      validateSSHKey((SelfManagedClusterEntity) cluster, cluster.getId());
-      validateKibanaSSHKey((SelfManagedClusterEntity) cluster, clusterNodes);
-    }
+    log.info("Starting cluster creation for clusterId={}", cluster.getId());
 
     secretStoreService.putSecret(
         cluster.getId(),
         ClusterAuthUtils.getAuthSecret(
-            request.getUsername(), request.getPassword(), request.getApiKey()
+            request.getUsername(),
+            request.getPassword(),
+            request.getApiKey()
         )
     );
 
-    clusterRepository.save(cluster);
-    syncElasticNodes(cluster);
+    try {
 
-    // Save Nodes
-    if (!clusterNodes.isEmpty()) {
-      syncKibanaNodes((SelfManagedClusterEntity) cluster, clusterNodes);
-      clusterNodeRepository.saveAll(clusterNodes);
+      log.info("Validating cluster connectivity for clusterId={}", cluster.getId());
+      validateCluster(cluster);
+
+      List<KibanaNodeEntity> clusterNodes = new ArrayList<>();
+
+      if (request instanceof AddSelfManagedClusterRequest selfManagedRequest) {
+
+        log.info("Preparing Kibana nodes for clusterId={}", cluster.getId());
+
+        clusterNodes = new ArrayList<>(
+            selfManagedRequest.getKibanaNodes()
+                .stream()
+                .map(kibanaNodeRequest -> {
+                  KibanaNodeEntity node = clusterMapper.toNodeEntity(kibanaNodeRequest);
+                  node.setId(HashUtil.generateHash(cluster.getId() + ":" + node.getIp()));
+                  node.setClusterId(cluster.getId());
+                  return node;
+                }).toList()
+        );
+
+        log.info("Validating SSH connectivity for clusterId={}", cluster.getId());
+
+        validateSSHKey((SelfManagedClusterEntity) cluster, cluster.getId());
+        validateKibanaSSHKey((SelfManagedClusterEntity) cluster, clusterNodes);
+      }
+
+      clusterRepository.save(cluster);
+
+      log.info("Cluster saved successfully with id={}", cluster.getId());
+
+      syncElasticNodes(cluster);
+
+      if (!clusterNodes.isEmpty()) {
+        syncKibanaNodes((SelfManagedClusterEntity) cluster, clusterNodes);
+        clusterNodeRepository.saveAll(clusterNodes);
+      }
+
+      log.info("Cluster creation completed successfully for clusterId={}", cluster.getId());
+
+      return new AddClusterResponse(cluster.getId());
+
+    } catch (Exception e) {
+      log.error("Cluster creation failed for clusterId={}. Removing secret.", cluster.getId(), e);
+      secretStoreService.removeSecret(cluster.getId());
+      throw e;
     }
-
-    return new AddClusterResponse(cluster.getId());
   }
 
   @CacheEvict(value = "elasticClientCache", key = "#p0")
