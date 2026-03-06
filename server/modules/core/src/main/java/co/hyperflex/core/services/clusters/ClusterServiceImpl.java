@@ -57,6 +57,7 @@ import jakarta.validation.constraints.NotNull;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -215,15 +216,50 @@ public class ClusterServiceImpl implements ClusterService {
   }
 
   @Override
+  @Transactional
   public UpdateClusterResponse updateClusterSshDetail(String clusterId, UpdateClusterSshDetailRequest request) {
     ClusterEntity cluster = clusterRepository.findById(clusterId)
         .orElseThrow(() -> new NotFoundException("Cluster not found with id: " + clusterId));
-    if (cluster instanceof SelfManagedClusterEntity selfManagedCluster) {
-      String file = sshKeyService.createSSHPrivateKeyFile(request.key(), selfManagedCluster.getId());
-      selfManagedCluster.setSshInfo(new SshInfo(request.username(), file, "root"));
-    } else {
+
+    if (!(cluster instanceof SelfManagedClusterEntity selfManagedCluster)) {
       throw new BadRequestException("Invalid request");
     }
+
+    // create a temporary key file
+    String file = sshKeyService.createSSHPrivateKeyFile(request.key(), selfManagedCluster.getId());
+
+    SshInfo previousSshInfo = selfManagedCluster.getSshInfo();
+    SshInfo sshInfo = new SshInfo(request.username(), file, "root");
+
+    selfManagedCluster.setSshInfo(sshInfo);
+
+    try {
+      // validate The SSH key
+      validateSSHKey(selfManagedCluster, clusterId);
+
+      List<KibanaNodeEntity> kibanaNodes =
+          clusterNodeRepository.findByClusterIdAndType(clusterId, ClusterNodeType.KIBANA)
+              .stream()
+              .map(KibanaNodeEntity.class::cast)
+              .toList();
+
+      validateKibanaSSHKey(selfManagedCluster, kibanaNodes);
+
+    } catch (Exception e) {
+      log.error("SSH validation failed for clusterId={}", clusterId, e);
+
+      // delete an invalid key file
+      try {
+        Files.deleteIfExists(Path.of(file));
+      } catch (IOException ignored) {
+        log.error("Deletion of Invalid SSH file Failed");
+      }
+
+      // restore old ssh info
+      selfManagedCluster.setSshInfo(previousSshInfo);
+      throw new BadRequestException("Invalid SSH key or unable to connect to cluster nodes");
+    }
+
     clusterRepository.save(cluster);
     syncElasticNodes(cluster);
     return new UpdateClusterResponse();
