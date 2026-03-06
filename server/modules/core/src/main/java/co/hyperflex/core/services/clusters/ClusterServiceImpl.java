@@ -57,6 +57,7 @@ import jakarta.validation.constraints.NotNull;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
@@ -69,6 +70,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ClusterServiceImpl implements ClusterService {
@@ -100,29 +102,48 @@ public class ClusterServiceImpl implements ClusterService {
   }
 
   @Override
+  @Transactional
   public AddClusterResponse add(final AddClusterRequest request) {
     final ClusterEntity cluster = this.clusterMapper.toEntity(request);
     cluster.setId(new ObjectId().toString());
-    secretStoreService.putSecret(cluster.getId(), ClusterAuthUtils.getAuthSecret(
-        request.getUsername(),
-        request.getPassword(),
-        request.getApiKey()
-    ));
+
+    // Perform Basic validations
     validateCluster(cluster);
+
+    List<KibanaNodeEntity> clusterNodes = new ArrayList<>();
+
+    if (request instanceof AddSelfManagedClusterRequest selfManagedRequest) {
+      // Prepare kibana nodes for SSH validation
+      clusterNodes = selfManagedRequest.getKibanaNodes()
+          .stream()
+          .map(kibanaNodeRequest -> {
+            KibanaNodeEntity node = clusterMapper.toNodeEntity(kibanaNodeRequest);
+            node.setId(HashUtil.generateHash(cluster.getId() + ":" + node.getIp()));
+            node.setClusterId(cluster.getId());
+            return node;
+          }).toList();
+
+      // Validate SSH Key
+      validateSSHKey((SelfManagedClusterEntity) cluster, cluster.getId());
+      validateKibanaSSHKey((SelfManagedClusterEntity) cluster, clusterNodes);
+    }
+
+    secretStoreService.putSecret(
+        cluster.getId(),
+        ClusterAuthUtils.getAuthSecret(
+            request.getUsername(), request.getPassword(), request.getApiKey()
+        )
+    );
+
     clusterRepository.save(cluster);
     syncElasticNodes(cluster);
-    if (request instanceof AddSelfManagedClusterRequest selfManagedRequest) {
-      validateSSHKey((SelfManagedClusterEntity) cluster, cluster.getId());
-      final List<KibanaNodeEntity> clusterNodes = selfManagedRequest.getKibanaNodes().stream().map(kibanaNodeRequest -> {
-        KibanaNodeEntity node = clusterMapper.toNodeEntity(kibanaNodeRequest);
-        node.setId(HashUtil.generateHash(cluster.getId() + ":" + node.getIp()));
-        node.setClusterId(cluster.getId());
-        return node;
-      }).toList();
-      validateKibanaSSHKey((SelfManagedClusterEntity) cluster, clusterNodes);
+
+    // Save Nodes
+    if (!clusterNodes.isEmpty()) {
       syncKibanaNodes((SelfManagedClusterEntity) cluster, clusterNodes);
       clusterNodeRepository.saveAll(clusterNodes);
     }
+
     return new AddClusterResponse(cluster.getId());
   }
 
@@ -462,7 +483,7 @@ public class ClusterServiceImpl implements ClusterService {
           log.info("SSH connection established via java base(Apache MINA SSHD) and working");
         } catch (Exception e) {
           log.error("Error Attempting SSH using input key. Error: {}", e.getMessage());
-          throw new BadRequestException("There is some problem with the key provided :- " + e.getMessage());
+          throw new BadRequestException(e.getMessage());
         }
       });
 
@@ -479,7 +500,7 @@ public class ClusterServiceImpl implements ClusterService {
           log.info("SSH connection established via Ansible");
         } catch (Exception e) {
           log.error("Error Attempting SSH using input key for ansible. Error: {}", e.getMessage());
-          throw new BadRequestException("There is some problem with the key provided :- " + e.getMessage());
+          throw new BadRequestException(e.getMessage());
         }
       });
 
