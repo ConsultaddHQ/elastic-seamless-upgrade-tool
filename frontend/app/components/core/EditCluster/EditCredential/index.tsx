@@ -8,7 +8,6 @@ import { OutlinedBorderButton } from "~/components/utilities/Buttons"
 import { useMutation } from "@tanstack/react-query"
 import { useFormik } from "formik"
 import { DocumentText1, DocumentUpload, Trash } from "iconsax-react"
-import _ from "lodash"
 import { useState } from "react"
 // @ts-ignore-block
 import Files from "react-files"
