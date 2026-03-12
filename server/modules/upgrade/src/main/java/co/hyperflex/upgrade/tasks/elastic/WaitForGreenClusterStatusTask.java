@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 public class WaitForGreenClusterStatusTask implements Task {
 
   private static final int MAX_RETRIES = 60;
-  private static final int RETRY_DELAY_MILLIS = 5000;
+  private static final int RETRY_DELAY_MILLIS = 3000;
 
   @Override
   public String getName() {
