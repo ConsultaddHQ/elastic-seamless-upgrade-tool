@@ -2,6 +2,7 @@ package co.hyperflex.upgrade.tasks.elastic;
 
 import co.hyperflex.clients.elastic.ElasticClient;
 import co.hyperflex.clients.elastic.dto.cat.health.HealthRecord;
+import co.hyperflex.clients.elastic.dto.nodes.NodeInfo;
 import co.hyperflex.upgrade.tasks.Context;
 import co.hyperflex.upgrade.tasks.Task;
 import co.hyperflex.upgrade.tasks.TaskResult;
@@ -14,7 +15,7 @@ import org.springframework.stereotype.Component;
 public class WaitForGreenClusterStatusTask implements Task {
 
   private static final int MAX_RETRIES = 60;
-  private static final int RETRY_DELAY_MILLIS = 5000;
+  private static final int RETRY_DELAY_MILLIS = 3000;
 
   @Override
   public String getName() {
@@ -50,4 +51,20 @@ public class WaitForGreenClusterStatusTask implements Task {
   public boolean skip(Map<String, Boolean> flags) {
     return flags.getOrDefault("skipHealth", false);
   }
+
+  @Override
+  public boolean isMandatoryTask(Context context) {
+
+    List<NodeInfo> nodes = context.elasticClient()
+        .getNodesInfo()
+        .getNodes()
+        .values()
+        .stream()
+        .toList();
+
+    String targetVersion = context.config().targetVersion();
+
+    return nodes.stream().allMatch(node -> targetVersion.equals(node.getVersion()));
+  }
+
 }
