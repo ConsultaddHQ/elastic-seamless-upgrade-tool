@@ -12,6 +12,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class LuceneIndexCompatibilityPrecheck extends BaseIndexPrecheck {
 
+  private static final Set<String> SYSTEM_INDICES_TO_SKIP = Set.of(
+      ".geoip_databases"
+  );
+
   @Override
   public String getName() {
     return "Lucene index compatibility";
@@ -23,6 +27,12 @@ public class LuceneIndexCompatibilityPrecheck extends BaseIndexPrecheck {
     var indexName = context.getIndexName();
     var clusterUpgradeJob = context.getClusterUpgradeJob();
     int targetLucene = IndexUtils.mapEsVersionToLucene(clusterUpgradeJob.getTargetVersion());
+
+    // Skip system indices like .geoIp_databases
+    if (SYSTEM_INDICES_TO_SKIP.contains(indexName)) {
+      logger.info("Skipping system index [{}] as it is managed internally by Elasticsearch.", indexName);
+      return;
+    }
 
     var request = ApiRequest.builder(JsonNode.class).get().uri("/" + indexName + "/_segments").build();
     JsonNode root = context.getElasticClient().execute(request);
