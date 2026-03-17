@@ -34,7 +34,6 @@ function UpgradeAssistant() {
 	const setPrecheckAllowed = useSafeRouteStore((state) => state.setPrecheckAllowed)
 
 
-
 	// Format remaining time in HH:MM:SS
 	const formatTime = (milliseconds: number | null): string => {
 		if (milliseconds === null) return "Not Started"
