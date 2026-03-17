@@ -14,4 +14,8 @@ public interface Task {
   default boolean skip(Map<String, Boolean> flags) {
     return false;
   }
+
+  default boolean isMandatoryTask(Context context) {
+    return true;
+  }
 }
