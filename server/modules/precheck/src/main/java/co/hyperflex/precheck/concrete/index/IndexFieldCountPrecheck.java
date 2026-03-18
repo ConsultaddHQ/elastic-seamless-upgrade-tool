@@ -14,9 +14,6 @@ import org.springframework.stereotype.Component;
 public class IndexFieldCountPrecheck extends BaseIndexPrecheck {
 
   private static final int FIELD_LIMIT = 1000;
-  private static final Set<String> SYSTEM_INDICES_TO_SKIP = Set.of(
-      ".geoip_databases"
-  );
 
   @Override
   public String getName() {
@@ -27,12 +24,6 @@ public class IndexFieldCountPrecheck extends BaseIndexPrecheck {
   public void run(IndexContext context) {
     String indexName = context.getIndexName();
     Logger logger = context.getLogger();
-
-    // Skip system indices like .geoIp_databases
-    if (SYSTEM_INDICES_TO_SKIP.contains(indexName)) {
-      logger.info("Skipping system index [{}] as it is managed internally by Elasticsearch.", indexName);
-      return;
-    }
 
     var uri = "/" + indexName + "/_mapping";
 
@@ -88,5 +79,17 @@ public class IndexFieldCountPrecheck extends BaseIndexPrecheck {
     }
 
     return count;
+  }
+
+  @Override
+  public boolean shouldRun(IndexContext context) {
+    var indexName = context.getIndexName();
+
+    if (SYSTEM_INDICES_TO_SKIP.contains(indexName)) {
+      context.getLogger().info("Skipping system index [{}] as it is managed internally by Elasticsearch.", indexName);
+      return false;
+    }
+
+    return true;
   }
 }
