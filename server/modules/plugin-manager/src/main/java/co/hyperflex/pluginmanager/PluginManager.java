@@ -11,5 +11,4 @@ public interface PluginManager {
 
   void installPlugin(String pluginName, String version);
 
-  public List<String> listPluginsViaFileSystem();
 }
