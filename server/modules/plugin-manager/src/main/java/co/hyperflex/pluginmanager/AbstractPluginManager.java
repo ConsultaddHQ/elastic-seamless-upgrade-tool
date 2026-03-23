@@ -59,10 +59,27 @@ public abstract class AbstractPluginManager implements PluginManager {
   public void installPlugin(String pluginName, String version) {
     try {
       var source = pluginSourceResolver.resolve(pluginName, version);
-      var result = executor.execute(getBaseCommand() + "install --batch " + source);
-      if (!result.isSuccess()) {
-        throw new RuntimeException("Failed to install [plugin: " + pluginName + "] from : " + result.stderr());
+
+      // Download the plugin directly using wget (bypassing Java SSL issues)
+      // We download it to /tmp so it's safely out of the way
+      String downloadCmd = "wget -q -O /tmp/" + pluginName + ".zip " + source;
+      var downloadResult = executor.execute(downloadCmd);
+      if (!downloadResult.isSuccess()) {
+        throw new RuntimeException("Failed to download plugin file from [" + source + "]: " + downloadResult.stderr());
       }
+
+      // Install the plugin using the local file path
+      // Note the "file://" syntax which tells the CLI tool not to use the internet
+      String installCmd = getBaseCommand() + "install --batch file:///tmp/" + pluginName + ".zip";
+      var installResult = executor.execute(installCmd);
+
+      if (!installResult.isSuccess()) {
+        throw new RuntimeException("Failed to install [plugin: " + pluginName + "] from local file: " + installResult.stderr());
+      }
+
+      // Cleanup the temp file
+      executor.execute("rm -f /tmp/" + pluginName + ".zip");
+
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
