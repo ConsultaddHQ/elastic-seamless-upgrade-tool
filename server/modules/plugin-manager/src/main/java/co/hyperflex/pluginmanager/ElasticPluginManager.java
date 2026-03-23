@@ -11,7 +11,7 @@ public class ElasticPluginManager extends AbstractPluginManager {
 
   @Override
   protected String getBaseCommand() {
-    return "/usr/share/elasticsearch/bin/elasticsearch-plugin ";
+    return "sudo /usr/share/elasticsearch/bin/elasticsearch-plugin ";
   }
 
   @Override

@@ -75,7 +75,7 @@ public abstract class AbstractPluginManager implements PluginManager {
   @Override
   public List<String> listPluginsViaFileSystem() {
     try {
-      var result = executor.execute("ls -1 " + getPluginDirectory());
+      var result = executor.execute("sudo ls -1 " + getPluginDirectory());
       if (!result.isSuccess() || result.stdout().isBlank()) {
         return Collections.emptyList();
       }
@@ -92,7 +92,7 @@ public abstract class AbstractPluginManager implements PluginManager {
   public void purgePluginDirectory() {
     try {
       // Adding a trailing slash to ensure it deletes contents, not the directory itself
-      var result = executor.execute("rm -rf " + getPluginDirectory() + "*");
+      var result = executor.execute("sudo rm -rf " + getPluginDirectory() + "*");
       if (!result.isSuccess()) {
         throw new RuntimeException("Failed to purge plugin directory: " + result.stderr());
       }
