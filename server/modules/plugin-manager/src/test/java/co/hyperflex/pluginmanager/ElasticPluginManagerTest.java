@@ -36,7 +36,7 @@ class ElasticPluginManagerTest {
   }
 
   private String getBaseCommand() {
-    return "/usr/share/elasticsearch/bin/elasticsearch-plugin ";
+    return "sudo /usr/share/elasticsearch/bin/elasticsearch-plugin ";
   }
 
   @Test
