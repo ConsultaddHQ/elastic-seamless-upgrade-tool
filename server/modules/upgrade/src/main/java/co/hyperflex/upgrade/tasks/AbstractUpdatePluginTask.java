@@ -17,9 +17,9 @@ public abstract class AbstractUpdatePluginTask implements Task {
     Logger logger = context.logger();
     try (SshCommandExecutor executor = context.getSshCommandExecutor()) {
       var pluginManger = pluginManagerFactory.create(executor, context.node().getType());
-      logger.info("Getting list of installed plugins");
+      logger.info("Getting list of installed plugins via filesystem");
       List<String> plugins = pluginManger
-          .listPluginsViaFileSystem()
+          .listPlugins()
           .stream()
           .filter(plugin -> !plugin.startsWith("WARNING:")) // 7.0.0 prints warning for old installed plugins
           .toList();
@@ -32,10 +32,11 @@ public abstract class AbstractUpdatePluginTask implements Task {
       logger.info("Found {} plugins[{}]", plugins.size(), String.join(", ", plugins));
 
       for (String plugin : plugins) {
-        logger.info("Removing plugin [{}]", plugin);
+        logger.info("Purging old directory for plugin [{}]", plugin);
         pluginManger.removePlugin(plugin);
-        logger.info("Successfully removed [plugin: {}]", plugin);
-        logger.info("Installing plugin [{}]", plugin);
+        logger.info("Successfully purged [plugin: {}]", plugin);
+
+        logger.info("Installing new 8.x plugin [{}]", plugin);
         pluginManger.installPlugin(plugin, context.config().targetVersion());
         logger.info("Successfully installed plugin [{}]", plugin);
       }
