@@ -10,4 +10,6 @@ public interface PluginManager {
   boolean isPluginAvailable(String pluginName, String version);
 
   void installPlugin(String pluginName, String version);
+
+  public List<String> listPluginsViaFileSystem();
 }

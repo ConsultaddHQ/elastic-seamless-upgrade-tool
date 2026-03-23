@@ -21,16 +21,16 @@ public abstract class AbstractPluginManager implements PluginManager {
   @Override
   public List<String> listPlugins() {
     try {
-      var result = executor.execute("ls -1 " + getPluginDirectory());
-      if (!result.isSuccess() || result.stdout().isBlank()) {
+      var result = executor.execute(getBaseCommand() + "list");
+      if (!result.isSuccess()) {
+        throw new RuntimeException("Failed to list plugins: " + result.stderr());
+      }
+      if (result.stdout().contains("No plugins installed")) {
         return Collections.emptyList();
       }
-      return Arrays.stream(result.stdout().split("\n"))
-          .map(String::trim)
-          .filter(p -> !p.isBlank())
-          .toList();
+      return Arrays.stream(result.stdout().split("\n")).map(String::trim).filter(p -> !p.isBlank()).toList();
     } catch (IOException e) {
-      throw new RuntimeException("Failed to list plugins via filesystem", e);
+      throw new RuntimeException(e);
     }
   }
 
@@ -71,5 +71,21 @@ public abstract class AbstractPluginManager implements PluginManager {
   protected abstract String getBaseCommand();
 
   protected abstract String getPluginDirectory();
+
+  @Override
+  public List<String> listPluginsViaFileSystem() {
+    try {
+      var result = executor.execute("ls -1 " + getPluginDirectory());
+      if (!result.isSuccess() || result.stdout().isBlank()) {
+        return Collections.emptyList();
+      }
+      return Arrays.stream(result.stdout().split("\n"))
+          .map(String::trim)
+          .filter(p -> !p.isBlank())
+          .toList();
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to list plugins via filesystem", e);
+    }
+  }
 
 }

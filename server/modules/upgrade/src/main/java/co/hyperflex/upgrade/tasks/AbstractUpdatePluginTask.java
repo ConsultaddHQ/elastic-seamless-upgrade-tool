@@ -19,7 +19,7 @@ public abstract class AbstractUpdatePluginTask implements Task {
       var pluginManger = pluginManagerFactory.create(executor, context.node().getType());
       logger.info("Getting list of installed plugins");
       List<String> plugins = pluginManger
-          .listPlugins()
+          .listPluginsViaFileSystem()
           .stream()
           .filter(plugin -> !plugin.startsWith("WARNING:")) // 7.0.0 prints warning for old installed plugins
           .toList();
