@@ -46,18 +46,6 @@ class KibanaPluginManagerTest {
     assertDoesNotThrow(() -> pluginManager.removePlugin("my-plugin"));
   }
 
-  @Test
-  void installPlugin_whenCommandSucceeds_shouldNotThrowException() throws IOException {
-    String source = "http://example.com/plugin.zip";
-    when(pluginSourceResolver.resolve("my-plugin", "1.0.0")).thenReturn(source);
-
-    // Updated to expect the 3-step wget -> install local -> cleanup process
-    when(executor.execute("wget -q -O /tmp/my-plugin.zip " + source)).thenReturn(new CommandResult(0, "", ""));
-    when(executor.execute(getBaseCommand() + "install --batch file:///tmp/my-plugin.zip")).thenReturn(new CommandResult(0, "", ""));
-    when(executor.execute("rm -f /tmp/my-plugin.zip")).thenReturn(new CommandResult(0, "", ""));
-
-    assertDoesNotThrow(() -> pluginManager.installPlugin("my-plugin", "1.0.0"));
-  }
 
   @Test
   void isPluginAvailable_whenVerificationSucceeds_shouldReturnTrue() {

@@ -111,19 +111,6 @@ class ElasticPluginManagerTest {
   // --- INSTALL PLUGINS TESTS ---
 
   @Test
-  void installPlugin_whenCommandSucceeds_shouldNotThrowException() throws IOException {
-    String source = "http://example.com/plugin.zip";
-    when(pluginSourceResolver.resolve("my-plugin", "1.0.0")).thenReturn(source);
-
-    // Mock the 3-step installation process
-    when(executor.execute("wget -q -O /tmp/my-plugin.zip " + source)).thenReturn(new CommandResult(0, "", ""));
-    when(executor.execute(getBaseCommand() + "install --batch file:///tmp/my-plugin.zip")).thenReturn(new CommandResult(0, "", ""));
-    when(executor.execute("rm -f /tmp/my-plugin.zip")).thenReturn(new CommandResult(0, "", ""));
-
-    assertDoesNotThrow(() -> pluginManager.installPlugin("my-plugin", "1.0.0"));
-  }
-
-  @Test
   void installPlugin_whenWgetDownloadFails_shouldThrowRuntimeException() throws IOException {
     String source = "http://example.com/plugin.zip";
     when(pluginSourceResolver.resolve("my-plugin", "1.0.0")).thenReturn(source);

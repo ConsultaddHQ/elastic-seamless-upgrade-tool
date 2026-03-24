@@ -21,7 +21,6 @@ public abstract class AbstractPluginManager implements PluginManager {
   @Override
   public List<String> listPlugins() {
     try {
-      // Bypasses the CLI and reads the filesystem directly
       var result = executor.execute("ls -1 " + getPluginDirectory());
       if (!result.isSuccess() || result.stdout().isBlank()) {
         return Collections.emptyList();
@@ -38,7 +37,6 @@ public abstract class AbstractPluginManager implements PluginManager {
   @Override
   public void removePlugin(String pluginName) {
     try {
-      // Purges the old 7.x folder directly to prevent 8.x CLI crashes
       var result = executor.execute("rm -rf " + getPluginDirectory() + pluginName);
       if (!result.isSuccess()) {
         throw new RuntimeException("Failed to forcefully remove plugin folder " + pluginName + ": " + result.stderr());
@@ -61,24 +59,10 @@ public abstract class AbstractPluginManager implements PluginManager {
   public void installPlugin(String pluginName, String version) {
     try {
       var source = pluginSourceResolver.resolve(pluginName, version);
-
-      // 1. Download the plugin directly using wget (bypasses JVM SSL/CA issues)
-      String downloadCmd = "wget -q -O /tmp/" + pluginName + ".zip " + source;
-      var downloadResult = executor.execute(downloadCmd);
-      if (!downloadResult.isSuccess()) {
-        throw new RuntimeException("Failed to download plugin file from [" + source + "]: " + downloadResult.stderr());
+      var result = executor.execute(getBaseCommand() + "install --batch " + source);
+      if (!result.isSuccess()) {
+        throw new RuntimeException("Failed to install [plugin: " + pluginName + "] from : " + result.stderr());
       }
-
-      // 2. Install the plugin using the local file path
-      String installCmd = getBaseCommand() + "install --batch file:///tmp/" + pluginName + ".zip";
-      var installResult = executor.execute(installCmd);
-      if (!installResult.isSuccess()) {
-        throw new RuntimeException("Failed to install [plugin: " + pluginName + "] from local file: " + installResult.stderr());
-      }
-
-      // 3. Cleanup the temp file to keep the server clean
-      executor.execute("rm -f /tmp/" + pluginName + ".zip");
-
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

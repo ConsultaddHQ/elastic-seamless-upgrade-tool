@@ -36,6 +36,12 @@ public abstract class AbstractUpdatePluginTask implements Task {
         pluginManger.removePlugin(plugin);
         logger.info("Successfully purged [plugin: {}]", plugin);
 
+        if (context.config().targetVersion().startsWith("8.")
+            && (plugin.equals("repository-gcs") || plugin.equals("repository-s3") || plugin.equals("repository-azure"))) {
+          logger.info("Plugin [{}] is natively bundled as a module in Elastic 8.x. Skipping installation.", plugin);
+          continue;
+        }
+
         logger.info("Installing new 8.x plugin [{}]", plugin);
         pluginManger.installPlugin(plugin, context.config().targetVersion());
         logger.info("Successfully installed plugin [{}]", plugin);
