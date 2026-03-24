@@ -21,7 +21,7 @@ public abstract class AbstractUpdatePluginTask implements Task {
       List<String> plugins = pluginManger
           .listPlugins()
           .stream()
-          .filter(plugin -> !plugin.startsWith("WARNING:")) // 7.0.0 prints warning for old installed plugins
+          .filter(plugin -> !plugin.startsWith("WARNING:"))
           .toList();
 
       if (plugins.isEmpty()) {
@@ -31,11 +31,19 @@ public abstract class AbstractUpdatePluginTask implements Task {
 
       logger.info("Found {} plugins[{}]", plugins.size(), String.join(", ", plugins));
 
+      // PASS 1: Purge ALL 7.x plugins first so the 8.x CLI doesn't crash on startup
+      logger.info("Performing bulk purge of old plugin directories...");
       for (String plugin : plugins) {
         logger.info("Purging old directory for plugin [{}]", plugin);
         pluginManger.removePlugin(plugin);
-        logger.info("Successfully purged [plugin: {}]", plugin);
+      }
+      logger.info("Bulk purge complete. Plugin directory is clean.");
 
+      // PASS 2: Install valid 8.x plugins
+      logger.info("Beginning 8.x plugin installations...");
+      for (String plugin : plugins) {
+
+        // Skip native modules bundled in 8.x
         if (context.config().targetVersion().startsWith("8.")
             && (plugin.equals("repository-gcs") || plugin.equals("repository-s3") || plugin.equals("repository-azure"))) {
           logger.info("Plugin [{}] is natively bundled as a module in Elastic 8.x. Skipping installation.", plugin);
@@ -46,6 +54,7 @@ public abstract class AbstractUpdatePluginTask implements Task {
         pluginManger.installPlugin(plugin, context.config().targetVersion());
         logger.info("Successfully installed plugin [{}]", plugin);
       }
+
       return TaskResult.success("Plugins updated successfully");
 
     } catch (Exception e) {
