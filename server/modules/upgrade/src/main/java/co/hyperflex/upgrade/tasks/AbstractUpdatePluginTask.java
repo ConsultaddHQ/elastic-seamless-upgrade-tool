@@ -44,7 +44,7 @@ public abstract class AbstractUpdatePluginTask implements Task {
       logger.info("Beginning plugin installations...");
       for (String plugin : plugins) {
 
-        // Skip native modules bundled in 8.x
+        // for 7.x to 8.x, Skipping native modules bundled in 8.x
         if (targetVersion.startsWith("8.")
             && (plugin.equals("repository-gcs") || plugin.equals("repository-s3") || plugin.equals("repository-azure"))) {
           logger.info("Plugin [{}] is natively bundled as a module in Elastic 8.x. Skipping installation.", plugin);

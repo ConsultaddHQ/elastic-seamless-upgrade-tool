@@ -1,6 +1,7 @@
 package co.hyperflex.pluginmanager;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -42,11 +43,19 @@ class ElasticPluginManagerTest {
     return "/usr/share/elasticsearch/plugins/";
   }
 
-  // --- LIST PLUGINS TESTS ---
+  @Test
+  void listPlugins_whenPluginsExist_shouldReturnPluginList() throws IOException {
+    String commandOutput = "plugin1\nplugin2";
+    when(executor.execute("ls -1 " + getPluginDirectory())).thenReturn(new CommandResult(0, commandOutput, ""));
+    List<String> plugins = pluginManager.listPlugins();
+    assertEquals(2, plugins.size());
+    assertTrue(plugins.contains("plugin1"));
+    assertTrue(plugins.contains("plugin2"));
+  }
 
   @Test
   void listPlugins_whenNoPluginsInstalled_shouldReturnEmptyList() throws IOException {
-    // Blank stdout simulates an empty folder
+    // A blank stdout represents an empty folder via ls
     when(executor.execute("ls -1 " + getPluginDirectory())).thenReturn(new CommandResult(0, "", ""));
     List<String> plugins = pluginManager.listPlugins();
     assertTrue(plugins.isEmpty());
@@ -54,8 +63,8 @@ class ElasticPluginManagerTest {
 
   @Test
   void listPlugins_whenCommandFails_shouldReturnEmptyList() throws IOException {
-    // If 'ls' fails (e.g., folder doesn't exist yet on a fresh node), it should gracefully return empty
-    when(executor.execute("ls -1 " + getPluginDirectory())).thenReturn(new CommandResult(2, "", "No such file or directory"));
+    // if ls fails (e.g. folder missing), the code now safely returns an empty list
+    when(executor.execute("ls -1 " + getPluginDirectory())).thenReturn(new CommandResult(1, "", "No such file or directory"));
     List<String> plugins = pluginManager.listPlugins();
     assertTrue(plugins.isEmpty());
   }
@@ -65,8 +74,6 @@ class ElasticPluginManagerTest {
     when(executor.execute("ls -1 " + getPluginDirectory())).thenThrow(new IOException());
     assertThrows(RuntimeException.class, () -> pluginManager.listPlugins());
   }
-
-  // --- REMOVE PLUGINS TESTS ---
 
   @Test
   void removePlugin_whenCommandSucceeds_shouldNotThrowException() throws IOException {
@@ -85,8 +92,6 @@ class ElasticPluginManagerTest {
     when(executor.execute("rm -rf " + getPluginDirectory() + "my-plugin")).thenThrow(new IOException());
     assertThrows(RuntimeException.class, () -> pluginManager.removePlugin("my-plugin"));
   }
-
-  // --- IS PLUGIN AVAILABLE TESTS ---
 
   @Test
   void isPluginAvailable_whenSourceIsPluginName_shouldReturnTrue() {
@@ -108,29 +113,18 @@ class ElasticPluginManagerTest {
     assertFalse(pluginManager.isPluginAvailable("my-plugin", "1.0.0"));
   }
 
-  // --- INSTALL PLUGINS TESTS ---
-
   @Test
-  void installPlugin_whenWgetDownloadFails_shouldThrowRuntimeException() throws IOException {
-    String source = "http://example.com/plugin.zip";
-    when(pluginSourceResolver.resolve("my-plugin", "1.0.0")).thenReturn(source);
-
-    // Fail on the first step (wget)
-    when(executor.execute("wget -q -O /tmp/my-plugin.zip " + source)).thenReturn(new CommandResult(1, "", "wget error"));
-
-    assertThrows(RuntimeException.class, () -> pluginManager.installPlugin("my-plugin", "1.0.0"));
+  void installPlugin_whenCommandSucceeds_shouldNotThrowException() throws IOException {
+    when(pluginSourceResolver.resolve("my-plugin", "1.0.0")).thenReturn("http://example.com/plugin.zip");
+    when(executor.execute(getBaseCommand() + "install --batch http://example.com/plugin.zip")).thenReturn(new CommandResult(0, "", ""));
+    assertDoesNotThrow(() -> pluginManager.installPlugin("my-plugin", "1.0.0"));
   }
 
   @Test
-  void installPlugin_whenLocalInstallFails_shouldThrowRuntimeException() throws IOException {
-    String source = "http://example.com/plugin.zip";
-    when(pluginSourceResolver.resolve("my-plugin", "1.0.0")).thenReturn(source);
-
-    // Succeed on wget, but fail on the elasticsearch-plugin tool
-    when(executor.execute("wget -q -O /tmp/my-plugin.zip " + source)).thenReturn(new CommandResult(0, "", ""));
-    when(executor.execute(getBaseCommand() + "install --batch file:///tmp/my-plugin.zip")).thenReturn(
-        new CommandResult(1, "", "install error"));
-
+  void installPlugin_whenCommandFails_shouldThrowRuntimeException() throws IOException {
+    when(pluginSourceResolver.resolve("my-plugin", "1.0.0")).thenReturn("http://example.com/plugin.zip");
+    when(executor.execute(getBaseCommand() + "install --batch http://example.com/plugin.zip")).thenReturn(
+        new CommandResult(1, "", "error"));
     assertThrows(RuntimeException.class, () -> pluginManager.installPlugin("my-plugin", "1.0.0"));
   }
 
