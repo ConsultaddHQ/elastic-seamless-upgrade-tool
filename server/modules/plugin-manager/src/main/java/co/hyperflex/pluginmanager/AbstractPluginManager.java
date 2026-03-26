@@ -30,7 +30,7 @@ public abstract class AbstractPluginManager implements PluginManager {
           .filter(p -> !p.isBlank())
           .toList();
     } catch (IOException e) {
-      throw new RuntimeException("Failed to list plugins via filesystem", e);
+      throw new RuntimeException("Failed to list plugins via filesystem.", e);
     }
   }
 
