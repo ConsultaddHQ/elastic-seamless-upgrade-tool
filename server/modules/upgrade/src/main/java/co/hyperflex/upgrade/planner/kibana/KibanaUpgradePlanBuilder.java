@@ -6,6 +6,7 @@ import co.hyperflex.core.upgrade.ClusterUpgradeJobEntity;
 import co.hyperflex.upgrade.planner.NodeUpgradePlanBuilder;
 import co.hyperflex.upgrade.planner.common.RepositoryPreparationStep;
 import co.hyperflex.upgrade.tasks.Task;
+import co.hyperflex.upgrade.tasks.kibana.BackupKibanaServiceFileTask;
 import co.hyperflex.upgrade.tasks.kibana.RestartKibanaServiceTask;
 import co.hyperflex.upgrade.tasks.kibana.UpdateKibanaPluginTask;
 import co.hyperflex.upgrade.tasks.kibana.UpdateKibanaTask;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Component;
 public class KibanaUpgradePlanBuilder implements NodeUpgradePlanBuilder {
 
   private final RepositoryPreparationStep repoStep;
+  private final BackupKibanaServiceFileTask kibanaServiceFileTask;
   private final UpdateKibanaTask update;
   private final RestartKibanaServiceTask restart;
   private final UpdateKibanaPluginTask updatePlugins;
@@ -27,12 +29,14 @@ public class KibanaUpgradePlanBuilder implements NodeUpgradePlanBuilder {
 
   public KibanaUpgradePlanBuilder(
       RepositoryPreparationStep repoStep,
+      BackupKibanaServiceFileTask kibanaServiceFileTask,
       UpdateKibanaTask update,
       RestartKibanaServiceTask restart,
       UpdateKibanaPluginTask updatePlugins,
       WaitForKibanaPortTask waitPort,
       WaitForKibanaReadyTask waitReady) {
     this.repoStep = repoStep;
+    this.kibanaServiceFileTask = kibanaServiceFileTask;
     this.update = update;
     this.restart = restart;
     this.updatePlugins = updatePlugins;
@@ -48,6 +52,7 @@ public class KibanaUpgradePlanBuilder implements NodeUpgradePlanBuilder {
   @Override
   public List<Task> buildPlan(ClusterNodeEntity node, ClusterUpgradeJobEntity job) {
     List<Task> tasks = new LinkedList<>(repoStep.prepare(node, job));
+    tasks.add(kibanaServiceFileTask);
     tasks.add(update);
     tasks.add(updatePlugins);
     tasks.add(restart);
