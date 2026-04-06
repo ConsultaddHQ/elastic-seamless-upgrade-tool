@@ -24,14 +24,15 @@ public class BackupKibanaServiceFileTask extends AbstractAnsibleTask {
     logger.info("Imp: If present, it will be safely renamed to prevent systemd conflicts during the 8.x boot sequence.");
 
     String archiveScript =
-        "test -f /etc/systemd/system/kibana.service && "
-            + "mv /etc/systemd/system/kibana.service /etc/systemd/system/kibana.service.7x_backup && "
-            + "systemctl daemon-reload && "
+        "sudo test -f /etc/systemd/system/kibana.service && "
+            + "sudo mv /etc/systemd/system/kibana.service /etc/systemd/system/kibana.service.7x_backup && "
+            + "sudo systemctl daemon-reload && "
             + "echo 'Legacy file found and successfully archived.' || "
             + "echo 'No legacy file found. Skipping archive step.'";
 
     AnsibleAdHocCommand command = AnsibleAdHocCommand.builder()
         .module("shell")
+
         .args(Map.of(
             "cmd", archiveScript,
             "executable", "/bin/bash"
