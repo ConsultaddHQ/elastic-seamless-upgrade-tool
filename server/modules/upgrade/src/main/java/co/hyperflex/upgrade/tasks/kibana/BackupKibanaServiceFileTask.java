@@ -23,20 +23,17 @@ public class BackupKibanaServiceFileTask extends AbstractAnsibleTask {
     logger.info("Imp: Checking for legacy 7.x systemd service file at /etc/systemd/system/kibana.service...");
     logger.info("Imp: If present, it will be safely renamed to prevent systemd conflicts during the 8.x boot sequence.");
 
-    String backupScript =
-        "if [ -f /etc/systemd/system/kibana.service ]; then "
-            + "echo 'Legacy override file found. Backing up to .7x_backup...'; "
-            + "mv /etc/systemd/system/kibana.service /etc/systemd/system/kibana.service.7x_backup; "
-            + "systemctl daemon-reload; "
-            + "echo 'Backup complete and systemd daemon reloaded.'; "
-            + "else "
-            + "echo 'No legacy override file found. Skipping backup.'; "
-            + "fi";
+    String archiveScript =
+        "test -f /etc/systemd/system/kibana.service && "
+            + "mv /etc/systemd/system/kibana.service /etc/systemd/system/kibana.service.7x_backup && "
+            + "systemctl daemon-reload && "
+            + "echo 'Legacy file found and successfully archived.' || "
+            + "echo 'No legacy file found. Skipping archive step.'";
 
     AnsibleAdHocCommand command = AnsibleAdHocCommand.builder()
         .module("shell")
         .args(Map.of(
-            "cmd", "\"" + backupScript + "\"",
+            "cmd", archiveScript,
             "executable", "/bin/bash"
         ))
         .build();
