@@ -36,7 +36,7 @@ public class BackupKibanaServiceFileTask extends AbstractAnsibleTask {
     AnsibleAdHocCommand command = AnsibleAdHocCommand.builder()
         .module("shell")
         .args(Map.of(
-            "cmd", backupScript,
+            "cmd", "\"" + backupScript + "\"",
             "executable", "/bin/bash"
         ))
         .build();
