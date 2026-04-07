@@ -24,6 +24,7 @@ public class IndexFieldCountPrecheck extends BaseIndexPrecheck {
   public void run(IndexContext context) {
     String indexName = context.getIndexName();
     Logger logger = context.getLogger();
+
     var uri = "/" + indexName + "/_mapping";
 
     var request = ApiRequest
@@ -78,5 +79,17 @@ public class IndexFieldCountPrecheck extends BaseIndexPrecheck {
     }
 
     return count;
+  }
+
+  @Override
+  public boolean shouldRun(IndexContext context) {
+    var indexName = context.getIndexName();
+
+    if (SYSTEM_INDICES_TO_SKIP.contains(indexName)) {
+      context.getLogger().info("Skipping system index [{}] as it is managed internally by Elasticsearch.", indexName);
+      return false;
+    }
+
+    return true;
   }
 }
