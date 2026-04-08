@@ -54,7 +54,7 @@ export default function LoginPage() {
 		<Box
 			component="form"
 			onSubmit={formik.handleSubmit}
-			className="w-full flex items-center justify-center mt-[50px]" // centers child vertically and horizontally
+			className="w-full flex items-center justify-center mt-[50px]"
 			padding={{ xs: "32px 16px", lg: "32px 56px 32px 152px" }}
 			sx={{ minHeight: "100vh" }}
 		>
