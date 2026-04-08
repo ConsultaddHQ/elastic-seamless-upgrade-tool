@@ -46,4 +46,9 @@ public class KibanaPluginManager extends AbstractPluginManager {
       throw new RuntimeException(e);
     }
   }
+
+  @Override
+  protected String getPluginDirectory() {
+    return "/usr/share/kibana/plugins/";
+  }
 }

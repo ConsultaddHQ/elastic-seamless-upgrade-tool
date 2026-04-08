@@ -14,6 +14,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
@@ -51,18 +52,22 @@ public class ElasticsearchClientProviderImpl implements ElasticsearchClientProvi
     try {
       HttpClient jdkHttpClient = HttpClient.newBuilder()
           .sslContext(getSSLContext())
+          .connectTimeout(Duration.ofSeconds(3)) // Fails fast in 3 seconds if IP is dead
           .build();
+
+      JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(jdkHttpClient);
+      requestFactory.setReadTimeout(Duration.ofSeconds(8)); // Fails fast in 8 seconds if ES is stuck
 
       RestClient genericClient = RestClient.builder()
           .baseUrl(detail.baseUrl())
           .defaultHeader("Authorization", secretStoreService.getSecret(detail.secretKey()).value())
           .defaultHeader("Content-Type", "application/json")
-          .requestFactory(new JdkClientHttpRequestFactory(jdkHttpClient))
+          .requestFactory(requestFactory)
           .build();
 
       return new ElasticClientImpl(new RestApiClient(genericClient));
     } catch (Exception e) {
-      logger.error("Failed to create elasticsearch client", e);
+      logger.error("Failed to create elasticsearch client for URL: {}, Reason: {}", detail.baseUrl(), e.getMessage());
       throw new RuntimeException(e);
     }
   }

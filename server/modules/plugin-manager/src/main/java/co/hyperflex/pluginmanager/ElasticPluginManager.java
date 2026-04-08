@@ -14,4 +14,8 @@ public class ElasticPluginManager extends AbstractPluginManager {
     return "/usr/share/elasticsearch/bin/elasticsearch-plugin ";
   }
 
+  @Override
+  protected String getPluginDirectory() {
+    return "/usr/share/elasticsearch/plugins/";
+  }
 }

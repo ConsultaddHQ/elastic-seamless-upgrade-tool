@@ -5,9 +5,22 @@ import { FullScreenDrawer } from "~/components/utilities/FullScreenDrawer"
 import AppBreadcrumb from "~/components/utilities/AppBreadcrumb"
 import { ArrowLeft } from "iconsax-react"
 import NoData from "~/components/core/Precheck/widgets/NoData"
-import { Skeleton, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react"
+import {
+	Skeleton,
+	Spinner,
+	Table,
+	TableBody,
+	TableCell,
+	TableColumn,
+	TableHeader,
+	TableRow,
+	Accordion,
+	AccordionItem,
+	Chip,
+} from "@heroui/react"
 import { useParams } from "react-router"
 import { clusterApi } from "~/apis/ClusterApi"
+import { DECIDER_EXPLANATIONS } from "~/constants/ShardAllocationDecidersList"
 
 function AllocationExplainBreadcrumb({ onBack }: { onBack: () => void }) {
 	return (
@@ -42,41 +55,29 @@ function useAllocationExplain() {
 function Loading() {
 	return (
 		<Box className="flex flex-col w-full gap-2 ">
-			{new Array(15).fill(0).map(() => (
-				<Skeleton className="rounded-lg">
+			{new Array(15).fill(0).map((_, i) => (
+				<Skeleton key={i} className="rounded-lg">
 					<Box height="80px"></Box>
 				</Skeleton>
 			))}
 		</Box>
 	)
 }
+
 function AllocationExplainTable({ data }: { data: IAllocationExplain[] | undefined }) {
-	const columns: TColumn = [
-		{
-			key: "index",
-			label: "Index",
-			align: "start",
-			width: 80,
-		},
-		{
-			key: "shard",
-			label: "Shard",
-			align: "start",
-			width: 30,
-		},
-		{
-			key: "explanation",
-			label: "Allocation Explanation",
-			align: "start",
-			width: 400,
-		},
+	const columns = [
+		{ key: "index", label: "Index", align: "start", width: 100 },
+		{ key: "shard", label: "Shard", align: "start", width: 60 },
+		{ key: "explanation", label: "Brief Explanation", align: "start", width: 220 },
+		{ key: "decidersSet", label: "Root Cause & Resolution", align: "start", width: 380 },
+		{ key: "fullExplanation", label: "Full Explanation Details", align: "start", width: 350 },
 	]
 
 	if (!data || data.length === 0) {
 		return (
 			<NoData
 				title="No allocation explanations available to display"
-				subtitle="There are no allocation explaination to show at the moment."
+				subtitle="There are no allocation explanations to show at the moment."
 			/>
 		)
 	}
@@ -88,22 +89,21 @@ function AllocationExplainTable({ data }: { data: IAllocationExplain[] | undefin
 				layout="auto"
 				isHeaderSticky
 				classNames={{
-					base: "max-h-[calc(var(--window-height)-212px)] h-[calc(var(--window-height)-212px)] overflow-scroll",
-					// table: "min-h-[400px] min-w-[600px]",
+					base: "max-h-[calc(var(--window-height)-212px)] h-[calc(var(--window-height)-212px)] overflow-scroll custom-scrollbar",
 					th: "text-[#9D90BB] text-xs bg-[#161616] first:rounded-l-xl last:rounded-r-xl",
-					td: "text-sm font-normal leading-normal border-b-[0.5px] border-solid border-[#1E1E1E]",
-					tr: "[&>th]:h-[42px] [&>td]:h-[60px]",
+					td: "text-sm font-normal leading-normal border-b-[0.5px] border-solid border-[#1E1E1E] py-4",
+					tr: "[&>th]:h-[42px]",
 				}}
 			>
 				<TableHeader columns={columns}>
 					{(column) => (
-						<TableColumn key={column.key} align={column.align} width={column.width}>
+						<TableColumn key={column.key} align={column.align as any} width={column.width}>
 							{column.label}
 						</TableColumn>
 					)}
 				</TableHeader>
 				<TableBody
-					items={data || []}
+					items={data}
 					loadingContent={<Spinner color="secondary" />}
 					emptyContent="No nodes upgrades found."
 				>
@@ -111,7 +111,92 @@ function AllocationExplainTable({ data }: { data: IAllocationExplain[] | undefin
 						<TableRow key={`${item.index}-${item.shard}`}>
 							{(columnKey) => (
 								<TableCell>
-									<span>{item[columnKey as keyof IAllocationExplain]}</span>
+									{columnKey === "decidersSet" ? (
+										<Box className="flex flex-col gap-3">
+											{item.decidersSet && item.decidersSet.length > 0 ? (
+												item.decidersSet.map((decider) => {
+													const info = DECIDER_EXPLANATIONS[decider] || {
+														cause: "Unknown allocation block.",
+														fix: "Check Elasticsearch logs for deeper details.",
+													}
+
+													return (
+														<Box
+															key={decider}
+															className="flex flex-col p-3 gap-2.5 rounded-lg bg-[#161616] border border-[#2A2A2A] w-full"
+														>
+															<Box>
+																<Chip
+																	size="sm"
+																	variant="flat"
+																	color="warning"
+																	className="text-[10px] h-5"
+																>
+																	{decider}
+																</Chip>
+															</Box>
+															<Box className="flex items-start gap-2">
+																<Typography
+																	fontSize="12px"
+																	color="#E5E0E0"
+																	lineHeight="1.5"
+																>
+																	<span className="font-semibold text-[#BDA0FF]">
+																		Cause:{" "}
+																	</span>
+																	{info.cause}
+																</Typography>
+															</Box>
+															<Box className="flex items-start gap-2">
+																<Typography
+																	fontSize="12px"
+																	color="#E5E0E0"
+																	lineHeight="1.5"
+																>
+																	<span className="font-semibold text-[#A8E6CF]">
+																		Fix:{" "}
+																	</span>
+																	{info.fix}
+																</Typography>
+															</Box>
+														</Box>
+													)
+												})
+											) : (
+												<span className="text-xs text-[#B0B0B0]">N/A</span>
+											)}
+										</Box>
+									) : columnKey === "explanation" ? (
+										<span className="text-[#E5E0E0] first-letter:uppercase">
+											{item[columnKey as keyof IAllocationExplain]}
+										</span>
+									) : columnKey === "fullExplanation" ? (
+										<Accordion variant="light" className="px-0">
+											<AccordionItem
+												key="explain"
+												aria-label="View Details"
+												title={
+													<span className="text-xs text-[#BDA0FF]">
+														View Details ({item.fullExplanation.length})
+													</span>
+												}
+												classNames={{
+													title: "text-xs",
+													content: "text-tiny text-[#B0B0B0] flex flex-col gap-2 pb-4",
+												}}
+											>
+												{item.fullExplanation.map((text, idx) => (
+													<div key={idx} className="border-l-2 border-[#BDA0FF] pl-2 py-1">
+														{text}
+													</div>
+												))}
+											</AccordionItem>
+										</Accordion>
+									) : (
+										<span className="text-[#E5E0E0]">
+											{item[columnKey as keyof IAllocationExplain]}
+										</span>
+									)}
 								</TableCell>
 							)}
 						</TableRow>
