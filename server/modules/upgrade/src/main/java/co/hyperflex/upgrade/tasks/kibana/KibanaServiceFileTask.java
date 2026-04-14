@@ -27,13 +27,11 @@ public class KibanaServiceFileTask extends AbstractAnsibleTask {
     logger.info("Imp: If present, it will be safely renamed to prevent systemd conflicts during the 8.x boot sequence.");
 
     String archiveScript = String.format(
-        "if [ -f %1$s ]; then "
-            + "  sudo mv %1$s %2$s && "
-            + "  sudo systemctl daemon-reload && "
-            + "  echo 'Legacy file found and successfully archived.'; "
-            + "else "
-            + "  echo 'No legacy file found. Skipping archive step.'; "
-            + "fi",
+        "sudo test -f %1$s && "
+            + "sudo mv %1$s %2$s && "
+            + "sudo systemctl daemon-reload && "
+            + "echo 'Legacy file found and successfully archived.' || "
+            + "echo 'No legacy file found. Skipping archive step.'",
         SRC_PATH, DEST_PATH
     );
 
