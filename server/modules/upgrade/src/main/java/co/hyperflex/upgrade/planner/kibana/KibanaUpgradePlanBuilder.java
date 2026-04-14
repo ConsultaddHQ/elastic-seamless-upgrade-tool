@@ -6,7 +6,7 @@ import co.hyperflex.core.upgrade.ClusterUpgradeJobEntity;
 import co.hyperflex.upgrade.planner.NodeUpgradePlanBuilder;
 import co.hyperflex.upgrade.planner.common.RepositoryPreparationStep;
 import co.hyperflex.upgrade.tasks.Task;
-import co.hyperflex.upgrade.tasks.kibana.BackupKibanaServiceFileTask;
+import co.hyperflex.upgrade.tasks.kibana.KibanaServiceFileTask;
 import co.hyperflex.upgrade.tasks.kibana.RestartKibanaServiceTask;
 import co.hyperflex.upgrade.tasks.kibana.UpdateKibanaPluginTask;
 import co.hyperflex.upgrade.tasks.kibana.UpdateKibanaTask;
@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
 public class KibanaUpgradePlanBuilder implements NodeUpgradePlanBuilder {
 
   private final RepositoryPreparationStep repoStep;
-  private final BackupKibanaServiceFileTask kibanaServiceFileTask;
+  private final KibanaServiceFileTask kibanaServiceFileTask;
   private final UpdateKibanaTask update;
   private final RestartKibanaServiceTask restart;
   private final UpdateKibanaPluginTask updatePlugins;
@@ -29,7 +29,7 @@ public class KibanaUpgradePlanBuilder implements NodeUpgradePlanBuilder {
 
   public KibanaUpgradePlanBuilder(
       RepositoryPreparationStep repoStep,
-      BackupKibanaServiceFileTask kibanaServiceFileTask,
+      KibanaServiceFileTask kibanaServiceFileTask,
       UpdateKibanaTask update,
       RestartKibanaServiceTask restart,
       UpdateKibanaPluginTask updatePlugins,
