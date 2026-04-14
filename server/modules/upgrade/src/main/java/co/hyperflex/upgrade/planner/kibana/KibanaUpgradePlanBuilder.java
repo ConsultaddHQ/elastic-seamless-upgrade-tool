@@ -52,7 +52,14 @@ public class KibanaUpgradePlanBuilder implements NodeUpgradePlanBuilder {
   @Override
   public List<Task> buildPlan(ClusterNodeEntity node, ClusterUpgradeJobEntity job) {
     List<Task> tasks = new LinkedList<>(repoStep.prepare(node, job));
-    tasks.add(kibanaServiceFileTask);
+
+    String currentVersion = job.getCurrentVersion();
+    String targetVersion = job.getTargetVersion();
+
+    if (currentVersion.startsWith("7.") && targetVersion.startsWith("8.")) {
+      tasks.add(kibanaServiceFileTask);
+    }
+
     tasks.add(update);
     tasks.add(updatePlugins);
     tasks.add(restart);
