@@ -123,14 +123,14 @@ function ManageIndices() {
 		[isValidUpgradePath, isReindexingSingle]
 	)
 
-	// Helper function to render a table so we don't duplicate code
+	// Helper function to render a table
 	const renderIndicesTable = (dataList: any[], emptyTitle: string, emptySub: string) => (
 		<Table
-			removeWrapper
-			layout="auto"
+			layout="fixed"
 			isHeaderSticky
 			classNames={{
-				base: "max-h-[400px] overflow-scroll",
+				wrapper: "max-h-[350px] w-full p-0 bg-transparent shadow-none overflow-y-auto",
+				base: "w-full min-w-full",
 				th: "text-[#9D90BB] text-xs bg-[#161616] first:rounded-l-xl last:rounded-r-xl border-none",
 				td: "text-sm font-normal leading-normal border-b-[0.5px] border-solid border-[#1E1E1E] first:rounded-l-xl last:rounded-r-xl",
 				tr: "[&>th]:h-[42px] [&>td]:h-[60px] hover:bg-[#28282A] transition-colors",
