@@ -104,7 +104,7 @@ class ClusterUpgradeServiceTest {
     @DisplayName("Should be upgradable when no nodes are upgraded and prechecks are complete")
     void upgradeInfo_when_prechecksCompleteAndNoNodesUpgraded_then_elasticIsUpgradable() {
       // Arrange
-      when(indexMigrationService.getReindexIndexesMetadata(CLUSTER_ID)).thenReturn(new ArrayList<>());
+      when(indexMigrationService.getReindexIndicesMetadata(CLUSTER_ID)).thenReturn(new ArrayList<>());
       when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(
           new GetFeatureMigrationResponse(FeatureMigrationStatus.NO_MIGRATION_NEEDED));
       when(clusterUpgradeJobService.getLatestJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
@@ -128,7 +128,7 @@ class ClusterUpgradeServiceTest {
     @DisplayName("Should show failed precheck status correctly")
     void upgradeInfo_when_prechecksFailed_then_showFailedStatus() {
       // Arrange
-      when(indexMigrationService.getReindexIndexesMetadata(CLUSTER_ID)).thenReturn(new ArrayList<>());
+      when(indexMigrationService.getReindexIndicesMetadata(CLUSTER_ID)).thenReturn(new ArrayList<>());
       when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(
           new GetFeatureMigrationResponse(FeatureMigrationStatus.NO_MIGRATION_NEEDED));
       when(clusterUpgradeJobService.getLatestJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
@@ -151,7 +151,7 @@ class ClusterUpgradeServiceTest {
     @DisplayName("Should make Kibana upgradable after all Elastic nodes are upgraded")
     void upgradeInfo_when_elasticNodesAreUpgraded_then_kibanaIsUpgradable() {
       // Arrange
-      when(indexMigrationService.getReindexIndexesMetadata(CLUSTER_ID)).thenReturn(new ArrayList<>());
+      when(indexMigrationService.getReindexIndicesMetadata(CLUSTER_ID)).thenReturn(new ArrayList<>());
       when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(
           new GetFeatureMigrationResponse(FeatureMigrationStatus.NO_MIGRATION_NEEDED));
       when(clusterUpgradeJobService.getLatestJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
@@ -172,7 +172,7 @@ class ClusterUpgradeServiceTest {
     @DisplayName("Should show nothing is upgradable when all nodes are upgraded")
     void upgradeInfo_when_allNodesAreUpgraded_then_nothingIsUpgradable() {
       // Arrange
-      when(indexMigrationService.getReindexIndexesMetadata(CLUSTER_ID)).thenReturn(new ArrayList<>());
+      when(indexMigrationService.getReindexIndicesMetadata(CLUSTER_ID)).thenReturn(new ArrayList<>());
       when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(
           new GetFeatureMigrationResponse(FeatureMigrationStatus.NO_MIGRATION_NEEDED));
       when(clusterUpgradeJobService.getLatestJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
@@ -195,7 +195,7 @@ class ClusterUpgradeServiceTest {
     void upgradeInfo_when_jobStatusIsUpdated_then_nothingIsUpgradable() {
       // Arrange
       clusterUpgradeJob.setStatus(ClusterUpgradeStatus.UPDATED);
-      when(indexMigrationService.getReindexIndexesMetadata(CLUSTER_ID)).thenReturn(new ArrayList<>());
+      when(indexMigrationService.getReindexIndicesMetadata(CLUSTER_ID)).thenReturn(new ArrayList<>());
       when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(
           new GetFeatureMigrationResponse(FeatureMigrationStatus.NO_MIGRATION_NEEDED));
       when(clusterUpgradeJobService.getLatestJobByClusterId(CLUSTER_ID)).thenReturn(clusterUpgradeJob);
@@ -234,7 +234,7 @@ class ClusterUpgradeServiceTest {
     @DisplayName("Should show invalid upgrade path when job has skipped major upgrade")
     void upgradeInfo_when_jobSkippedMajor_then_UpgradePathIsInvalid() {
       // Arrange
-      when(indexMigrationService.getReindexIndexesMetadata(CLUSTER_ID)).thenReturn(new ArrayList<>());
+      when(indexMigrationService.getReindexIndicesMetadata(CLUSTER_ID)).thenReturn(new ArrayList<>());
       when(featureMigrationService.getFeatureMigrationResponse(anyString())).thenReturn(
           new GetFeatureMigrationResponse(FeatureMigrationStatus.NO_MIGRATION_NEEDED));
       clusterUpgradeJob.setStatus(ClusterUpgradeStatus.UPDATED);

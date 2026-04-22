@@ -26,7 +26,6 @@ import co.hyperflex.core.services.clusters.dtos.UpdateNodeConfigurationRequest;
 import co.hyperflex.core.services.clusters.dtos.UpdateNodeConfigurationResponse;
 import co.hyperflex.core.services.clusters.dtos.UploadCertificateResponse;
 import co.hyperflex.upgrade.services.NodeUpgradeService;
-import co.hyperflex.upgrade.services.dtos.IndexReindexInfo;
 import co.hyperflex.upgrade.services.migration.IndexMigrationService;
 import jakarta.validation.Valid;
 import java.io.IOException;
@@ -168,8 +167,4 @@ public class ClusterController {
     return clusterService.getAllocationExplanation(clusterId);
   }
 
-  @GetMapping("/{clusterId}/upgrade/reindex-indices")
-  public List<IndexReindexInfo> getAllIndexReIndexInfo(@PathVariable String clusterId) {
-    return indexMigrationService.getReindexIndexesMetadata(clusterId);
-  }
 }

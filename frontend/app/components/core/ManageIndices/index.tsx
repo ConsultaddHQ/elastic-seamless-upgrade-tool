@@ -12,6 +12,7 @@ import AppBreadcrumb from "~/components/utilities/AppBreadcrumb"
 const columns = [
 	{ key: "name", label: "Index Name", align: "start" as const },
 	{ key: "size", label: "Total Size", align: "start" as const },
+	{ key: "docsCount", label: "Docs Count", align: "start" as const },
 	{ key: "storageTier", label: "Storage Tier", align: "start" as const },
 	{ key: "systemIndex", label: "System Index", align: "start" as const },
 	{ key: "estimateSummary", label: "Reindex Estimate summary", align: "start" as const },
@@ -82,6 +83,7 @@ function ManageIndices() {
 				case "name":
 					return <span className="text-[#ADADAD] font-medium">{cellValue}</span>
 				case "size":
+                case "docsCount":
 				case "storageTier":
 				case "estimateSummary":
 				case "estimateTime":

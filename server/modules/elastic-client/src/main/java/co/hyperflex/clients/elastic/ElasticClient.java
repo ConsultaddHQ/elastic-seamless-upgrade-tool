@@ -28,6 +28,13 @@ public interface ElasticClient extends ApiClient {
 
   List<IndicesRecord> getIndices();
 
+  /**
+   * Fetches all indices from the cluster, including hidden indices.
+   *
+   * @return list of indices records
+   */
+  List<IndicesRecord> getAllIndices();
+
   String getHealthStatus();
 
   List<MasterRecord> getActiveMasters();
