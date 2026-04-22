@@ -31,7 +31,8 @@ public class IndexMigrationService {
     int targetLucene = IndexUtils.mapEsVersionToLucene(upgradeJob.getTargetVersion());
 
     return indices.stream().filter(indicesRecord -> !indexUtils.isLuceneCompatible(clusterId, indicesRecord.getIndex(), targetLucene))
-        .map(indicesRecord -> new IndexReindexInfo(indicesRecord.getIndex(), indicesRecord.getDocsSize(), indicesRecord.getDocsCount()))
+        .map(indicesRecord -> new IndexReindexInfo(indicesRecord.getIndex(), indicesRecord.getDocsSize(), indicesRecord.getDocsCount(),
+            "HOT", true, "", ""))
         .toList();
   }
 

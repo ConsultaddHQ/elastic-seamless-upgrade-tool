@@ -75,6 +75,14 @@ class ClusterUpgradeApi {
 		const response = await axiosJSON.post(`/clusters/${clusterId}/migrations/reindex-indices`)
 		return response.data
 	}
+
+	async reindexSingle(clusterId: string, indexName: string): Promise<unknown> {
+		return {};
+	}
+
+	async deleteIndex(clusterId: string, indexName: string): Promise<unknown> {
+		return {};
+	}
 }
 
 export const clusterUpgradeApi = new ClusterUpgradeApi()

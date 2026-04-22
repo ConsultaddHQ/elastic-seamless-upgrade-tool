@@ -1,29 +1,22 @@
 import { Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Tooltip } from "@heroui/react"
 import { Box, Typography } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { Convertshape2, Folder, InfoCircle, TickCircle, Warning2 } from "iconsax-react"
+import { Convertshape2, Folder, InfoCircle, TickCircle, Warning2, Trash, Refresh } from "iconsax-react"
 import { useCallback, type Key } from "react"
 import { useNavigate, useParams } from "react-router"
 import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"
 import AppBreadcrumb from "~/components/utilities/AppBreadcrumb"
 
+// Updated to match the design requirements
 const columns = [
-	{
-		key: "name",
-		label: "Index name",
-		align: "start" as const,
-	},
-	{
-		key: "docsCount",
-		label: "Docs Count",
-		align: "start" as const,
-	},
-	{
-		key: "size",
-		label: "Size",
-		align: "start" as const,
-	},
+	{ key: "name", label: "Index Name", align: "start" as const },
+	{ key: "size", label: "Total Size", align: "start" as const },
+	{ key: "storageTier", label: "Storage Tier", align: "start" as const },
+	{ key: "systemIndex", label: "System Index", align: "start" as const },
+	{ key: "estimateSummary", label: "Reindex Estimate summary", align: "start" as const },
+	{ key: "estimateTime", label: "Reindex Estimate time", align: "start" as const },
+	{ key: "actions", label: "Actions", align: "end" as const },
 ]
 
 function ManageIndices() {
@@ -47,6 +40,24 @@ function ManageIndices() {
 		},
 	})
 
+	// Single Index Reindex Mutation
+	const { isPending: isReindexingSingle, mutate: reindexSingleIndex } = useMutation({
+		mutationFn: (data: { clusterId: string; indexName: string }) =>
+			clusterUpgradeApi.reindexSingle(data.clusterId, data.indexName),
+		onSuccess: () => {
+			refetchMigrationInfo()
+		},
+	})
+
+	// Single Index Delete Mutation
+	const { isPending: isDeleting, mutate: deleteSingleIndex } = useMutation({
+		mutationFn: (data: { clusterId: string; indexName: string }) =>
+			clusterUpgradeApi.deleteIndex(data.clusterId, data.indexName),
+		onSuccess: () => {
+			refetchMigrationInfo()
+		},
+	})
+
 	const systemIndicesStatus = migrationInfo?.systemIndices?.status
 	const isSystemMigrationInProgress = systemIndicesStatus === "IN_PROGRESS"
 	const isSystemMigrationCompleted =
@@ -54,37 +65,65 @@ function ManageIndices() {
 
 	const reindexNeedingIndices = migrationInfo?.reindexNeedingIndices
 	const isValidUpgradePath = migrationInfo?.isValidUpgradePath
-	const reindexPossible = migrationInfo?.reindexStatus?.possible
-	const reindexReason = migrationInfo?.reindexStatus?.reason
 
-	const { isPending: isReindexing, mutate: reindexIndices } = useMutation({
-		mutationFn: (data: { clusterId: string }) => clusterUpgradeApi.reindexIndices(data.clusterId),
-		onSuccess: () => {
-			refetchMigrationInfo()
-		},
-	})
-
-	const handleReindexAll = () => {
-		reindexIndices({ clusterId: clusterId! })
+	const handleReindex = (indexName: string) => {
+		if (clusterId) reindexSingleIndex({ clusterId, indexName })
 	}
 
-	// Placeholder for single Reindex mutation
-	// const handleReindex = (indexName: string) => {
-	// 	console.log("Reindex clicked for", indexName)
-	// }
+	const handleDelete = (indexName: string) => {
+		if (clusterId) deleteSingleIndex({ clusterId, indexName })
+	}
 
-	const renderCell = useCallback((row: any, columnKey: Key) => {
-		const cellValue = row[columnKey as keyof typeof row]
-		switch (columnKey) {
-			case "name":
-				return <span className="text-[#ADADAD]">{cellValue}</span>
-			case "docsCount":
-			case "size":
-				return <span className="text-[#ADADAD]">{cellValue}</span>
-			default:
-				return cellValue
-		}
-	}, [])
+	const renderCell = useCallback(
+		(row: any, columnKey: Key) => {
+			const cellValue = row[columnKey as keyof typeof row]
+
+			switch (columnKey) {
+				case "name":
+					return <span className="text-[#ADADAD] font-medium">{cellValue}</span>
+				case "size":
+				case "storageTier":
+				case "estimateSummary":
+				case "estimateTime":
+					return <span className="text-[#ADADAD]">{cellValue || "-"}</span>
+				case "systemIndex":
+					return (
+						<span className={cellValue ? "text-[#BDA0FF]" : "text-[#ADADAD]"}>
+							{cellValue ? "true" : "false"}
+						</span>
+					)
+				case "actions":
+					return (
+						<Box className="flex flex-row items-center justify-end gap-3">
+							<Tooltip content="Delete Index" placement="top">
+								<Box
+									className="cursor-pointer hover:opacity-70 transition-opacity"
+									onClick={() => handleDelete(row.name)}
+								>
+									<Trash size="18" color="#FF6B6B" />
+								</Box>
+							</Tooltip>
+							<Tooltip content="Start Reindex" placement="top">
+								<Box>
+									<OutlinedBorderButton
+										onClick={() => handleReindex(row.name)}
+										disabled={!isValidUpgradePath || isReindexingSingle}
+									>
+										<Box className="flex items-center gap-2">
+											<Refresh size="14" />
+											<span>Reindex</span>
+										</Box>
+									</OutlinedBorderButton>
+								</Box>
+							</Tooltip>
+						</Box>
+					)
+				default:
+					return cellValue
+			}
+		},
+		[isValidUpgradePath, isReindexingSingle]
+	)
 
 	return (
 		<Box className="flex flex-col w-full h-full gap-6">
@@ -179,20 +218,6 @@ function ManageIndices() {
 							</Box>
 						</Tooltip>
 					</Box>
-					{/* <Tooltip
-						content={!isValidUpgradePath ? "Cluster is in view only mode" : reindexReason}
-						isDisabled={!isValidUpgradePath ? false : !!reindexPossible}
-						placement="top"
-					>
-						<Box>
-							<OutlinedBorderButton
-								onClick={handleReindexAll}
-								disabled={!isValidUpgradePath || !reindexPossible || !customIndices || customIndices.length === 0 || isReindexing}
-							>
-								{isReindexing ? "Reindexing..." : "Reindex"}
-							</OutlinedBorderButton>
-						</Box>
-					</Tooltip> */}
 				</Box>
 
 				<Table
@@ -201,9 +226,9 @@ function ManageIndices() {
 					isHeaderSticky
 					classNames={{
 						base: "h-full overflow-scroll",
-						th: "text-[#9D90BB] text-xs bg-[#161616] first:rounded-l-xl last:rounded-r-xl",
+						th: "text-[#9D90BB] text-xs bg-[#161616] first:rounded-l-xl last:rounded-r-xl border-none",
 						td: "text-sm font-normal leading-normal border-b-[0.5px] border-solid border-[#1E1E1E] first:rounded-l-xl last:rounded-r-xl",
-						tr: "[&>th]:h-[42px] [&>td]:h-[60px] hover:bg-[#28282A]",
+						tr: "[&>th]:h-[42px] [&>td]:h-[60px] hover:bg-[#28282A] transition-colors",
 					}}
 				>
 					<TableHeader columns={columns}>
@@ -217,8 +242,8 @@ function ManageIndices() {
 						items={
 							reindexNeedingIndices?.map((item: any) => ({
 								...item,
-								uid: item.index,
-								name: item.index,
+								uid: item.index || item.name,
+								name: item.index || item.name,
 							})) || []
 						}
 						isLoading={isLoadingMigrationInfo}
