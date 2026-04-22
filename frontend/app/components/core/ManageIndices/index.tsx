@@ -126,12 +126,15 @@ function ManageIndices() {
 	// Helper function to render a table
 	const renderIndicesTable = (dataList: any[], emptyTitle: string, emptySub: string) => (
 		<Table
-			layout="fixed"
+			removeWrapper // 1. Bring this back to remove the default UI wrapper
+			layout="fixed" // 2. Keep this so columns align perfectly between both tables
 			isHeaderSticky
 			classNames={{
-				wrapper: "max-h-[350px] w-full p-0 bg-transparent shadow-none overflow-y-auto",
-				base: "w-full min-w-full",
-				th: "text-[#9D90BB] text-xs bg-[#161616] first:rounded-l-xl last:rounded-r-xl border-none",
+				// 3. Apply the scrolling directly to the base slot.
+				// We use both max-h and overflow-y-auto to force the scrollbar to appear.
+				base: "max-h-[350px] overflow-y-auto min-h-0",
+				table: "w-full min-w-full",
+				th: "text-[#9D90BB] text-xs bg-[#161616] first:rounded-l-xl last:rounded-r-xl border-none z-10 sticky top-0",
 				td: "text-sm font-normal leading-normal border-b-[0.5px] border-solid border-[#1E1E1E] first:rounded-l-xl last:rounded-r-xl",
 				tr: "[&>th]:h-[42px] [&>td]:h-[60px] hover:bg-[#28282A] transition-colors",
 			}}
