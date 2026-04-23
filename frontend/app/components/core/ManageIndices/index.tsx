@@ -139,11 +139,10 @@ function ManageIndices() {
 		<Table
 			removeWrapper
 			layout="fixed"
-			isHeaderSticky
 			classNames={{
-				base: "max-h-[350px] overflow-y-auto min-h-0",
+				base: "w-full h-auto",
 				table: "w-full min-w-full",
-				th: "text-[#9D90BB] text-xs bg-[#161616] first:rounded-l-xl last:rounded-r-xl border-none z-10 sticky top-0",
+				th: "text-[#9D90BB] text-xs bg-[#161616] first:rounded-l-xl last:rounded-r-xl border-none",
 				td: "text-sm font-normal leading-normal border-b-[0.5px] border-solid border-[#1E1E1E] first:rounded-l-xl last:rounded-r-xl",
 				tr: "[&>th]:h-[42px] [&>td]:h-[60px] hover:bg-[#28282A] transition-colors",
 			}}
