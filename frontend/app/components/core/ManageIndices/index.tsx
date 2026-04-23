@@ -1,4 +1,15 @@
-import { Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Tooltip } from "@heroui/react"
+import {
+	Spinner,
+	Table,
+	TableBody,
+	TableCell,
+	TableColumn,
+	TableHeader,
+	TableRow,
+	Tooltip,
+	Tabs,
+	Tab,
+} from "@heroui/react"
 import { Box, Typography } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { Convertshape2, Folder, InfoCircle, TickCircle, Warning2, Trash, Refresh } from "iconsax-react"
@@ -126,12 +137,10 @@ function ManageIndices() {
 	// Helper function to render a table
 	const renderIndicesTable = (dataList: any[], emptyTitle: string, emptySub: string) => (
 		<Table
-			removeWrapper // 1. Bring this back to remove the default UI wrapper
-			layout="fixed" // 2. Keep this so columns align perfectly between both tables
+			removeWrapper
+			layout="fixed"
 			isHeaderSticky
 			classNames={{
-				// 3. Apply the scrolling directly to the base slot.
-				// We use both max-h and overflow-y-auto to force the scrollbar to appear.
 				base: "max-h-[350px] overflow-y-auto min-h-0",
 				table: "w-full min-w-full",
 				th: "text-[#9D90BB] text-xs bg-[#161616] first:rounded-l-xl last:rounded-r-xl border-none z-10 sticky top-0",
@@ -182,148 +191,165 @@ function ManageIndices() {
 	)
 
 	return (
-		<>
-			<Box className="flex flex-col w-full h-full gap-6">
-				<Box className="flex flex-row justify-between items-center">
-					<AppBreadcrumb
-						items={[
-							{
-								label: "Assist",
-								icon: <Convertshape2 size="14px" color="currentColor" />,
-								onClick: () => navigate(`/${clusterId}/upgrade-assistant`),
-							},
-							{
-								label: "Prepare Data for Upgrade",
-								color: "#BDA0FF",
-							},
-						]}
-					/>
-				</Box>
+		<Box className="flex flex-col w-full h-full gap-6">
+			<Box className="flex flex-row justify-between items-center">
+				<AppBreadcrumb
+					items={[
+						{
+							label: "Assist",
+							icon: <Convertshape2 size="14px" color="currentColor" />,
+							onClick: () => navigate(`/${clusterId}/upgrade-assistant`),
+						},
+						{
+							label: "Prepare Data for Upgrade",
+							color: "#BDA0FF",
+						},
+					]}
+				/>
+			</Box>
 
-				{/* Non-Technical Page Introduction */}
-				<Box className="flex flex-col gap-1 px-2">
-					<Typography color="#FFF" fontSize="20px" fontWeight="600">
-						Data Migration & Reindexing
+			{/* Non-Technical Page Introduction */}
+			<Box className="flex flex-col gap-1 px-2">
+				<Typography color="#FFF" fontSize="20px" fontWeight="600">
+					Data Migration & Reindexing
+				</Typography>
+				<Typography color="#A6A6A6" fontSize="14px" fontWeight="400" className="max-w-7xl">
+					Before upgrading your cluster, older data formats need to be converted to match the new system
+					requirements. This conversion process is called <strong>Reindexing</strong>. Below, you can
+					automatically migrate system configurations and manually convert your application data so everything
+					works smoothly after the upgrade.
+				</Typography>
+			</Box>
+
+			{isValidUpgradePath != null && !isValidUpgradePath && (
+				<Box className="flex flex-row items-center gap-2 p-4 rounded-xl bg-[#FFF7E6] border border-[#FFE066]">
+					<Warning2 size="20" color="#B28C00" variant="Bold" />
+					<Typography color="#665200" fontSize="14px" fontWeight="500">
+						Currently the cluster is in view-only mode. Select a valid upgrade path to enable data
+						migration.
 					</Typography>
-					<Typography color="#A6A6A6" fontSize="14px" fontWeight="400" className="max-w-7xl">
-						Before upgrading your cluster, older data formats need to be converted to match the new system
-						requirements. This conversion process is called <strong>Reindexing</strong>. Below, you can
-						automatically migrate system configurations and manually convert your application data so
-						everything works smoothly after the upgrade.
-					</Typography>
 				</Box>
+			)}
 
-				{isValidUpgradePath != null && !isValidUpgradePath && (
-					<Box className="flex flex-row items-center gap-2 p-4 rounded-xl bg-[#FFF7E6] border border-[#FFE066]">
-						<Warning2 size="20" color="#B28C00" variant="Bold" />
-						<Typography color="#665200" fontSize="14px" fontWeight="500">
-							Currently the cluster is in view-only mode. Select a valid upgrade path to enable data
-							migration.
-						</Typography>
-					</Box>
-				)}
-
-				{/* =========================================
-                SECTION 1: SYSTEM INDICES
-				========================================= */}
-				<Box className="flex flex-col p-6 rounded-2xl bg-[#0d0d0d] border border-[#2F2F2F] gap-6">
-					<Box className="flex flex-row justify-between items-start">
-						<Box className="flex flex-col gap-1 max-w-8xl">
-							<Box className="flex flex-row items-center gap-2">
-								<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
-									1. Internal System Data
-								</Typography>
-								<Tooltip
-									content="Hidden indices that store Kibana dashboards, users, and automated tasks."
-									placement="top"
-								>
-									<Box className="cursor-pointer">
-										<InfoCircle size="16" color="#ADADAD" />
-									</Box>
-								</Tooltip>
-							</Box>
-							<Typography color="#6E6E6E" fontSize="13px" fontWeight="400">
-								These indices power the internal mechanics of your cluster. Click{" "}
-								<strong>Migrate</strong> to let the system automatically update standard configurations.
-								Any leftover legacy system files shown in the table below must be manually reindexed or
-								deleted.
-							</Typography>
-						</Box>
-						<Box className="pt-2">
-							{isSystemMigrationInProgress ? (
-								<Typography color="#6E6E6E" fontSize="13px">
-									Migrating system features...
-								</Typography>
-							) : !isSystemMigrationCompleted || !isValidUpgradePath ? (
-								<Tooltip
-									content={!isValidUpgradePath ? "Cluster is in view only mode" : null}
-									isDisabled={!!isValidUpgradePath}
-									placement="top"
-								>
-									<Box>
-										<OutlinedBorderButton
-											disabled={
-												!isValidUpgradePath ||
-												isMigratingSystemFeatures ||
-												systemIndicesStatus === "MIGRATION_UNAVAILABLE"
-											}
-											onClick={() => migrateSystemFeatures({ clusterId: clusterId! })}
-										>
-											Auto-Migrate System
-										</OutlinedBorderButton>
-									</Box>
-								</Tooltip>
-							) : (
-								<Box className="flex flex-row w-fit items-center gap-2 px-[7px] py-[5px] rounded-3xl bg-[#52D97F21] text-[#52D97F]">
-									<TickCircle size="16" color="#52D97F" variant="Bold" />
-									Auto-Migration Complete
+			{/* =========================================
+                TABS CONTAINER
+            ========================================= */}
+			<Box className="flex flex-col flex-grow p-4 md:p-6 rounded-2xl bg-[#0d0d0d] border border-[#2F2F2F] gap-4 overflow-hidden">
+				<Tabs
+					aria-label="Indices Categories"
+					variant="underlined"
+					classNames={{
+						tabList: "gap-6 w-full relative rounded-none p-0 border-b border-[#2F2F2F]",
+						cursor: "w-full bg-[#BDA0FF]",
+						tab: "max-w-fit px-0 h-12",
+						tabContent: "group-data-[selected=true]:text-[#FFF] text-[#ADADAD] text-base font-medium",
+					}}
+				>
+					{/* TAB 1: CUSTOM INDICES */}
+					<Tab key="custom" title={`Custom Indices (${customIndicesList.length})`}>
+						<Box className="flex flex-col gap-6 pt-4">
+							<Box className="flex flex-col gap-1 max-w-7xl">
+								<Box className="flex flex-row items-center gap-2">
+									<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
+										Your Application Data
+									</Typography>
+									<Tooltip
+										content="Indices created by your applications and data ingestion pipelines."
+										placement="top"
+									>
+										<Box className="cursor-pointer">
+											<InfoCircle size="16" color="#ADADAD" />
+										</Box>
+									</Tooltip>
 								</Box>
+								<Typography color="#6E6E6E" fontSize="13px" fontWeight="400">
+									This is your actual business data and application logs. You must manually initiate a{" "}
+									<strong>Reindex</strong> for these older indices so your applications can continue
+									reading them after the upgrade. <br /> Unneeded logs can safely be deleted.
+								</Typography>
+							</Box>
+
+							{/* Render Custom Indices Table */}
+							{renderIndicesTable(
+								customIndicesList,
+								"Application Data Ready",
+								"All of your custom data is already compatible with the target version."
 							)}
 						</Box>
-					</Box>
+					</Tab>
 
-					{/* Render System Indices Table */}
-					{renderIndicesTable(
-						systemIndicesList,
-						"System Data Ready",
-						"No older system data requires manual reindexing."
-					)}
-				</Box>
-
-				{/* =========================================
-                SECTION 2: CUSTOM INDICES
-				========================================= */}
-				<Box className="flex flex-col flex-grow p-6 rounded-2xl bg-[#0d0d0d] border border-[#2F2F2F] gap-6 overflow-hidden">
-					<Box className="flex flex-col gap-1 max-w-8xl">
-						<Box className="flex flex-row items-center gap-2">
-							<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
-								2. Your Application Data
-							</Typography>
-							<Tooltip
-								content="Indices created by your applications and data ingestion pipelines."
-								placement="top"
-							>
-								<Box className="cursor-pointer">
-									<InfoCircle size="16" color="#ADADAD" />
+					{/* TAB 2: SYSTEM INDICES */}
+					<Tab key="system" title={`System Indices (${systemIndicesList.length})`}>
+						<Box className="flex flex-col gap-6 pt-4">
+							<Box className="flex flex-row justify-between items-start">
+								<Box className="flex flex-col gap-1 max-w-4xl">
+									<Box className="flex flex-row items-center gap-2">
+										<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
+											Internal System Data
+										</Typography>
+										<Tooltip
+											content="Hidden indices that store Kibana dashboards, users, and automated tasks."
+											placement="top"
+										>
+											<Box className="cursor-pointer">
+												<InfoCircle size="16" color="#ADADAD" />
+											</Box>
+										</Tooltip>
+									</Box>
+									<Typography color="#6E6E6E" fontSize="13px" fontWeight="400">
+										These indices power the internal mechanics of your cluster. Click{" "}
+										<strong>Migrate</strong> to let the system automatically update standard
+										configurations.
+										<br />
+										Any leftover legacy system files shown in the table below must be manually
+										reindexed or deleted.
+									</Typography>
 								</Box>
-							</Tooltip>
-						</Box>
-						<Typography color="#6E6E6E" fontSize="13px" fontWeight="400">
-							This is your actual business data and application logs. You must manually initiate a{" "}
-							<strong>Reindex</strong> for these older indices so your applications can continue reading
-							them after the upgrade. Unneeded logs can safely be deleted.
-						</Typography>
-					</Box>
 
-					{/* Render Custom Indices Table */}
-					{renderIndicesTable(
-						customIndicesList,
-						"Application Data Ready",
-						"All of your custom data is already compatible with the target version."
-					)}
-				</Box>
+								<Box className="pt-2">
+									{isSystemMigrationInProgress ? (
+										<Typography color="#6E6E6E" fontSize="13px">
+											Migrating system features...
+										</Typography>
+									) : !isSystemMigrationCompleted || !isValidUpgradePath ? (
+										<Tooltip
+											content={!isValidUpgradePath ? "Cluster is in view only mode" : null}
+											isDisabled={!!isValidUpgradePath}
+											placement="top"
+										>
+											<Box>
+												<OutlinedBorderButton
+													disabled={
+														!isValidUpgradePath ||
+														isMigratingSystemFeatures ||
+														systemIndicesStatus === "MIGRATION_UNAVAILABLE"
+													}
+													onClick={() => migrateSystemFeatures({ clusterId: clusterId! })}
+												>
+													Auto-Migrate System
+												</OutlinedBorderButton>
+											</Box>
+										</Tooltip>
+									) : (
+										<Box className="flex flex-row w-fit items-center gap-2 px-[7px] py-[5px] rounded-3xl bg-[#52D97F21] text-[#52D97F]">
+											<TickCircle size="16" color="#52D97F" variant="Bold" />
+											Auto-Migration Complete
+										</Box>
+									)}
+								</Box>
+							</Box>
+
+							{/* Render System Indices Table */}
+							{renderIndicesTable(
+								systemIndicesList,
+								"System Data Ready",
+								"No older system data requires manual reindexing."
+							)}
+						</Box>
+					</Tab>
+				</Tabs>
 			</Box>
-		</>
+		</Box>
 	)
 }
 
