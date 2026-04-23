@@ -190,7 +190,8 @@ function ManageIndices() {
 	)
 
 	return (
-		<Box className="flex flex-col w-full h-full gap-6">
+		// 1. Changed 'h-full' to 'min-h-full pb-10' to allow page scrolling
+		<Box className="flex flex-col w-full min-h-full gap-6 pb-10">
 			<Box className="flex flex-row justify-between items-center">
 				<AppBreadcrumb
 					items={[
@@ -233,7 +234,8 @@ function ManageIndices() {
 			{/* =========================================
                 TABS CONTAINER
             ========================================= */}
-			<Box className="flex flex-col flex-grow p-4 md:p-6 rounded-2xl bg-[#0d0d0d] border border-[#2F2F2F] gap-4 overflow-hidden">
+			{/* 2. Removed 'overflow-hidden' and 'flex-grow' so the dark box expands with the table */}
+			<Box className="flex flex-col p-4 md:p-6 rounded-2xl bg-[#0d0d0d] border border-[#2F2F2F] gap-4">
 				<Tabs
 					aria-label="Indices Categories"
 					variant="underlined"
@@ -264,7 +266,7 @@ function ManageIndices() {
 								<Typography color="#6E6E6E" fontSize="13px" fontWeight="400">
 									This is your actual business data and application logs. You must manually initiate a{" "}
 									<strong>Reindex</strong> for these older indices so your applications can continue
-									reading them after the upgrade. <br /> Unneeded logs can safely be deleted.
+									reading them after the upgrade. Unneeded logs can safely be deleted.
 								</Typography>
 							</Box>
 
@@ -298,10 +300,8 @@ function ManageIndices() {
 									<Typography color="#6E6E6E" fontSize="13px" fontWeight="400">
 										These indices power the internal mechanics of your cluster. Click{" "}
 										<strong>Migrate</strong> to let the system automatically update standard
-										configurations.
-										<br />
-										Any leftover legacy system files shown in the table below must be manually
-										reindexed or deleted.
+										configurations. Any leftover legacy system files shown in the table below must
+										be manually reindexed or deleted.
 									</Typography>
 								</Box>
 
