@@ -80,9 +80,10 @@ class ClusterUpgradeApi {
 		return {};
 	}
 
-	async deleteIndex(clusterId: string, indexName: string): Promise<unknown> {
-		return {};
-	}
+	async deleteIndex(clusterId: string, indexName: string) {
+        const response = await axiosJSON.delete(`/clusters/${clusterId}/migrations/indices/${encodeURIComponent(indexName)}`)
+        return response.data
+    }
 }
 
 export const clusterUpgradeApi = new ClusterUpgradeApi()

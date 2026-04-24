@@ -106,8 +106,10 @@ function ManageIndices() {
 						<Box className="flex flex-row items-center justify-end gap-3">
 							<Tooltip content="Delete Data (Permanent)" placement="top">
 								<Box
-									className="cursor-pointer hover:opacity-70 transition-opacity"
-									onClick={() => handleDelete(row.name)}
+									className={`transition-opacity ${
+										isDeleting ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:opacity-70"
+									}`}
+									onClick={() => !isDeleting && handleDelete(row.name)}
 								>
 									<Trash size="18" color="#FF6B6B" />
 								</Box>
@@ -116,10 +118,14 @@ function ManageIndices() {
 								<Box>
 									<OutlinedBorderButton
 										onClick={() => handleReindex(row.name)}
-										disabled={!isValidUpgradePath || isReindexingSingle}
+										disabled={!isValidUpgradePath || isReindexingSingle || isDeleting}
 									>
 										<Box className="flex items-center gap-2">
-											<Refresh size="14" />
+											{isReindexingSingle ? (
+												<Spinner size="sm" color="current" />
+											) : (
+												<Refresh size="14" />
+											)}
 											<span>Reindex</span>
 										</Box>
 									</OutlinedBorderButton>
