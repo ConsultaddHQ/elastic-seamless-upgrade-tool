@@ -46,9 +46,7 @@ public class MigrationController {
   }
 
   @DeleteMapping(value = "/indices/{indexName}", produces = MediaType.APPLICATION_JSON_VALUE)
-  public ResponseEntity<Map<String, String>> deleteIndex(
-      @PathVariable String clusterId,
-      @PathVariable String indexName) {
+  public ResponseEntity<Map<String, String>> deleteIndex(@PathVariable String clusterId, @PathVariable String indexName) {
 
     boolean isDeleted = indexMigrationService.safeDeleteIndex(clusterId, indexName);
     Map<String, String> responseBody = new HashMap<>();
