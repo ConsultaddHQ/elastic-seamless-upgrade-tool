@@ -18,6 +18,7 @@ import { useNavigate, useParams } from "react-router"
 import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"
 import AppBreadcrumb from "~/components/utilities/AppBreadcrumb"
+import { toast } from "sonner" // <-- Added Sonner import
 
 const columns = [
 	{ key: "name", label: "Index Name", align: "start" as const },
@@ -43,10 +44,16 @@ function ManageIndices() {
 		enabled: !!clusterId,
 	})
 
+	// Auto-Migrate System Features
 	const { isPending: isMigratingSystemFeatures, mutate: migrateSystemFeatures } = useMutation({
 		mutationFn: (data: { clusterId: string }) => clusterUpgradeApi.migrateSystemFeatures(data.clusterId),
 		onSuccess: () => {
+			toast.success("System features migration initiated successfully.")
 			refetchMigrationInfo()
+		},
+		onError: (error: any) => {
+			const errorMessage = error.response?.data?.message || "Failed to migrate system features."
+			toast.error(errorMessage)
 		},
 	})
 
@@ -54,8 +61,13 @@ function ManageIndices() {
 	const { isPending: isReindexingSingle, mutate: reindexSingleIndex } = useMutation({
 		mutationFn: (data: { clusterId: string; indexName: string }) =>
 			clusterUpgradeApi.reindexSingle(data.clusterId, data.indexName),
-		onSuccess: () => {
+		onSuccess: (data: any) => {
+			toast.success(data?.message || "Reindex initiated successfully.")
 			refetchMigrationInfo()
+		},
+		onError: (error: any) => {
+			const errorMessage = error.response?.data?.message || "Failed to reindex the target index."
+			toast.error(errorMessage)
 		},
 	})
 
@@ -63,8 +75,15 @@ function ManageIndices() {
 	const { isPending: isDeleting, mutate: deleteSingleIndex } = useMutation({
 		mutationFn: (data: { clusterId: string; indexName: string }) =>
 			clusterUpgradeApi.deleteIndex(data.clusterId, data.indexName),
-		onSuccess: () => {
+		onSuccess: (data: any) => {
+			// Displays the specific success message from your Spring Boot response
+			toast.success(data?.message || "Index deleted successfully.")
 			refetchMigrationInfo()
+		},
+		onError: (error: any) => {
+			// Captures your Spring Boot error message or falls back to a generic one
+			const errorMessage = error.response?.data?.message || "An unexpected error occurred while deleting."
+			toast.error(errorMessage)
 		},
 	})
 
@@ -137,7 +156,7 @@ function ManageIndices() {
 					return cellValue
 			}
 		},
-		[isValidUpgradePath, isReindexingSingle]
+		[isValidUpgradePath, isReindexingSingle, isDeleting] // <-- Added isDeleting to dependencies
 	)
 
 	// Helper function to render a table
@@ -196,7 +215,6 @@ function ManageIndices() {
 	)
 
 	return (
-		// 1. Changed 'h-full' to 'min-h-full pb-10' to allow page scrolling
 		<Box className="flex flex-col w-full min-h-full gap-6 pb-10">
 			<Box className="flex flex-row justify-between items-center">
 				<AppBreadcrumb
@@ -240,7 +258,6 @@ function ManageIndices() {
 			{/* =========================================
                 TABS CONTAINER
             ========================================= */}
-			{/* 2. Removed 'overflow-hidden' and 'flex-grow' so the dark box expands with the table */}
 			<Box className="flex flex-col p-4 md:p-6 rounded-2xl bg-[#0d0d0d] border border-[#2F2F2F] gap-4">
 				<Tabs
 					aria-label="Indices Categories"

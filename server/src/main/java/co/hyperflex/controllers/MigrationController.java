@@ -6,7 +6,10 @@ import co.hyperflex.upgrade.services.migration.FeatureMigrationResponse;
 import co.hyperflex.upgrade.services.migration.IndexMigrationResponse;
 import co.hyperflex.upgrade.services.migration.IndexMigrationService;
 import co.hyperflex.upgrade.services.migration.MigrationService;
+import java.util.HashMap;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -42,16 +45,22 @@ public class MigrationController {
     return migrationService.reindexIndices(clusterId);
   }
 
-  @DeleteMapping("/indices/{indexName}")
-  public ResponseEntity<String> deleteIndex(@PathVariable String clusterId, @PathVariable String indexName) {
+  @DeleteMapping(value = "/indices/{indexName}", produces = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<Map<String, String>> deleteIndex(
+      @PathVariable String clusterId,
+      @PathVariable String indexName) {
 
     boolean isDeleted = indexMigrationService.safeDeleteIndex(clusterId, indexName);
+    Map<String, String> responseBody = new HashMap<>();
 
     if (isDeleted) {
-      return ResponseEntity.ok("Index [" + indexName + "] was successfully deleted.");
+      responseBody.put("status", "success");
+      responseBody.put("message", "Index [" + indexName + "] was successfully deleted.");
+      return ResponseEntity.ok(responseBody);
     } else {
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-          .body("Failed to delete index [" + indexName + "]. Check server logs for details.");
+      responseBody.put("status", "error");
+      responseBody.put("message", "Failed to delete index [" + indexName + "]. Check server logs for details.");
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseBody);
     }
   }
 }
