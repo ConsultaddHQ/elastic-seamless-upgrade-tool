@@ -32,8 +32,9 @@ function ManageIndices() {
 	const { clusterId } = useParams()
 	const navigate = useNavigate()
 
-	// Track which specific index is currently refreshing its status
+	// 1. Add state to track which row is currently executing an action
 	const [refreshingIndex, setRefreshingIndex] = useState<string | null>(null)
+	const [activeActionIndex, setActiveActionIndex] = useState<string | null>(null)
 
 	const {
 		data: migrationInfo,
@@ -60,6 +61,8 @@ function ManageIndices() {
 			toast.success(data?.message || "Reindex started in background.")
 			refetchMigrationInfo()
 		},
+		// 2. Clear the active row state when finished
+		onSettled: () => setActiveActionIndex(null),
 	})
 
 	const { isPending: isDeleting, mutate: deleteSingleIndex } = useMutation({
@@ -69,9 +72,11 @@ function ManageIndices() {
 			toast.success(data?.message || "Index deleted successfully.")
 			refetchMigrationInfo()
 		},
+		// Clear the active row state when finished
+		onSettled: () => setActiveActionIndex(null),
 	})
 
-	// New Mutation to poll specific task status
+	// Get specific task status
 	const { mutate: checkTaskStatus } = useMutation({
 		mutationFn: (data: { clusterId: string; indexName: string }) =>
 			clusterUpgradeApi.checkReindexStatus(data.clusterId, data.indexName),
@@ -93,11 +98,17 @@ function ManageIndices() {
 	const customIndicesList = allIndices.filter((item: any) => !item.systemIndex)
 
 	const handleReindex = (indexName: string) => {
-		if (clusterId) reindexSingleIndex({ clusterId, indexName })
+		if (clusterId) {
+			setActiveActionIndex(indexName) // Set the active row
+			reindexSingleIndex({ clusterId, indexName })
+		}
 	}
 
 	const handleDelete = (indexName: string) => {
-		if (clusterId) deleteSingleIndex({ clusterId, indexName })
+		if (clusterId) {
+			setActiveActionIndex(indexName) // Set the active row
+			deleteSingleIndex({ clusterId, indexName })
+		}
 	}
 
 	const handleRefreshStatus = (indexName: string) => {
@@ -119,9 +130,15 @@ function ManageIndices() {
 				case "storageTier":
 					return <span className="text-[#ADADAD]">{cellValue || "-"}</span>
 				case "actions":
-					// Check if this specific row is currently reindexing in the background
 					const isTaskActive = row.progress?.isReindexing
 					const isCurrentlyRefreshing = refreshingIndex === row.name
+
+					// 3. Create specific booleans for this exact row
+					const isThisRowReindexing = isReindexingSingle && activeActionIndex === row.name
+					const isThisRowDeleting = isDeleting && activeActionIndex === row.name
+
+					// Global lock to disable all other buttons while one is working
+					const isAnyActionRunning = isReindexingSingle || isDeleting
 
 					if (isTaskActive) {
 						return (
@@ -157,21 +174,30 @@ function ManageIndices() {
 							<Tooltip content="Delete Data (Permanent)" placement="top">
 								<Box
 									className={`transition-opacity ${
-										isDeleting ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:opacity-70"
+										isAnyActionRunning
+											? "opacity-50 cursor-not-allowed"
+											: "cursor-pointer hover:opacity-70"
 									}`}
-									onClick={() => !isDeleting && handleDelete(row.name)}
+									onClick={() => !isAnyActionRunning && handleDelete(row.name)}
 								>
-									<Trash size="18" color="#FF6B6B" />
+									{/* Optional: Show a spinner here too if this specific row is deleting */}
+									{isThisRowDeleting ? (
+										<Spinner size="sm" color="danger" />
+									) : (
+										<Trash size="18" color="#FF6B6B" />
+									)}
 								</Box>
 							</Tooltip>
 							<Tooltip content="Convert to new format" placement="top">
 								<Box>
 									<OutlinedBorderButton
 										onClick={() => handleReindex(row.name)}
-										disabled={!isValidUpgradePath || isReindexingSingle || isDeleting}
+										// Disable if view-only OR if ANY action is running
+										disabled={!isValidUpgradePath || isAnyActionRunning}
 									>
 										<Box className="flex items-center gap-2">
-											{isReindexingSingle ? (
+											{/* Only spin if THIS row is the one reindexing */}
+											{isThisRowReindexing ? (
 												<Spinner size="sm" color="current" />
 											) : (
 												<Refresh size="14" />
