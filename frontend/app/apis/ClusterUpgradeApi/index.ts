@@ -76,12 +76,18 @@ class ClusterUpgradeApi {
 		return response.data
 	}
 
-	async reindexSingle(clusterId: string, indexName: string): Promise<unknown> {
-		return {};
-	}
-
 	async deleteIndex(clusterId: string, indexName: string) {
         const response = await axiosJSON.delete(`/clusters/${clusterId}/migrations/indices/${encodeURIComponent(indexName)}`)
+        return response.data
+    }
+
+	async reindexSingle(clusterId: string, indexName: string) {
+        const response = await axiosJSON.post(`/clusters/${clusterId}/migrations/indices/${encodeURIComponent(indexName)}/reindex`)
+        return response.data
+    }
+
+    async checkReindexStatus(clusterId: string, indexName: string) {
+        const response = await axiosJSON.get(`/clusters/${clusterId}/migrations/indices/${encodeURIComponent(indexName)}/reindex/status`)
         return response.data
     }
 }

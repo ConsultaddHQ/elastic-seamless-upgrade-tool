@@ -7,6 +7,7 @@ public record IndexReindexInfo(
     String storageTier,
     boolean systemIndex,
     String estimateSummary,
-    String estimateTime
+    String estimateTime,
+    ReindexProgressInfo progress
 ) {
 }

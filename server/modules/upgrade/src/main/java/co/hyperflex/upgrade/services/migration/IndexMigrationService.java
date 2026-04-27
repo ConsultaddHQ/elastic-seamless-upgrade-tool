@@ -7,6 +7,7 @@ import co.hyperflex.core.services.upgrade.ClusterUpgradeJobService;
 import co.hyperflex.core.utils.VersionUtils;
 import co.hyperflex.precheck.utils.IndexUtils;
 import co.hyperflex.upgrade.services.dtos.IndexReindexInfo;
+import co.hyperflex.upgrade.services.dtos.ReindexProgressInfo;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.HashMap;
 import java.util.List;
@@ -70,7 +71,7 @@ public class IndexMigrationService {
 
     return allIndices.stream()
         .filter(record -> indicesToReindexWithTier.containsKey(record.getIndex()))
-        .map(record -> buildReindexInfo(record, indicesToReindexWithTier))
+        .map(record -> buildReindexInfo(clusterId, record, indicesToReindexWithTier))
         .toList();
   }
 
@@ -94,7 +95,7 @@ public class IndexMigrationService {
     return indicesToReindex;
   }
 
-  private IndexReindexInfo buildReindexInfo(IndicesRecord record, Map<String, String> indicesTierMap) {
+  private IndexReindexInfo buildReindexInfo(String clusterId, IndicesRecord record, Map<String, String> indicesTierMap) {
     String indexName = record.getIndex();
     assert indexName != null;
     boolean isSystem = indexName.startsWith(".");
@@ -112,7 +113,8 @@ public class IndexMigrationService {
         storageTier,
         isSystem,
         estimateSummary,
-        estimateTime
+        estimateTime,
+        checkAndUpdateReindexStatus(clusterId, indexName)
     );
   }
 
@@ -232,6 +234,119 @@ public class IndexMigrationService {
       }
     } catch (Exception e) {
       log.error("Exception occurred during delete for index [{}]: {}", indexName, e.getMessage(), e);
+      return false;
+    }
+  }
+
+  /**
+   * Triggers the reindex asynchronously and saves the Task ID.
+   */
+  public boolean safeReindexIndexAsync(String clusterId, String indexName) {
+    log.info("Initiating ASYNC reindex for index: [{}]", indexName);
+    String destIndexName = indexName + "-reindexed";
+
+    try {
+      Matcher matcher = DATA_STREAM_PATTERN.matcher(indexName);
+
+      // 1. Rollover Data Streams if active
+      if (matcher.matches()) {
+        String dataStreamName = matcher.group(1);
+        if (isWriteIndex(clusterId, dataStreamName, indexName)) {
+          if (!rolloverDataStream(clusterId, dataStreamName)) {
+            return false;
+          }
+        }
+      }
+
+      // 2. Lock Source Index
+      if (!applyWriteBlock(clusterId, indexName)) {
+        return false;
+      }
+
+      // 3. Trigger Async Reindex (?wait_for_completion=false)
+      var client = elasticsearchClientProvider.getClient(clusterId);
+      String requestBody = String.format("{\"source\": {\"index\": \"%s\"}, \"dest\": {\"index\": \"%s\"}}", indexName, destIndexName);
+
+      JsonNode response = client.execute(ApiRequest.builder(JsonNode.class)
+          .post()
+          .uri("/_reindex?wait_for_completion=false")
+          .body(requestBody)
+          .build());
+
+      // 4. Save Task ID to Database (Survives Page Refreshes)
+      if (response != null && response.has("task")) {
+        String taskId = response.get("task").asText();
+
+        // TODO: Save to your DB! e.g., upgradeJob.getActiveTasks().put(indexName, taskId);
+        clusterUpgradeJobService.saveActiveReindexTask(clusterId, indexName, taskId);
+
+        return true;
+      }
+      return false;
+    } catch (Exception e) {
+      log.error("Async reindex failed for [{}]: {}", indexName, e.getMessage());
+      return false;
+    }
+  }
+
+  /**
+   * Called by the frontend "Refresh" button. Checks ES for progress.
+   * If 100% complete, it deletes the old index automatically.
+   */
+  public ReindexProgressInfo checkAndUpdateReindexStatus(String clusterId, String indexName) {
+    // 1. Get Task ID from DB
+    String taskId = clusterUpgradeJobService.getTaskIdForIndex(clusterId, indexName);
+
+    if (taskId == null) {
+      return new ReindexProgressInfo(false, null, 0, 0); // Not currently reindexing
+    }
+
+    try {
+      var client = elasticsearchClientProvider.getClient(clusterId);
+      JsonNode response = client.execute(ApiRequest.builder(JsonNode.class).get().uri("/_tasks/" + taskId).build());
+
+      if (response != null) {
+        boolean isCompleted = response.path("completed").asBoolean(false);
+        JsonNode statusNode = response.path("task").path("status");
+
+        if (isCompleted) {
+          // Task Finished! Cleanup Phase.
+          log.info("Reindex task [{}] completed! Deleting legacy index [{}]", taskId, indexName);
+          executeDelete(clusterId, indexName);
+          clusterUpgradeJobService.removeActiveReindexTask(clusterId, indexName); // Remove from DB
+
+          return new ReindexProgressInfo(false, null, 100, 0);
+        }
+
+        // Calculate Progress
+        long total = statusNode.path("total").asLong(1); // Avoid div by 0
+        long created = statusNode.path("created").asLong(0);
+        long updated = statusNode.path("updated").asLong(0);
+        long deleted = statusNode.path("deleted").asLong(0);
+
+        long processed = created + updated + deleted;
+        int progress = (int) ((processed * 100) / total);
+        long remaining = total - processed;
+
+        return new ReindexProgressInfo(true, taskId, progress, remaining);
+      }
+    } catch (Exception e) {
+      log.error("Failed to check task status for [{}]: {}", taskId, e.getMessage());
+    }
+
+    return new ReindexProgressInfo(true, taskId, 0, 0); // Fallback if API glitch
+  }
+
+  // --- Helper Methods ---
+  private boolean applyWriteBlock(String clusterId, String indexName) {
+    try {
+      var client = elasticsearchClientProvider.getClient(clusterId);
+      return client.execute(ApiRequest.builder(JsonNode.class)
+          .put()
+          .uri("/" + indexName + "/_settings")
+          .body("{\"index.blocks.write\": true}")
+          .build()).path("acknowledged").asBoolean(false);
+    } catch (Exception e) {
       return false;
     }
   }

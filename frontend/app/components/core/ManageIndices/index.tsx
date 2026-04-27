@@ -12,27 +12,28 @@ import {
 } from "@heroui/react"
 import { Box, Typography } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { Convertshape2, Folder, InfoCircle, TickCircle, Warning2, Trash, Refresh } from "iconsax-react"
-import { useCallback, type Key } from "react"
+import { Convertshape2, InfoCircle, TickCircle, Warning2, Trash, Refresh, ArrowRight2 } from "iconsax-react"
+import { useCallback, type Key, useState } from "react"
 import { useNavigate, useParams } from "react-router"
 import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"
 import AppBreadcrumb from "~/components/utilities/AppBreadcrumb"
-import { toast } from "sonner" // <-- Added Sonner import
+import { toast } from "sonner"
 
 const columns = [
 	{ key: "name", label: "Index Name", align: "start" as const },
 	{ key: "docsCount", label: "Docs Count", align: "start" as const },
 	{ key: "size", label: "Total Size", align: "start" as const },
 	{ key: "storageTier", label: "Storage Tier", align: "start" as const },
-	{ key: "estimateSummary", label: "Reindex Estimate summary", align: "start" as const },
-	{ key: "estimateTime", label: "Reindex Estimate time", align: "start" as const },
 	{ key: "actions", label: "Actions", align: "end" as const },
 ]
 
 function ManageIndices() {
 	const { clusterId } = useParams()
 	const navigate = useNavigate()
+
+	// Track which specific index is currently refreshing its status
+	const [refreshingIndex, setRefreshingIndex] = useState<string | null>(null)
 
 	const {
 		data: migrationInfo,
@@ -44,57 +45,49 @@ function ManageIndices() {
 		enabled: !!clusterId,
 	})
 
-	// Auto-Migrate System Features
 	const { isPending: isMigratingSystemFeatures, mutate: migrateSystemFeatures } = useMutation({
 		mutationFn: (data: { clusterId: string }) => clusterUpgradeApi.migrateSystemFeatures(data.clusterId),
 		onSuccess: () => {
-			toast.success("System features migration initiated successfully.")
+			toast.success("System features migration initiated.")
 			refetchMigrationInfo()
-		},
-		onError: (error: any) => {
-			const errorMessage = error.response?.data?.message || "Failed to migrate system features."
-			toast.error(errorMessage)
 		},
 	})
 
-	// Single Index Reindex
 	const { isPending: isReindexingSingle, mutate: reindexSingleIndex } = useMutation({
 		mutationFn: (data: { clusterId: string; indexName: string }) =>
 			clusterUpgradeApi.reindexSingle(data.clusterId, data.indexName),
 		onSuccess: (data: any) => {
-			toast.success(data?.message || "Reindex initiated successfully.")
+			toast.success(data?.message || "Reindex started in background.")
 			refetchMigrationInfo()
-		},
-		onError: (error: any) => {
-			const errorMessage = error.response?.data?.message || "Failed to reindex the target index."
-			toast.error(errorMessage)
 		},
 	})
 
-	// Single Index Delete
 	const { isPending: isDeleting, mutate: deleteSingleIndex } = useMutation({
 		mutationFn: (data: { clusterId: string; indexName: string }) =>
 			clusterUpgradeApi.deleteIndex(data.clusterId, data.indexName),
 		onSuccess: (data: any) => {
-			// Displays the specific success message from your Spring Boot response
 			toast.success(data?.message || "Index deleted successfully.")
 			refetchMigrationInfo()
 		},
-		onError: (error: any) => {
-			// Captures your Spring Boot error message or falls back to a generic one
-			const errorMessage = error.response?.data?.message || "An unexpected error occurred while deleting."
-			toast.error(errorMessage)
+	})
+
+	// New Mutation to poll specific task status
+	const { mutate: checkTaskStatus } = useMutation({
+		mutationFn: (data: { clusterId: string; indexName: string }) =>
+			clusterUpgradeApi.checkReindexStatus(data.clusterId, data.indexName),
+		onSuccess: () => {
+			// Once status is checked, refetch the whole list to update the UI
+			refetchMigrationInfo().finally(() => setRefreshingIndex(null))
 		},
+		onError: () => setRefreshingIndex(null),
 	})
 
 	const systemIndicesStatus = migrationInfo?.systemIndices?.status
 	const isSystemMigrationInProgress = systemIndicesStatus === "IN_PROGRESS"
 	const isSystemMigrationCompleted =
 		systemIndicesStatus === "NO_MIGRATION_NEEDED" || systemIndicesStatus === "COMPLETED"
-
 	const isValidUpgradePath = migrationInfo?.isValidUpgradePath
 
-	// Separate the indices into Custom and System lists
 	const allIndices = migrationInfo?.reindexNeedingIndices || []
 	const systemIndicesList = allIndices.filter((item: any) => item.systemIndex)
 	const customIndicesList = allIndices.filter((item: any) => !item.systemIndex)
@@ -107,6 +100,13 @@ function ManageIndices() {
 		if (clusterId) deleteSingleIndex({ clusterId, indexName })
 	}
 
+	const handleRefreshStatus = (indexName: string) => {
+		if (clusterId) {
+			setRefreshingIndex(indexName)
+			checkTaskStatus({ clusterId, indexName })
+		}
+	}
+
 	const renderCell = useCallback(
 		(row: any, columnKey: Key) => {
 			const cellValue = row[columnKey as keyof typeof row]
@@ -117,10 +117,41 @@ function ManageIndices() {
 				case "docsCount":
 				case "size":
 				case "storageTier":
-				case "estimateSummary":
-				case "estimateTime":
 					return <span className="text-[#ADADAD]">{cellValue || "-"}</span>
 				case "actions":
+					// Check if this specific row is currently reindexing in the background
+					const isTaskActive = row.progress?.isReindexing
+					const isCurrentlyRefreshing = refreshingIndex === row.name
+
+					if (isTaskActive) {
+						return (
+							<Box className="flex flex-row items-center justify-end gap-4">
+								<Box className="flex flex-col items-end">
+									<Typography color="#BDA0FF" fontSize="13px" fontWeight="600">
+										{row.progress.progressPercentage}% Complete
+									</Typography>
+									<Typography color="#6E6E6E" fontSize="11px">
+										{row.progress.remainingDocs} docs remaining
+									</Typography>
+								</Box>
+								<Tooltip content="Refresh Progress" placement="top">
+									<Box
+										className={`cursor-pointer p-2 rounded-full bg-[#1A1A1A] hover:bg-[#2A2A2A] transition-colors ${
+											isCurrentlyRefreshing ? "opacity-50 pointer-events-none" : ""
+										}`}
+										onClick={() => handleRefreshStatus(row.name)}
+									>
+										<Refresh
+											size="16"
+											color="#FFF"
+											className={isCurrentlyRefreshing ? "animate-spin" : ""}
+										/>
+									</Box>
+								</Tooltip>
+							</Box>
+						)
+					}
+
 					return (
 						<Box className="flex flex-row items-center justify-end gap-3">
 							<Tooltip content="Delete Data (Permanent)" placement="top">
@@ -156,10 +187,9 @@ function ManageIndices() {
 					return cellValue
 			}
 		},
-		[isValidUpgradePath, isReindexingSingle, isDeleting] // <-- Added isDeleting to dependencies
+		[isValidUpgradePath, isReindexingSingle, isDeleting, refreshingIndex]
 	)
 
-	// Helper function to render a table
 	const renderIndicesTable = (dataList: any[], emptyTitle: string, emptySub: string) => (
 		<Table
 			removeWrapper

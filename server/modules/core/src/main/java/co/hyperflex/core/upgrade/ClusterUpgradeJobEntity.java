@@ -12,6 +12,8 @@ public class ClusterUpgradeJobEntity {
   public static final String ACTIVE = "isActive";
   public static final String STOP = "stop";
   public static final String STATUS = "status";
+  private Map<String, String> activeReindexTasks = new HashMap<>();
+
 
   @Id
   private String id;
@@ -86,5 +88,16 @@ public class ClusterUpgradeJobEntity {
 
   public void setStop(boolean stop) {
     this.stop = stop;
+  }
+
+  public Map<String, String> getActiveReindexTasks() {
+    if (activeReindexTasks == null) {
+      activeReindexTasks = new HashMap<>();
+    }
+    return activeReindexTasks;
+  }
+
+  public void setActiveReindexTasks(Map<String, String> activeReindexTasks) {
+    this.activeReindexTasks = activeReindexTasks;
   }
 }

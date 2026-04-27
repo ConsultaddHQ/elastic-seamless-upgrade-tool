@@ -2,6 +2,7 @@ package co.hyperflex.controllers;
 
 
 import co.hyperflex.upgrade.services.dtos.MigrationInfoResponse;
+import co.hyperflex.upgrade.services.dtos.ReindexProgressInfo;
 import co.hyperflex.upgrade.services.migration.FeatureMigrationResponse;
 import co.hyperflex.upgrade.services.migration.IndexMigrationResponse;
 import co.hyperflex.upgrade.services.migration.IndexMigrationService;
@@ -60,5 +61,27 @@ public class MigrationController {
       responseBody.put("message", "Failed to delete index [" + indexName + "]. Check server logs for details.");
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseBody);
     }
+  }
+
+  @PostMapping("/indices/{indexName}/reindex")
+  public ResponseEntity<Map<String, String>> reindexSingleIndex(@PathVariable String clusterId, @PathVariable String indexName) {
+    boolean isStarted = indexMigrationService.safeReindexIndexAsync(clusterId, indexName);
+    Map<String, String> responseBody = new HashMap<>();
+
+    if (isStarted) {
+      responseBody.put("status", "success");
+      responseBody.put("message", "Reindex started in the background.");
+      return ResponseEntity.accepted().body(responseBody);
+    } else {
+      responseBody.put("status", "error");
+      responseBody.put("message", "Failed to start reindex.");
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseBody);
+    }
+  }
+
+  @GetMapping("/indices/{indexName}/reindex/status")
+  public ResponseEntity<ReindexProgressInfo> checkReindexStatus(@PathVariable String clusterId, @PathVariable String indexName) {
+    ReindexProgressInfo status = indexMigrationService.checkAndUpdateReindexStatus(clusterId, indexName);
+    return ResponseEntity.ok(status);
   }
 }
