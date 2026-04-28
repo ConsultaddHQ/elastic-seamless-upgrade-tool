@@ -15,7 +15,7 @@ import {
 import { Box, Typography } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { Convertshape2, InfoCircle, TickCircle, Warning2, Trash, Refresh } from "iconsax-react"
-import { useCallback, type Key, useState } from "react"
+import { useCallback, type Key, useState, useEffect } from "react" // <-- Added useEffect here
 import { useNavigate, useParams } from "react-router"
 import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"
@@ -86,6 +86,23 @@ function ManageIndices() {
 		onError: () => setRefreshingIndex(null),
 	})
 
+	useEffect(() => {
+		const indices = migrationInfo?.reindexNeedingIndices || []
+
+		// Check if ANY index is currently sitting at 100% completion
+		const isAnyIndexFinalizing = indices.some(
+			(item: any) => item.progress?.progressPercentage === 100 && !item.progress?.isReindexing
+		)
+
+		if (isAnyIndexFinalizing) {
+			const interval = setInterval(() => {
+				refetchMigrationInfo()
+			}, 2000)
+
+			return () => clearInterval(interval)
+		}
+	}, [migrationInfo, refetchMigrationInfo])
+
 	const systemIndicesStatus = migrationInfo?.systemIndices?.status
 	const isSystemMigrationInProgress = systemIndicesStatus === "IN_PROGRESS"
 	const isSystemMigrationCompleted =
@@ -131,7 +148,6 @@ function ManageIndices() {
 				case "estimateTime":
 					return <span className="text-[#ADADAD]">{cellValue || "-"}</span>
 				case "actions":
-					// 1. Capture both the active state AND the 100% completed state
 					const isTaskActive = row.progress?.isReindexing === true
 					const isTaskCompleted = row.progress?.progressPercentage === 100 && !isTaskActive
 					const showProgressUI = isTaskActive || isTaskCompleted
@@ -144,7 +160,6 @@ function ManageIndices() {
 					const isThisRowDeleting = isDeleting && activeActionIndex === row.name
 					const isAnyActionRunning = isReindexingSingle || isDeleting
 
-					// 2. Render the progress UI if it's active OR if it finished instantly
 					if (showProgressUI) {
 						return (
 							<Box className="flex flex-row items-center justify-end gap-3 min-w-[220px]">
@@ -180,7 +195,7 @@ function ManageIndices() {
 										variant="solid"
 										className="min-w-[32px] w-[32px] h-[32px] bg-black text-[#FFFFFF] hover:bg-[#1A1A1A] border border-[#2F2F2F]"
 										isLoading={isCurrentlyRefreshing}
-										isDisabled={isTaskCompleted} // Disable refresh if already 100%
+										isDisabled={isTaskCompleted}
 										onPress={() => handleRefreshStatus(row.name)}
 									>
 										{!isCurrentlyRefreshing && <Refresh size="16" color="#FFFFFF" />}
@@ -307,7 +322,6 @@ function ManageIndices() {
 				/>
 			</Box>
 
-			{/* Non-Technical Page Introduction */}
 			<Box className="flex flex-col gap-1 px-2">
 				<Typography color="#FFF" fontSize="20px" fontWeight="600">
 					Data Migration & Reindexing
