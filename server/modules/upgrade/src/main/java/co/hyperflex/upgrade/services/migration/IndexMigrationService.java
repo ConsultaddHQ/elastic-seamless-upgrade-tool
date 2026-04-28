@@ -310,9 +310,18 @@ public class IndexMigrationService {
 
         if (isCompleted) {
           // Task Finished! Cleanup Phase.
-          logger.info("Reindex task [{}] completed! Deleting legacy index [{}]", taskId, indexName);
+          logger.info("Reindex task [{}] completed! Cleaning up legacy index [{}]", taskId, indexName);
+
+          String destIndexName = indexName + "-reindexed";
+
+          // 1. Copy aliases to prevent application downtime!
+          copyAliasesToNewIndex(clusterId, indexName, destIndexName);
+
+          // 2. Delete the old index (this automatically removes it from the alias pool)
           executeDelete(clusterId, indexName);
-          clusterUpgradeJobService.removeActiveReindexTask(clusterId, indexName); // Remove from DB
+
+          // 3. Remove task from DB
+          clusterUpgradeJobService.removeActiveReindexTask(clusterId, indexName);
 
           return new ReindexProgressInfo(false, null, 100, 0);
         }
@@ -347,6 +356,57 @@ public class IndexMigrationService {
           .build()).path("acknowledged").asBoolean(false);
     } catch (Exception e) {
       return false;
+    }
+  }
+
+  /**
+   * Fetches all aliases from the old index and safely applies them to the new index.
+   * This ensures zero-downtime for applications relying on alias routing.
+   */
+  private void copyAliasesToNewIndex(String clusterId, String oldIndexName, String newIndexName) {
+    try {
+      var client = elasticsearchClientProvider.getClient(clusterId);
+
+      // 1. Get existing aliases for the old index
+      JsonNode aliasResponse = client.execute(ApiRequest.builder(JsonNode.class)
+          .get()
+          .uri("/" + oldIndexName + "/_alias")
+          .build());
+
+      if (aliasResponse != null && aliasResponse.has(oldIndexName)) {
+        JsonNode aliasesNode = aliasResponse.get(oldIndexName).path("aliases");
+
+        // 2. If it has aliases, build the bulk update request
+        if (!aliasesNode.isMissingNode() && !aliasesNode.isEmpty()) {
+          StringBuilder actions = new StringBuilder("{\"actions\": [");
+          boolean isFirst = true;
+
+          var iterator = aliasesNode.fieldNames();
+          while (iterator.hasNext()) {
+            String aliasName = iterator.next();
+            if (!isFirst) {
+              actions.append(",");
+            }
+            actions.append(String.format("{\"add\": {\"index\": \"%s\", \"alias\": \"%s\"}}", newIndexName, aliasName));
+            isFirst = false;
+          }
+          actions.append("]}");
+
+          // 3. Execute the Alias assignment
+          if (!isFirst) { // ensures we actually added something to the builder
+            client.execute(ApiRequest.builder(JsonNode.class)
+                .post()
+                .uri("/_aliases")
+                .body(actions.toString())
+                .build());
+            logger.info("Successfully copied aliases from [{}] to [{}]", oldIndexName, newIndexName);
+          }
+        } else {
+          logger.debug("Index [{}] has no standard aliases to copy.", oldIndexName);
+        }
+      }
+    } catch (Exception e) {
+      logger.error("Failed to copy aliases from [{}] to [{}]: {}", oldIndexName, newIndexName, e.getMessage());
     }
   }
 }
