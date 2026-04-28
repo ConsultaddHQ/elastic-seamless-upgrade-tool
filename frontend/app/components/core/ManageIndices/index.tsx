@@ -25,6 +25,8 @@ const columns = [
 	{ key: "docsCount", label: "Docs Count", align: "start" as const },
 	{ key: "size", label: "Total Size", align: "start" as const },
 	{ key: "storageTier", label: "Storage Tier", align: "start" as const },
+	{ key: "estimateSummary", label: "Reindex Estimate summary", align: "start" as const },
+	{ key: "estimateTime", label: "Reindex Estimate time", align: "start" as const },
 	{ key: "actions", label: "Actions", align: "end" as const },
 ]
 
@@ -32,7 +34,6 @@ function ManageIndices() {
 	const { clusterId } = useParams()
 	const navigate = useNavigate()
 
-	// 1. Add state to track which row is currently executing an action
 	const [refreshingIndex, setRefreshingIndex] = useState<string | null>(null)
 	const [activeActionIndex, setActiveActionIndex] = useState<string | null>(null)
 
@@ -61,7 +62,6 @@ function ManageIndices() {
 			toast.success(data?.message || "Reindex started in background.")
 			refetchMigrationInfo()
 		},
-		// 2. Clear the active row state when finished
 		onSettled: () => setActiveActionIndex(null),
 	})
 
@@ -72,16 +72,13 @@ function ManageIndices() {
 			toast.success(data?.message || "Index deleted successfully.")
 			refetchMigrationInfo()
 		},
-		// Clear the active row state when finished
 		onSettled: () => setActiveActionIndex(null),
 	})
 
-	// Get specific task status
 	const { mutate: checkTaskStatus } = useMutation({
 		mutationFn: (data: { clusterId: string; indexName: string }) =>
 			clusterUpgradeApi.checkReindexStatus(data.clusterId, data.indexName),
 		onSuccess: () => {
-			// Once status is checked, refetch the whole list to update the UI
 			refetchMigrationInfo().finally(() => setRefreshingIndex(null))
 		},
 		onError: () => setRefreshingIndex(null),
@@ -99,14 +96,14 @@ function ManageIndices() {
 
 	const handleReindex = (indexName: string) => {
 		if (clusterId) {
-			setActiveActionIndex(indexName) // Set the active row
+			setActiveActionIndex(indexName)
 			reindexSingleIndex({ clusterId, indexName })
 		}
 	}
 
 	const handleDelete = (indexName: string) => {
 		if (clusterId) {
-			setActiveActionIndex(indexName) // Set the active row
+			setActiveActionIndex(indexName)
 			deleteSingleIndex({ clusterId, indexName })
 		}
 	}
@@ -125,19 +122,19 @@ function ManageIndices() {
 			switch (columnKey) {
 				case "name":
 					return <span className="text-[#ADADAD] font-medium">{cellValue}</span>
+				// 2. Added new column keys to standard rendering
 				case "docsCount":
 				case "size":
 				case "storageTier":
+				case "estimateSummary":
+				case "estimateTime":
 					return <span className="text-[#ADADAD]">{cellValue || "-"}</span>
 				case "actions":
 					const isTaskActive = row.progress?.isReindexing
 					const isCurrentlyRefreshing = refreshingIndex === row.name
 
-					// 3. Create specific booleans for this exact row
 					const isThisRowReindexing = isReindexingSingle && activeActionIndex === row.name
 					const isThisRowDeleting = isDeleting && activeActionIndex === row.name
-
-					// Global lock to disable all other buttons while one is working
 					const isAnyActionRunning = isReindexingSingle || isDeleting
 
 					if (isTaskActive) {
@@ -171,32 +168,14 @@ function ManageIndices() {
 
 					return (
 						<Box className="flex flex-row items-center justify-end gap-3">
-							<Tooltip content="Delete Data (Permanent)" placement="top">
-								<Box
-									className={`transition-opacity ${
-										isAnyActionRunning
-											? "opacity-50 cursor-not-allowed"
-											: "cursor-pointer hover:opacity-70"
-									}`}
-									onClick={() => !isAnyActionRunning && handleDelete(row.name)}
-								>
-									{/* Optional: Show a spinner here too if this specific row is deleting */}
-									{isThisRowDeleting ? (
-										<Spinner size="sm" color="danger" />
-									) : (
-										<Trash size="18" color="#FF6B6B" />
-									)}
-								</Box>
-							</Tooltip>
+							{/* 3. Polished UI: Reindex button first, Delete button second with new container styles */}
 							<Tooltip content="Convert to new format" placement="top">
 								<Box>
 									<OutlinedBorderButton
 										onClick={() => handleReindex(row.name)}
-										// Disable if view-only OR if ANY action is running
 										disabled={!isValidUpgradePath || isAnyActionRunning}
 									>
 										<Box className="flex items-center gap-2">
-											{/* Only spin if THIS row is the one reindexing */}
 											{isThisRowReindexing ? (
 												<Spinner size="sm" color="current" />
 											) : (
@@ -205,6 +184,23 @@ function ManageIndices() {
 											<span>Reindex</span>
 										</Box>
 									</OutlinedBorderButton>
+								</Box>
+							</Tooltip>
+
+							<Tooltip content="Delete Data (Permanent)" placement="top">
+								<Box
+									className={`flex items-center justify-center w-9 h-9 rounded-lg border transition-all ${
+										isAnyActionRunning
+											? "opacity-50 cursor-not-allowed border-[#FF6B6B]/30 bg-[#FF6B6B]/5"
+											: "cursor-pointer border-[#FF6B6B]/30 bg-[#FF6B6B]/10 hover:bg-[#FF6B6B]/20 hover:border-[#FF6B6B]/50"
+									}`}
+									onClick={() => !isAnyActionRunning && handleDelete(row.name)}
+								>
+									{isThisRowDeleting ? (
+										<Spinner size="sm" color="danger" />
+									) : (
+										<Trash size="16" color="#FF6B6B" />
+									)}
 								</Box>
 							</Tooltip>
 						</Box>
@@ -288,7 +284,6 @@ function ManageIndices() {
 				/>
 			</Box>
 
-			{/* Non-Technical Page Introduction */}
 			<Box className="flex flex-col gap-1 px-2">
 				<Typography color="#FFF" fontSize="20px" fontWeight="600">
 					Data Migration & Reindexing
@@ -311,9 +306,6 @@ function ManageIndices() {
 				</Box>
 			)}
 
-			{/* =========================================
-                TABS CONTAINER
-            ========================================= */}
 			<Box className="flex flex-col p-4 md:p-6 rounded-2xl bg-[#0d0d0d] border border-[#2F2F2F] gap-4">
 				<Tabs
 					aria-label="Indices Categories"
@@ -325,7 +317,6 @@ function ManageIndices() {
 						tabContent: "group-data-[selected=true]:text-[#FFF] text-[#ADADAD] text-base font-medium",
 					}}
 				>
-					{/* TAB 1: CUSTOM INDICES */}
 					<Tab key="custom" title={`Custom Indices (${customIndicesList.length})`}>
 						<Box className="flex flex-col gap-6 pt-4">
 							<Box className="flex flex-col gap-1 max-w-7xl">
@@ -349,7 +340,6 @@ function ManageIndices() {
 								</Typography>
 							</Box>
 
-							{/* Render Custom Indices Table */}
 							{renderIndicesTable(
 								customIndicesList,
 								"Application Data Ready",
@@ -358,7 +348,6 @@ function ManageIndices() {
 						</Box>
 					</Tab>
 
-					{/* TAB 2: SYSTEM INDICES */}
 					<Tab key="system" title={`System Indices (${systemIndicesList.length})`}>
 						<Box className="flex flex-col gap-6 pt-4">
 							<Box className="flex flex-row justify-between items-start">
@@ -417,7 +406,6 @@ function ManageIndices() {
 								</Box>
 							</Box>
 
-							{/* Render System Indices Table */}
 							{renderIndicesTable(
 								systemIndicesList,
 								"System Data Ready",

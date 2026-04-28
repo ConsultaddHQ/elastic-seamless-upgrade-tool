@@ -20,11 +20,11 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class IndexMigrationService {
-  private static final Logger log = LoggerFactory.getLogger(IndexMigrationService.class);
+  private static final Logger logger = LoggerFactory.getLogger(IndexMigrationService.class);
 
   // Regex to capture the base data stream name from a backing index.
-  // Example: .ds-.logs-deprecation.elasticsearch-default-2026.04.22-000001
-  // Group 1 extracts: .logs-deprecation.elasticsearch-default
+  // Example: .ds-.loggers-deprecation.elasticsearch-default-2026.04.22-000001
+  // Group 1 extracts: .loggers-deprecation.elasticsearch-default
   private static final Pattern DATA_STREAM_PATTERN = Pattern.compile("^\\.ds-(.+)-\\d{4}\\.\\d{2}\\.\\d{2}-\\d{6}$");
 
   private final ElasticsearchClientProvider elasticsearchClientProvider;
@@ -126,7 +126,7 @@ public class IndexMigrationService {
    * @return true if successfully deleted, false otherwise.
    */
   public boolean safeDeleteIndex(String clusterId, String indexName) {
-    log.info("Initiating safe delete process for index: [{}] on cluster: [{}]", indexName, clusterId);
+    logger.info("Initiating safe delete process for index: [{}] on cluster: [{}]", indexName, clusterId);
 
     try {
       Matcher matcher = DATA_STREAM_PATTERN.matcher(indexName);
@@ -134,19 +134,19 @@ public class IndexMigrationService {
       // Phase 1: Categorize & Validate
       if (matcher.matches()) {
         String dataStreamName = matcher.group(1);
-        log.debug("Identified as Data Stream backing index. Base stream name: [{}]", dataStreamName);
+        logger.debug("Identified as Data Stream backing index. Base stream name: [{}]", dataStreamName);
 
         if (isWriteIndex(clusterId, dataStreamName, indexName)) {
-          log.info("Index [{}] is the active write index. Initiating rollover...", indexName);
+          logger.info("Index [{}] is the active write index. Initiating rollover...", indexName);
 
           // Phase 2: Rollover (Unlock)
           boolean rolledOver = rolloverDataStream(clusterId, dataStreamName);
           if (!rolledOver) {
-            log.error("Failed to rollover data stream [{}]. Aborting delete for safety.", dataStreamName);
+            logger.error("Failed to rollover data stream [{}]. Aborting delete for safety.", dataStreamName);
             return false;
           }
         } else {
-          log.debug("Index [{}] is an older segment. No rollover needed.", indexName);
+          logger.debug("Index [{}] is an older segment. No rollover needed.", indexName);
         }
       }
 
@@ -154,7 +154,7 @@ public class IndexMigrationService {
       return executeDelete(clusterId, indexName);
 
     } catch (Exception e) {
-      log.error("Elasticsearch operation failed while processing index [{}]: {}", indexName, e.getMessage(), e);
+      logger.error("Elasticsearch operation failed while processing index [{}]: {}", indexName, e.getMessage(), e);
       return false;
     }
   }
@@ -171,7 +171,7 @@ public class IndexMigrationService {
           .build());
 
       if (response == null || !response.has("data_streams") || response.get("data_streams").isEmpty()) {
-        log.warn("Data stream [{}] not found or response was empty.", dataStreamName);
+        logger.warn("Data stream [{}] not found or response was empty.", dataStreamName);
         return false;
       }
 
@@ -186,7 +186,7 @@ public class IndexMigrationService {
 
     } catch (Exception e) {
       // Catching generic exception assuming the custom client might throw it on a 404
-      log.debug("Data stream [{}] check failed (it might not exist or returned 404): {}", dataStreamName, e.getMessage());
+      logger.debug("Data stream [{}] check failed (it might not exist or returned 404): {}", dataStreamName, e.getMessage());
       return false;
     }
   }
@@ -203,12 +203,12 @@ public class IndexMigrationService {
           .build());
 
       if (response != null && response.path("acknowledged").asBoolean(false)) {
-        log.info("Successfully rolled over data stream: [{}]", dataStreamName);
+        logger.info("Successfully rolled over data stream: [{}]", dataStreamName);
         return true;
       }
       return false;
     } catch (Exception e) {
-      log.error("Exception occurred during rollover for data stream [{}]: {}", dataStreamName, e.getMessage(), e);
+      logger.error("Exception occurred during rollover for data stream [{}]: {}", dataStreamName, e.getMessage(), e);
       return false;
     }
   }
@@ -217,7 +217,7 @@ public class IndexMigrationService {
    * Executes the actual DELETE command using the custom ApiRequest.
    */
   private boolean executeDelete(String clusterId, String indexName) {
-    log.info("Executing DELETE command for index: [{}]", indexName);
+    logger.info("Executing DELETE command for index: [{}]", indexName);
     try {
       var client = elasticsearchClientProvider.getClient(clusterId);
       JsonNode response = client.execute(ApiRequest.builder(JsonNode.class)
@@ -226,14 +226,14 @@ public class IndexMigrationService {
           .build());
 
       if (response != null && response.path("acknowledged").asBoolean(false)) {
-        log.info("Successfully deleted index: [{}]", indexName);
+        logger.info("Successfully deleted index: [{}]", indexName);
         return true;
       } else {
-        log.warn("Delete command acknowledged as false by cluster for index: [{}]", indexName);
+        logger.warn("Delete command acknowledged as false by cluster for index: [{}]", indexName);
         return false;
       }
     } catch (Exception e) {
-      log.error("Exception occurred during delete for index [{}]: {}", indexName, e.getMessage(), e);
+      logger.error("Exception occurred during delete for index [{}]: {}", indexName, e.getMessage(), e);
       return false;
     }
   }
@@ -242,7 +242,7 @@ public class IndexMigrationService {
    * Triggers the reindex asynchronously and saves the Task ID.
    */
   public boolean safeReindexIndexAsync(String clusterId, String indexName) {
-    log.info("Initiating ASYNC reindex for index: [{}]", indexName);
+    logger.info("Initiating ASYNC reindex for index: [{}]", indexName);
     String destIndexName = indexName + "-reindexed";
 
     try {
@@ -273,18 +273,17 @@ public class IndexMigrationService {
           .body(requestBody)
           .build());
 
-      // 4. Save Task ID to Database (Survives Page Refreshes)
+      // 4. Save Task ID to Database
       if (response != null && response.has("task")) {
         String taskId = response.get("task").asText();
 
-        // TODO: Save to your DB! e.g., upgradeJob.getActiveTasks().put(indexName, taskId);
         clusterUpgradeJobService.saveActiveReindexTask(clusterId, indexName, taskId);
 
         return true;
       }
       return false;
     } catch (Exception e) {
-      log.error("Async reindex failed for [{}]: {}", indexName, e.getMessage());
+      logger.error("Async reindex failed for [{}]: {}", indexName, e.getMessage());
       return false;
     }
   }
@@ -311,7 +310,7 @@ public class IndexMigrationService {
 
         if (isCompleted) {
           // Task Finished! Cleanup Phase.
-          log.info("Reindex task [{}] completed! Deleting legacy index [{}]", taskId, indexName);
+          logger.info("Reindex task [{}] completed! Deleting legacy index [{}]", taskId, indexName);
           executeDelete(clusterId, indexName);
           clusterUpgradeJobService.removeActiveReindexTask(clusterId, indexName); // Remove from DB
 
@@ -331,7 +330,7 @@ public class IndexMigrationService {
         return new ReindexProgressInfo(true, taskId, progress, remaining);
       }
     } catch (Exception e) {
-      log.error("Failed to check task status for [{}]: {}", taskId, e.getMessage());
+      logger.error("Failed to check task status for [{}]: {}", taskId, e.getMessage());
     }
 
     return new ReindexProgressInfo(true, taskId, 0, 0); // Fallback if API glitch
