@@ -131,8 +131,11 @@ function ManageIndices() {
 				case "estimateTime":
 					return <span className="text-[#ADADAD]">{cellValue || "-"}</span>
 				case "actions":
-					// Extract progress state securely
-					const isTaskActive = row.progress?.isReindexing
+					// 1. Capture both the active state AND the 100% completed state
+					const isTaskActive = row.progress?.isReindexing === true
+					const isTaskCompleted = row.progress?.progressPercentage === 100 && !isTaskActive
+					const showProgressUI = isTaskActive || isTaskCompleted
+
 					const progressValue = row.progress?.progressPercentage || 0
 					const remainingDocs = row.progress?.remainingDocs || 0
 
@@ -141,14 +144,14 @@ function ManageIndices() {
 					const isThisRowDeleting = isDeleting && activeActionIndex === row.name
 					const isAnyActionRunning = isReindexingSingle || isDeleting
 
-					// 2. Updated Progress UI with a visual progress bar
-					if (isTaskActive) {
+					// 2. Render the progress UI if it's active OR if it finished instantly
+					if (showProgressUI) {
 						return (
-							<Box className="flex flex-row items-center justify-end gap-4 min-w-[220px]">
+							<Box className="flex flex-row items-center justify-end gap-3 min-w-[220px]">
 								<Box className="flex flex-col w-full gap-[6px]">
 									<Box className="flex justify-between items-end w-full px-1">
 										<Typography color="#BDA0FF" fontSize="12px" fontWeight="600" lineHeight="1">
-											Reindexing...
+											{isTaskCompleted ? "Finalizing..." : "Reindexing..."}
 										</Typography>
 										<Typography color="#FFF" fontSize="12px" fontWeight="500" lineHeight="1">
 											{progressValue}%
@@ -164,7 +167,9 @@ function ManageIndices() {
 										}}
 									/>
 									<Typography color="#6E6E6E" fontSize="11px" textAlign="right" className="px-1">
-										{remainingDocs.toLocaleString()} docs remaining
+										{isTaskCompleted
+											? "Cleaning up old index..."
+											: `${remainingDocs.toLocaleString()} docs remaining`}
 									</Typography>
 								</Box>
 
@@ -172,12 +177,13 @@ function ManageIndices() {
 									<Button
 										isIconOnly
 										radius="md"
-										variant="flat"
-										className="min-w-[36px] w-[36px] h-[36px] bg-[#1A1A1A] text-[#ADADAD] hover:bg-[#2A2A2A] hover:text-[#FFF] border border-[#2F2F2F]"
+										variant="solid"
+										className="min-w-[32px] w-[32px] h-[32px] bg-black text-[#FFFFFF] hover:bg-[#1A1A1A] border border-[#2F2F2F]"
 										isLoading={isCurrentlyRefreshing}
+										isDisabled={isTaskCompleted} // Disable refresh if already 100%
 										onPress={() => handleRefreshStatus(row.name)}
 									>
-										{!isCurrentlyRefreshing && <Refresh size="16" />}
+										{!isCurrentlyRefreshing && <Refresh size="16" color="#FFFFFF" />}
 									</Button>
 								</Tooltip>
 							</Box>
@@ -185,10 +191,10 @@ function ManageIndices() {
 					}
 
 					return (
-						<Box className="flex flex-row items-center justify-end gap-3">
+						<Box className="flex flex-row items-center justify-end gap-2">
 							<Tooltip content="Delete Data (Permanent)" placement="top">
 								<Box
-									className={`flex items-center justify-center w-9 h-9 rounded-lg border transition-all ${
+									className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
 										isAnyActionRunning
 											? "opacity-50 cursor-not-allowed border-[#FF6B6B]/30 bg-[#FF6B6B]/5"
 											: "cursor-pointer border-[#FF6B6B]/30 bg-[#FF6B6B]/10 hover:bg-[#FF6B6B]/20 hover:border-[#FF6B6B]/50"
@@ -209,7 +215,7 @@ function ManageIndices() {
 										onClick={() => handleReindex(row.name)}
 										disabled={!isValidUpgradePath || isAnyActionRunning}
 									>
-										<Box className="flex items-center gap-2">
+										<Box className="flex items-center gap-[6px]">
 											{isThisRowReindexing ? (
 												<Spinner size="sm" color="current" />
 											) : (
@@ -301,6 +307,7 @@ function ManageIndices() {
 				/>
 			</Box>
 
+			{/* Non-Technical Page Introduction */}
 			<Box className="flex flex-col gap-1 px-2">
 				<Typography color="#FFF" fontSize="20px" fontWeight="600">
 					Data Migration & Reindexing
