@@ -9,10 +9,12 @@ import {
 	Tooltip,
 	Tabs,
 	Tab,
+	Progress,
+	Button,
 } from "@heroui/react"
 import { Box, Typography } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { Convertshape2, InfoCircle, TickCircle, Warning2, Trash, Refresh, ArrowRight2 } from "iconsax-react"
+import { Convertshape2, InfoCircle, TickCircle, Warning2, Trash, Refresh } from "iconsax-react"
 import { useCallback, type Key, useState } from "react"
 import { useNavigate, useParams } from "react-router"
 import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
@@ -122,7 +124,6 @@ function ManageIndices() {
 			switch (columnKey) {
 				case "name":
 					return <span className="text-[#ADADAD] font-medium">{cellValue}</span>
-				// 2. Added new column keys to standard rendering
 				case "docsCount":
 				case "size":
 				case "storageTier":
@@ -130,37 +131,54 @@ function ManageIndices() {
 				case "estimateTime":
 					return <span className="text-[#ADADAD]">{cellValue || "-"}</span>
 				case "actions":
+					// Extract progress state securely
 					const isTaskActive = row.progress?.isReindexing
-					const isCurrentlyRefreshing = refreshingIndex === row.name
+					const progressValue = row.progress?.progressPercentage || 0
+					const remainingDocs = row.progress?.remainingDocs || 0
 
+					const isCurrentlyRefreshing = refreshingIndex === row.name
 					const isThisRowReindexing = isReindexingSingle && activeActionIndex === row.name
 					const isThisRowDeleting = isDeleting && activeActionIndex === row.name
 					const isAnyActionRunning = isReindexingSingle || isDeleting
 
+					// 2. Updated Progress UI with a visual progress bar
 					if (isTaskActive) {
 						return (
-							<Box className="flex flex-row items-center justify-end gap-4">
-								<Box className="flex flex-col items-end">
-									<Typography color="#BDA0FF" fontSize="13px" fontWeight="600">
-										{row.progress.progressPercentage}% Complete
-									</Typography>
-									<Typography color="#6E6E6E" fontSize="11px">
-										{row.progress.remainingDocs} docs remaining
+							<Box className="flex flex-row items-center justify-end gap-4 min-w-[220px]">
+								<Box className="flex flex-col w-full gap-[6px]">
+									<Box className="flex justify-between items-end w-full px-1">
+										<Typography color="#BDA0FF" fontSize="12px" fontWeight="600" lineHeight="1">
+											Reindexing...
+										</Typography>
+										<Typography color="#FFF" fontSize="12px" fontWeight="500" lineHeight="1">
+											{progressValue}%
+										</Typography>
+									</Box>
+									<Progress
+										size="sm"
+										aria-label="Reindexing progress"
+										value={progressValue}
+										classNames={{
+											track: "bg-[#2F2F2F] h-[6px]",
+											indicator: "bg-[#BDA0FF] h-[6px]",
+										}}
+									/>
+									<Typography color="#6E6E6E" fontSize="11px" textAlign="right" className="px-1">
+										{remainingDocs.toLocaleString()} docs remaining
 									</Typography>
 								</Box>
+
 								<Tooltip content="Refresh Progress" placement="top">
-									<Box
-										className={`cursor-pointer p-2 rounded-full bg-[#1A1A1A] hover:bg-[#2A2A2A] transition-colors ${
-											isCurrentlyRefreshing ? "opacity-50 pointer-events-none" : ""
-										}`}
-										onClick={() => handleRefreshStatus(row.name)}
+									<Button
+										isIconOnly
+										radius="md"
+										variant="flat"
+										className="min-w-[36px] w-[36px] h-[36px] bg-[#1A1A1A] text-[#ADADAD] hover:bg-[#2A2A2A] hover:text-[#FFF] border border-[#2F2F2F]"
+										isLoading={isCurrentlyRefreshing}
+										onPress={() => handleRefreshStatus(row.name)}
 									>
-										<Refresh
-											size="16"
-											color="#FFF"
-											className={isCurrentlyRefreshing ? "animate-spin" : ""}
-										/>
-									</Box>
+										{!isCurrentlyRefreshing && <Refresh size="16" />}
+									</Button>
 								</Tooltip>
 							</Box>
 						)
@@ -168,7 +186,23 @@ function ManageIndices() {
 
 					return (
 						<Box className="flex flex-row items-center justify-end gap-3">
-							{/* 3. Polished UI: Reindex button first, Delete button second with new container styles */}
+							<Tooltip content="Delete Data (Permanent)" placement="top">
+								<Box
+									className={`flex items-center justify-center w-9 h-9 rounded-lg border transition-all ${
+										isAnyActionRunning
+											? "opacity-50 cursor-not-allowed border-[#FF6B6B]/30 bg-[#FF6B6B]/5"
+											: "cursor-pointer border-[#FF6B6B]/30 bg-[#FF6B6B]/10 hover:bg-[#FF6B6B]/20 hover:border-[#FF6B6B]/50"
+									}`}
+									onClick={() => !isAnyActionRunning && handleDelete(row.name)}
+								>
+									{isThisRowDeleting ? (
+										<Spinner size="sm" color="danger" />
+									) : (
+										<Trash size="16" color="#FF6B6B" />
+									)}
+								</Box>
+							</Tooltip>
+
 							<Tooltip content="Convert to new format" placement="top">
 								<Box>
 									<OutlinedBorderButton
@@ -186,30 +220,13 @@ function ManageIndices() {
 									</OutlinedBorderButton>
 								</Box>
 							</Tooltip>
-
-							<Tooltip content="Delete Data (Permanent)" placement="top">
-								<Box
-									className={`flex items-center justify-center w-9 h-9 rounded-lg border transition-all ${
-										isAnyActionRunning
-											? "opacity-50 cursor-not-allowed border-[#FF6B6B]/30 bg-[#FF6B6B]/5"
-											: "cursor-pointer border-[#FF6B6B]/30 bg-[#FF6B6B]/10 hover:bg-[#FF6B6B]/20 hover:border-[#FF6B6B]/50"
-									}`}
-									onClick={() => !isAnyActionRunning && handleDelete(row.name)}
-								>
-									{isThisRowDeleting ? (
-										<Spinner size="sm" color="danger" />
-									) : (
-										<Trash size="16" color="#FF6B6B" />
-									)}
-								</Box>
-							</Tooltip>
 						</Box>
 					)
 				default:
 					return cellValue
 			}
 		},
-		[isValidUpgradePath, isReindexingSingle, isDeleting, refreshingIndex]
+		[isValidUpgradePath, isReindexingSingle, isDeleting, refreshingIndex, activeActionIndex]
 	)
 
 	const renderIndicesTable = (dataList: any[], emptyTitle: string, emptySub: string) => (
