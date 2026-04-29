@@ -94,28 +94,30 @@ function ManageIndices() {
 	// =========================================================================
 	// SMART POLLING ARCHITECTURE
 	// =========================================================================
+	const systemIndicesStatus = migrationInfo?.systemIndices?.status
+	const isSystemMigrationInProgress = systemIndicesStatus === "IN_PROGRESS"
+	const isSystemMigrationCompleted =
+		systemIndicesStatus === "NO_MIGRATION_NEEDED" || systemIndicesStatus === "COMPLETED"
+	const isValidUpgradePath = migrationInfo?.isValidUpgradePath
 
+	// Auto-Reload Watcher
 	useEffect(() => {
-		if (!migrationInfo?.reindexNeedingIndices) return
+		const indices = migrationInfo?.reindexNeedingIndices || []
 
-		const newTasks = { ...activeTasks }
-		let hasChanges = false
+		// Check if ANY index is currently sitting at 100% completion
+		const isAnyIndexFinalizing = indices.some(
+			(item: any) => item.progress?.progressPercentage === 100 && !item.progress?.isReindexing
+		)
 
-		migrationInfo.reindexNeedingIndices.forEach((item: any) => {
-			if (item.progress?.isReindexing && !newTasks[item.name]) {
-				newTasks[item.name] = {
-					progressPercentage: item.progress.progressPercentage || 0,
-					remainingDocs: item.progress.remainingDocs || 0,
-					isCompleted: item.progress.progressPercentage === 100,
-				}
-				hasChanges = true
-			}
-		})
+		// Also check if the system migration is currently running
+		if (isAnyIndexFinalizing || isSystemMigrationInProgress) {
+			const interval = setInterval(() => {
+				refetchMigrationInfo()
+			}, 2000)
 
-		if (hasChanges) {
-			setActiveTasks(newTasks)
+			return () => clearInterval(interval)
 		}
-	}, [migrationInfo])
+	}, [migrationInfo, refetchMigrationInfo, isSystemMigrationInProgress])
 
 	useEffect(() => {
 		if (!clusterId) return
@@ -140,18 +142,12 @@ function ManageIndices() {
 					console.error(`Failed to fetch status for ${indexName}`, error)
 				}
 			})
-		}, 2000)
+		}, 4000)
 
 		return () => clearInterval(intervalId)
 	}, [activeTasks, clusterId])
 
 	// =========================================================================
-
-	const systemIndicesStatus = migrationInfo?.systemIndices?.status
-	const isSystemMigrationInProgress = systemIndicesStatus === "IN_PROGRESS"
-	const isSystemMigrationCompleted =
-		systemIndicesStatus === "NO_MIGRATION_NEEDED" || systemIndicesStatus === "COMPLETED"
-	const isValidUpgradePath = migrationInfo?.isValidUpgradePath
 
 	const allIndices = migrationInfo?.reindexNeedingIndices || []
 	const systemIndicesList = allIndices.filter((item: any) => item.systemIndex)
@@ -209,7 +205,6 @@ function ManageIndices() {
 
 						return (
 							<Box className="flex flex-row items-center justify-end w-full h-full">
-								{/* Fixed width to 200px and reduced gap to ensure it doesn't break row height */}
 								<Box className="flex flex-col w-[200px] gap-1 justify-center">
 									<Box className="flex justify-between items-center w-full">
 										<Typography
@@ -453,37 +448,37 @@ function ManageIndices() {
 								</Box>
 
 								<Box className="pt-2">
-									{isSystemMigrationInProgress ? (
-										<Typography color="#6E6E6E" fontSize="13px">
-											Migrating system features...
-										</Typography>
-									) : !isSystemMigrationCompleted || !isValidUpgradePath ? (
-										<Tooltip
-											content={!isValidUpgradePath ? "Cluster is in view only mode" : null}
-											isDisabled={!!isValidUpgradePath}
-											placement="top"
-										>
-											<Box>
-												<OutlinedBorderButton
-													disabled={
-														!isValidUpgradePath ||
-														isMigratingSystemFeatures ||
-														systemIndicesStatus === "MIGRATION_UNAVAILABLE"
-													}
-													onClick={() => migrateSystemFeatures({ clusterId: clusterId! })}
-												>
-													Auto-Migrate System
-												</OutlinedBorderButton>
-											</Box>
-										</Tooltip>
-									) : (
-										<Box className="flex flex-row w-fit items-center gap-2 px-[7px] py-[5px] rounded-3xl bg-[#52D97F21] text-[#52D97F]">
-											<TickCircle size="16" color="#52D97F" variant="Bold" />
-											Auto-Migration Complete
-										</Box>
-									)}
-								</Box>
-							</Box>
+                                    {isSystemMigrationInProgress ? (
+                                        <Box className="flex flex-row w-fit items-center gap-2 px-[12px] py-[6px] rounded-3xl bg-[#BDA0FF]/10 text-[#BDA0FF] border border-[#BDA0FF]/20">
+                                            <Spinner size="sm" color="current" />
+                                            <span className="text-[13px] font-medium">Migrating System...</span>
+                                        </Box>
+                                    ) : !isSystemMigrationCompleted || !isValidUpgradePath ? (
+                                        <Tooltip
+                                            content={!isValidUpgradePath ? "Cluster is in view only mode" : null}
+                                            isDisabled={!!isValidUpgradePath}
+                                            placement="top"
+                                        >
+                                            <Box>
+                                                <OutlinedBorderButton
+                                                    disabled={
+                                                        !isValidUpgradePath ||
+                                                        isMigratingSystemFeatures ||
+                                                        systemIndicesStatus === "MIGRATION_UNAVAILABLE"
+                                                    }
+                                                    onClick={() => migrateSystemFeatures({ clusterId: clusterId! })}
+                                                >
+                                                    Auto-Migrate System
+                                                </OutlinedBorderButton>
+                                            </Box>
+                                        </Tooltip>
+                                    ) : (
+                                        <Box className="flex flex-row w-fit items-center gap-2 px-[7px] py-[5px] rounded-3xl bg-[#52D97F21] text-[#52D97F]">
+                                            <TickCircle size="16" color="#52D97F" variant="Bold" />
+                                            Auto-Migration Complete
+                                        </Box>
+                                    )}
+                                </Box>
 
 							{renderIndicesTable(
 								systemIndicesList,
