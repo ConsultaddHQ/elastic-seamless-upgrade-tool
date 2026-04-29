@@ -179,7 +179,7 @@ function ManageIndices() {
 							<Box className="flex flex-row items-center justify-end w-full h-full">
 								<Box className="bg-[#FF6B6B]/10 border border-[#FF6B6B]/20 px-3 py-1 rounded-md">
 									<Typography color="#FF6B6B" fontSize="12px" fontWeight="600">
-										Deleted
+										Index Deleted
 									</Typography>
 								</Box>
 							</Box>
