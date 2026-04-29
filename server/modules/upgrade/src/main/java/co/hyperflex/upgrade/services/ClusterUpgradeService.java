@@ -242,7 +242,13 @@ public class ClusterUpgradeService {
 
                 if (!result.success()) {
                   log.error("Task [name: {}] failed for node [ip: {}] — {}", task.getName(), node.getIp(), result.message());
-                  throw new RuntimeException(result.message());
+
+                  if (task.isMandatoryTask(context)) {
+                    log.error("Task is mandatory. Failing upgrade.");
+                    throw new RuntimeException(result.message());
+                  } else {
+                    log.warn("Task is not mandatory. Continuing upgrade.");
+                  }
                 }
               }
 
