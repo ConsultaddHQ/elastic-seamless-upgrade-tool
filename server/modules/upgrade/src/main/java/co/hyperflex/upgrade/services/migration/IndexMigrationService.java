@@ -310,7 +310,7 @@ public class IndexMigrationService {
 
         if (isCompleted) {
           // Task Finished! Cleanup Phase.
-          logger.info("Reindex task [{}] completed! Cleaning up legacy index [{}]", taskId, indexName);
+          logger.info("Reindex task [{}] completed! Cleaning up legacy index [{}].", taskId, indexName);
 
           String destIndexName = indexName + "-reindexed";
 
