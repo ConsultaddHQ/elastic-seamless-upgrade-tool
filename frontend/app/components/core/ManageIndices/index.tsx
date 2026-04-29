@@ -144,6 +144,7 @@ function ManageIndices() {
 
 		return () => clearInterval(intervalId)
 	}, [activeTasks, clusterId])
+
 	// =========================================================================
 
 	const systemIndicesStatus = migrationInfo?.systemIndices?.status
@@ -184,10 +185,11 @@ function ManageIndices() {
 				case "estimateTime":
 					return <span className="text-[#ADADAD]">{cellValue || "-"}</span>
 				case "actions":
+					// 1. Handle Deleted State First
 					if (deletedIndices.includes(row.name)) {
 						return (
-							<Box className="flex flex-row items-center justify-end min-w-[220px]">
-								<Box className="bg-[#FF6B6B]/10 border border-[#FF6B6B]/20 px-3 py-1.5 rounded-md">
+							<Box className="flex flex-row items-center justify-end w-full h-full">
+								<Box className="bg-[#FF6B6B]/10 border border-[#FF6B6B]/20 px-3 py-1 rounded-md">
 									<Typography color="#FF6B6B" fontSize="12px" fontWeight="600">
 										Deleted
 									</Typography>
@@ -195,20 +197,21 @@ function ManageIndices() {
 							</Box>
 						)
 					}
-					// Check local state first to see if this row is active
-					const localProgress = activeTasks[row.name]
 
+					const localProgress = activeTasks[row.name]
 					const isThisRowReindexing = isReindexingSingle && activeActionIndex === row.name
 					const isThisRowDeleting = isDeleting && activeActionIndex === row.name
 					const isAnyActionRunning = isReindexingSingle || isDeleting
 
+					// 2. Handle Reindexing/Completed Progress State
 					if (localProgress) {
 						const isTaskCompleted = localProgress.isCompleted
 
 						return (
-							<Box className="flex flex-row items-center justify-end min-w-[220px]">
-								<Box className="flex flex-col w-full gap-[6px]">
-									<Box className="flex justify-between items-end w-full px-1">
+							<Box className="flex flex-row items-center justify-end w-full h-full">
+								{/* Fixed width to 200px and reduced gap to ensure it doesn't break row height */}
+								<Box className="flex flex-col w-[200px] gap-1 justify-center">
+									<Box className="flex justify-between items-center w-full">
 										<Typography
 											color={isTaskCompleted ? "#52D97F" : "#BDA0FF"}
 											fontSize="12px"
@@ -217,7 +220,7 @@ function ManageIndices() {
 										>
 											{isTaskCompleted ? "Completed" : "Reindexing..."}
 										</Typography>
-										<Typography color="#FFF" fontSize="12px" fontWeight="500" lineHeight="1">
+										<Typography color="#FFF" fontSize="12px" fontWeight="600" lineHeight="1">
 											{localProgress.progressPercentage}%
 										</Typography>
 									</Box>
@@ -226,13 +229,13 @@ function ManageIndices() {
 										aria-label="Reindexing progress"
 										value={localProgress.progressPercentage}
 										classNames={{
-											track: "bg-[#2F2F2F] h-[6px]",
+											track: "bg-[#2F2F2F] h-[4px]",
 											indicator: isTaskCompleted
-												? "bg-[#52D97F] h-[6px]"
-												: "bg-[#BDA0FF] h-[6px]",
+												? "bg-[#52D97F] h-[4px]"
+												: "bg-[#BDA0FF] h-[4px]",
 										}}
 									/>
-									<Typography color="#6E6E6E" fontSize="11px" textAlign="right" className="px-1">
+									<Typography color="#6E6E6E" fontSize="10px" textAlign="right" lineHeight="1">
 										{isTaskCompleted
 											? "Data converted successfully"
 											: `${localProgress.remainingDocs.toLocaleString()} docs remaining`}
@@ -242,8 +245,9 @@ function ManageIndices() {
 						)
 					}
 
+					// 3. Default State (Buttons)
 					return (
-						<Box className="flex flex-row items-center justify-end gap-2">
+						<Box className="flex flex-row items-center justify-end gap-2 w-full h-full">
 							<Tooltip content="Delete Data (Permanent)" placement="top">
 								<Box
 									className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
@@ -284,7 +288,7 @@ function ManageIndices() {
 					return cellValue
 			}
 		},
-		[isValidUpgradePath, isReindexingSingle, isDeleting, activeActionIndex, activeTasks]
+		[isValidUpgradePath, isReindexingSingle, isDeleting, activeActionIndex, activeTasks, deletedIndices]
 	)
 
 	const renderIndicesTable = (dataList: any[], emptyTitle: string, emptySub: string) => (
