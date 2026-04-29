@@ -10,7 +10,6 @@ import {
 	Tabs,
 	Tab,
 	Progress,
-	Button,
 } from "@heroui/react"
 import { Box, Typography } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
@@ -42,6 +41,8 @@ type TaskProgress = {
 function ManageIndices() {
 	const { clusterId } = useParams()
 	const navigate = useNavigate()
+
+	const [deletedIndices, setDeletedIndices] = useState<string[]>([])
 
 	const [activeActionIndex, setActiveActionIndex] = useState<string | null>(null)
 
@@ -82,9 +83,10 @@ function ManageIndices() {
 	const { isPending: isDeleting, mutate: deleteSingleIndex } = useMutation({
 		mutationFn: (data: { clusterId: string; indexName: string }) =>
 			clusterUpgradeApi.deleteIndex(data.clusterId, data.indexName),
-		onSuccess: (data: any) => {
+		onSuccess: (data: any, variables) => {
 			toast.success(data?.message || "Index deleted successfully.")
-			refetchMigrationInfo()
+
+			setDeletedIndices((prev) => [...prev, variables.indexName])
 		},
 		onSettled: () => setActiveActionIndex(null),
 	})
@@ -182,6 +184,17 @@ function ManageIndices() {
 				case "estimateTime":
 					return <span className="text-[#ADADAD]">{cellValue || "-"}</span>
 				case "actions":
+					if (deletedIndices.includes(row.name)) {
+						return (
+							<Box className="flex flex-row items-center justify-end min-w-[220px]">
+								<Box className="bg-[#FF6B6B]/10 border border-[#FF6B6B]/20 px-3 py-1.5 rounded-md">
+									<Typography color="#FF6B6B" fontSize="12px" fontWeight="600">
+										Deleted
+									</Typography>
+								</Box>
+							</Box>
+						)
+					}
 					// Check local state first to see if this row is active
 					const localProgress = activeTasks[row.name]
 
