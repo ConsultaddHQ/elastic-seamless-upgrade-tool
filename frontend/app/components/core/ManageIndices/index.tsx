@@ -100,24 +100,16 @@ function ManageIndices() {
 		systemIndicesStatus === "NO_MIGRATION_NEEDED" || systemIndicesStatus === "COMPLETED"
 	const isValidUpgradePath = migrationInfo?.isValidUpgradePath
 
-	// Auto-Reload Watcher
-	useEffect(() => {
-		const indices = migrationInfo?.reindexNeedingIndices || []
+    useEffect(() => {
+        // If the system migration is currently running, poll globally to get its status
+        if (isSystemMigrationInProgress) {
+            const interval = setInterval(() => {
+                refetchMigrationInfo()
+            }, 2000)
 
-		// Check if ANY index is currently sitting at 100% completion
-		const isAnyIndexFinalizing = indices.some(
-			(item: any) => item.progress?.progressPercentage === 100 && !item.progress?.isReindexing
-		)
-
-		// Also check if the system migration is currently running
-		if (isAnyIndexFinalizing || isSystemMigrationInProgress) {
-			const interval = setInterval(() => {
-				refetchMigrationInfo()
-			}, 2000)
-
-			return () => clearInterval(interval)
-		}
-	}, [migrationInfo, refetchMigrationInfo, isSystemMigrationInProgress])
+            return () => clearInterval(interval)
+        }
+    }, [isSystemMigrationInProgress, refetchMigrationInfo])
 
 	useEffect(() => {
 		if (!clusterId) return
