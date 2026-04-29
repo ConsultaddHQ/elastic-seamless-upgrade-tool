@@ -100,16 +100,16 @@ function ManageIndices() {
 		systemIndicesStatus === "NO_MIGRATION_NEEDED" || systemIndicesStatus === "COMPLETED"
 	const isValidUpgradePath = migrationInfo?.isValidUpgradePath
 
-    useEffect(() => {
-        // If the system migration is currently running, poll globally to get its status
-        if (isSystemMigrationInProgress) {
-            const interval = setInterval(() => {
-                refetchMigrationInfo()
-            }, 2000)
+	useEffect(() => {
+		// If the system migration is currently running, poll globally to get its status
+		if (isSystemMigrationInProgress) {
+			const interval = setInterval(() => {
+				refetchMigrationInfo()
+			}, 2000)
 
-            return () => clearInterval(interval)
-        }
-    }, [isSystemMigrationInProgress, refetchMigrationInfo])
+			return () => clearInterval(interval)
+		}
+	}, [isSystemMigrationInProgress, refetchMigrationInfo])
 
 	useEffect(() => {
 		if (!clusterId) return
@@ -440,37 +440,38 @@ function ManageIndices() {
 								</Box>
 
 								<Box className="pt-2">
-                                    {isSystemMigrationInProgress ? (
-                                        <Box className="flex flex-row w-fit items-center gap-2 px-[12px] py-[6px] rounded-3xl bg-[#BDA0FF]/10 text-[#BDA0FF] border border-[#BDA0FF]/20">
-                                            <Spinner size="sm" color="current" />
-                                            <span className="text-[13px] font-medium">Migrating System...</span>
-                                        </Box>
-                                    ) : !isSystemMigrationCompleted || !isValidUpgradePath ? (
-                                        <Tooltip
-                                            content={!isValidUpgradePath ? "Cluster is in view only mode" : null}
-                                            isDisabled={!!isValidUpgradePath}
-                                            placement="top"
-                                        >
-                                            <Box>
-                                                <OutlinedBorderButton
-                                                    disabled={
-                                                        !isValidUpgradePath ||
-                                                        isMigratingSystemFeatures ||
-                                                        systemIndicesStatus === "MIGRATION_UNAVAILABLE"
-                                                    }
-                                                    onClick={() => migrateSystemFeatures({ clusterId: clusterId! })}
-                                                >
-                                                    Auto-Migrate System
-                                                </OutlinedBorderButton>
-                                            </Box>
-                                        </Tooltip>
-                                    ) : (
-                                        <Box className="flex flex-row w-fit items-center gap-2 px-[7px] py-[5px] rounded-3xl bg-[#52D97F21] text-[#52D97F]">
-                                            <TickCircle size="16" color="#52D97F" variant="Bold" />
-                                            Auto-Migration Complete
-                                        </Box>
-                                    )}
-                                </Box>
+									{isSystemMigrationInProgress ? (
+										<Box className="flex flex-row w-fit items-center gap-2 px-[12px] py-[6px] rounded-3xl bg-[#BDA0FF]/10 text-[#BDA0FF] border border-[#BDA0FF]/20">
+											<Spinner size="sm" color="current" />
+											<span className="text-[13px] font-medium">Migrating System...</span>
+										</Box>
+									) : !isSystemMigrationCompleted || !isValidUpgradePath ? (
+										<Tooltip
+											content={!isValidUpgradePath ? "Cluster is in view only mode" : null}
+											isDisabled={!!isValidUpgradePath}
+											placement="top"
+										>
+											<Box>
+												<OutlinedBorderButton
+													disabled={
+														!isValidUpgradePath ||
+														isMigratingSystemFeatures ||
+														systemIndicesStatus === "MIGRATION_UNAVAILABLE"
+													}
+													onClick={() => migrateSystemFeatures({ clusterId: clusterId! })}
+												>
+													Auto-Migrate System
+												</OutlinedBorderButton>
+											</Box>
+										</Tooltip>
+									) : (
+										<Box className="flex flex-row w-fit items-center gap-2 px-[7px] py-[5px] rounded-3xl bg-[#52D97F21] text-[#52D97F]">
+											<TickCircle size="16" color="#52D97F" variant="Bold" />
+											Auto-Migration Complete
+										</Box>
+									)}
+								</Box>
+							</Box>
 
 							{renderIndicesTable(
 								systemIndicesList,
