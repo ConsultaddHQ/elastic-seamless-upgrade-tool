@@ -15,7 +15,7 @@ import {
 import { Box, Typography } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { Convertshape2, InfoCircle, TickCircle, Warning2, Trash, Refresh } from "iconsax-react"
-import { useCallback, type Key, useState, useEffect } from "react" // <-- Added useEffect here
+import { useCallback, type Key, useState, useEffect } from "react"
 import { useNavigate, useParams } from "react-router"
 import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"
@@ -32,12 +32,20 @@ const columns = [
 	{ key: "actions", label: "Actions", align: "end" as const },
 ]
 
+// Define our local progress state type
+type TaskProgress = {
+	progressPercentage: number
+	remainingDocs: number
+	isCompleted: boolean
+}
+
 function ManageIndices() {
 	const { clusterId } = useParams()
 	const navigate = useNavigate()
 
-	const [refreshingIndex, setRefreshingIndex] = useState<string | null>(null)
 	const [activeActionIndex, setActiveActionIndex] = useState<string | null>(null)
+
+	const [activeTasks, setActiveTasks] = useState<Record<string, TaskProgress>>({})
 
 	const {
 		data: migrationInfo,
@@ -60,9 +68,13 @@ function ManageIndices() {
 	const { isPending: isReindexingSingle, mutate: reindexSingleIndex } = useMutation({
 		mutationFn: (data: { clusterId: string; indexName: string }) =>
 			clusterUpgradeApi.reindexSingle(data.clusterId, data.indexName),
-		onSuccess: (data: any) => {
+		onSuccess: (data: any, variables) => {
 			toast.success(data?.message || "Reindex started in background.")
-			refetchMigrationInfo()
+
+			setActiveTasks((prev) => ({
+				...prev,
+				[variables.indexName]: { progressPercentage: 0, remainingDocs: 0, isCompleted: false },
+			}))
 		},
 		onSettled: () => setActiveActionIndex(null),
 	})
@@ -77,31 +89,60 @@ function ManageIndices() {
 		onSettled: () => setActiveActionIndex(null),
 	})
 
-	const { mutate: checkTaskStatus } = useMutation({
-		mutationFn: (data: { clusterId: string; indexName: string }) =>
-			clusterUpgradeApi.checkReindexStatus(data.clusterId, data.indexName),
-		onSuccess: () => {
-			refetchMigrationInfo().finally(() => setRefreshingIndex(null))
-		},
-		onError: () => setRefreshingIndex(null),
-	})
+	// =========================================================================
+	// SMART POLLING ARCHITECTURE
+	// =========================================================================
 
 	useEffect(() => {
-		const indices = migrationInfo?.reindexNeedingIndices || []
+		if (!migrationInfo?.reindexNeedingIndices) return
 
-		// Check if ANY index is currently sitting at 100% completion
-		const isAnyIndexFinalizing = indices.some(
-			(item: any) => item.progress?.progressPercentage === 100 && !item.progress?.isReindexing
-		)
+		const newTasks = { ...activeTasks }
+		let hasChanges = false
 
-		if (isAnyIndexFinalizing) {
-			const interval = setInterval(() => {
-				refetchMigrationInfo()
-			}, 2000)
+		migrationInfo.reindexNeedingIndices.forEach((item: any) => {
+			if (item.progress?.isReindexing && !newTasks[item.name]) {
+				newTasks[item.name] = {
+					progressPercentage: item.progress.progressPercentage || 0,
+					remainingDocs: item.progress.remainingDocs || 0,
+					isCompleted: item.progress.progressPercentage === 100,
+				}
+				hasChanges = true
+			}
+		})
 
-			return () => clearInterval(interval)
+		if (hasChanges) {
+			setActiveTasks(newTasks)
 		}
-	}, [migrationInfo, refetchMigrationInfo])
+	}, [migrationInfo])
+
+	useEffect(() => {
+		if (!clusterId) return
+
+		const indicesToPoll = Object.keys(activeTasks).filter((name) => !activeTasks[name].isCompleted)
+
+		if (indicesToPoll.length === 0) return
+
+		const intervalId = setInterval(() => {
+			indicesToPoll.forEach(async (indexName) => {
+				try {
+					const status = await clusterUpgradeApi.checkReindexStatus(clusterId, indexName)
+					setActiveTasks((prev) => ({
+						...prev,
+						[indexName]: {
+							progressPercentage: status.progressPercentage || 0,
+							remainingDocs: status.remainingDocs || 0,
+							isCompleted: status.progressPercentage === 100,
+						},
+					}))
+				} catch (error) {
+					console.error(`Failed to fetch status for ${indexName}`, error)
+				}
+			})
+		}, 2000)
+
+		return () => clearInterval(intervalId)
+	}, [activeTasks, clusterId])
+	// =========================================================================
 
 	const systemIndicesStatus = migrationInfo?.systemIndices?.status
 	const isSystemMigrationInProgress = systemIndicesStatus === "IN_PROGRESS"
@@ -127,13 +168,6 @@ function ManageIndices() {
 		}
 	}
 
-	const handleRefreshStatus = (indexName: string) => {
-		if (clusterId) {
-			setRefreshingIndex(indexName)
-			checkTaskStatus({ clusterId, indexName })
-		}
-	}
-
 	const renderCell = useCallback(
 		(row: any, columnKey: Key) => {
 			const cellValue = row[columnKey as keyof typeof row]
@@ -148,59 +182,49 @@ function ManageIndices() {
 				case "estimateTime":
 					return <span className="text-[#ADADAD]">{cellValue || "-"}</span>
 				case "actions":
-					const isTaskActive = row.progress?.isReindexing === true
-					const isTaskCompleted = row.progress?.progressPercentage === 100 && !isTaskActive
-					const showProgressUI = isTaskActive || isTaskCompleted
+					// Check local state first to see if this row is active
+					const localProgress = activeTasks[row.name]
 
-					const progressValue = row.progress?.progressPercentage || 0
-					const remainingDocs = row.progress?.remainingDocs || 0
-
-					const isCurrentlyRefreshing = refreshingIndex === row.name
 					const isThisRowReindexing = isReindexingSingle && activeActionIndex === row.name
 					const isThisRowDeleting = isDeleting && activeActionIndex === row.name
 					const isAnyActionRunning = isReindexingSingle || isDeleting
 
-					if (showProgressUI) {
+					if (localProgress) {
+						const isTaskCompleted = localProgress.isCompleted
+
 						return (
-							<Box className="flex flex-row items-center justify-end gap-3 min-w-[220px]">
+							<Box className="flex flex-row items-center justify-end min-w-[220px]">
 								<Box className="flex flex-col w-full gap-[6px]">
 									<Box className="flex justify-between items-end w-full px-1">
-										<Typography color="#BDA0FF" fontSize="12px" fontWeight="600" lineHeight="1">
-											{isTaskCompleted ? "Finalizing..." : "Reindexing..."}
+										<Typography
+											color={isTaskCompleted ? "#52D97F" : "#BDA0FF"}
+											fontSize="12px"
+											fontWeight="600"
+											lineHeight="1"
+										>
+											{isTaskCompleted ? "Completed" : "Reindexing..."}
 										</Typography>
 										<Typography color="#FFF" fontSize="12px" fontWeight="500" lineHeight="1">
-											{progressValue}%
+											{localProgress.progressPercentage}%
 										</Typography>
 									</Box>
 									<Progress
 										size="sm"
 										aria-label="Reindexing progress"
-										value={progressValue}
+										value={localProgress.progressPercentage}
 										classNames={{
 											track: "bg-[#2F2F2F] h-[6px]",
-											indicator: "bg-[#BDA0FF] h-[6px]",
+											indicator: isTaskCompleted
+												? "bg-[#52D97F] h-[6px]"
+												: "bg-[#BDA0FF] h-[6px]",
 										}}
 									/>
 									<Typography color="#6E6E6E" fontSize="11px" textAlign="right" className="px-1">
 										{isTaskCompleted
-											? "Cleaning up old index..."
-											: `${remainingDocs.toLocaleString()} docs remaining`}
+											? "Data converted successfully"
+											: `${localProgress.remainingDocs.toLocaleString()} docs remaining`}
 									</Typography>
 								</Box>
-
-								<Tooltip content="Refresh Progress" placement="top">
-									<Button
-										isIconOnly
-										radius="md"
-										variant="solid"
-										className="min-w-[32px] w-[32px] h-[32px] bg-black text-[#FFFFFF] hover:bg-[#1A1A1A] border border-[#2F2F2F]"
-										isLoading={isCurrentlyRefreshing}
-										isDisabled={isTaskCompleted}
-										onPress={() => handleRefreshStatus(row.name)}
-									>
-										{!isCurrentlyRefreshing && <Refresh size="16" color="#FFFFFF" />}
-									</Button>
-								</Tooltip>
 							</Box>
 						)
 					}
@@ -247,7 +271,7 @@ function ManageIndices() {
 					return cellValue
 			}
 		},
-		[isValidUpgradePath, isReindexingSingle, isDeleting, refreshingIndex, activeActionIndex]
+		[isValidUpgradePath, isReindexingSingle, isDeleting, activeActionIndex, activeTasks]
 	)
 
 	const renderIndicesTable = (dataList: any[], emptyTitle: string, emptySub: string) => (
