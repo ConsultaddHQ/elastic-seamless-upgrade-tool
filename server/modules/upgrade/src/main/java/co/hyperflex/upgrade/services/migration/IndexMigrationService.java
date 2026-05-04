@@ -205,12 +205,19 @@ public class IndexMigrationService {
 
       // 1. NATIVE DATA STREAM REINDEX
       if (indexUtils.isDataStream(clusterId, indexName)) {
-        logger.info("Detected Data Stream. Using native Data Stream Reindex API for [{}]", indexName);
+        logger.info("Detected Data Stream. Using official Migration Reindex API for [{}]", indexName);
 
-        // Uses the official Elasticsearch 8.x+ Data Stream Reindex API
+        String body = String.format("""
+            {
+              "source": { "index": "%s" },
+              "mode": "upgrade"
+            }
+            """, indexName);
+
         JsonNode response = client.execute(ApiRequest.builder(JsonNode.class)
             .post()
-            .uri("/_data_stream/_reindex/" + indexName + "?wait_for_completion=false")
+            .uri("/_migration/reindex")
+            .body(body)
             .build());
 
         if (response != null && response.has("task")) {
