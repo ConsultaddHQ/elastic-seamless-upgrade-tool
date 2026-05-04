@@ -13,9 +13,13 @@ import org.springframework.stereotype.Component;
 public class IndexUtils {
   private static final Logger log = LoggerFactory.getLogger(IndexUtils.class);
   private static final Map<String, Integer> ES_TO_LUCENE = Map.of("5", 6, "6", 7, "7", 8, "8", 9, "9", 10);
-  private static final long VERSION_MULTIPLIER = 1_000_000L;
+  // Thresholds for Document Count
   private static final long DOCS_HARD_THRESHOLD = 5_000_000L;
   private static final long DOCS_MEDIUM_THRESHOLD = 1_000_000L;
+
+  // Thresholds for Data Size (Assuming bytes)
+  private static final long SIZE_HARD_THRESHOLD = 50L * 1024 * 1024 * 1024; // 50 GB
+  private static final long SIZE_MEDIUM_THRESHOLD = 5L * 1024 * 1024 * 1024;  // 5 GB
   private final ElasticsearchClientProvider elasticsearchClientProvider;
 
   public IndexUtils(ElasticsearchClientProvider elasticsearchClientProvider) {
@@ -71,21 +75,21 @@ public class IndexUtils {
     }
   }
 
-  public String calculateEstimateTime(long docsCount) {
-    if (docsCount > DOCS_HARD_THRESHOLD) {
-      return "12 hours";
+  public String calculateEstimateTime(long docsCount, long docsSize) {
+    if (docsCount > DOCS_HARD_THRESHOLD || docsSize > SIZE_HARD_THRESHOLD) {
+      return "10+ hours";
     }
-    if (docsCount > DOCS_MEDIUM_THRESHOLD) {
-      return "1 hour";
+    if (docsCount > DOCS_MEDIUM_THRESHOLD || docsSize > SIZE_MEDIUM_THRESHOLD) {
+      return "1-2 hours";
     }
-    return "1 min";
+    return "1-5 mins";
   }
 
-  public String calculateEstimateSummary(long docsCount) {
-    if (docsCount > DOCS_HARD_THRESHOLD) {
+  public String calculateEstimateSummary(long docsCount, long docsSize) {
+    if (docsCount > DOCS_HARD_THRESHOLD || docsSize > SIZE_HARD_THRESHOLD) {
       return "Hard";
     }
-    if (docsCount > DOCS_MEDIUM_THRESHOLD) {
+    if (docsCount > DOCS_MEDIUM_THRESHOLD || docsSize > SIZE_MEDIUM_THRESHOLD) {
       return "Medium";
     }
     return "Easy";
@@ -112,9 +116,57 @@ public class IndexUtils {
     return "Hot";
   }
 
-  public long calculateMinAllowedVersionOfElasticForIndex(String targetVersion) {
-    int targetMajorVersion = Integer.parseInt(targetVersion.split("\\.")[0]);
-    return (targetMajorVersion - 1) * VERSION_MULTIPLIER;
+  /**
+   * Converts Elasticsearch human-readable size strings (e.g., "11.5mb", "100b") into raw bytes.
+   */
+  public long parseByteSize(String sizeStr) {
+    if (sizeStr == null || sizeStr.isBlank()) {
+      return 0L;
+    }
+
+    String lowerStr = sizeStr.trim().toLowerCase();
+
+    try {
+      if (lowerStr.endsWith("tb")) {
+        return (long) (Double.parseDouble(lowerStr.replace("tb", "").trim()) * 1024 * 1024 * 1024 * 1024);
+      } else if (lowerStr.endsWith("gb")) {
+        return (long) (Double.parseDouble(lowerStr.replace("gb", "").trim()) * 1024 * 1024 * 1024);
+      } else if (lowerStr.endsWith("mb")) {
+        return (long) (Double.parseDouble(lowerStr.replace("mb", "").trim()) * 1024 * 1024);
+      } else if (lowerStr.endsWith("kb")) {
+        return (long) (Double.parseDouble(lowerStr.replace("kb", "").trim()) * 1024);
+      } else if (lowerStr.endsWith("b")) {
+        return (long) Double.parseDouble(lowerStr.replace("b", "").trim());
+      } else {
+        // If no unit is found
+        return (long) Double.parseDouble(lowerStr);
+      }
+    } catch (NumberFormatException e) {
+      log.warn("Failed to parse byte size string: {}", sizeStr);
+      return 0L;
+    }
   }
 
+  /**
+   * Helper method to accurately check if a given name is a Data Stream.
+   */
+  public boolean isDataStream(String clusterId, String name) {
+    try {
+      var client = elasticsearchClientProvider.getClient(clusterId);
+
+      // Ping the native Data Stream API
+      JsonNode response = client.execute(ApiRequest.builder(JsonNode.class)
+          .get()
+          .uri("/_data_stream/" + name)
+          .build());
+
+      // If it exists and the array isn't empty, it's a Data Stream!
+      return response != null && response.has("data_streams") && !response.get("data_streams").isEmpty();
+
+    } catch (Exception e) {
+      // If Elasticsearch throws a 404 Not Found (or any other error),
+      // it means this is just a standard index.
+      return false;
+    }
+  }
 }

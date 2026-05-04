@@ -2,6 +2,7 @@ package co.hyperflex.upgrade.services.migration;
 
 import co.hyperflex.clients.client.ApiRequest;
 import co.hyperflex.clients.elastic.ElasticsearchClientProvider;
+import co.hyperflex.clients.elastic.dto.GetElasticDeprecationResponse;
 import co.hyperflex.clients.elastic.dto.cat.indices.IndicesRecord;
 import co.hyperflex.core.services.upgrade.ClusterUpgradeJobService;
 import co.hyperflex.core.utils.VersionUtils;
@@ -9,11 +10,13 @@ import co.hyperflex.precheck.utils.IndexUtils;
 import co.hyperflex.upgrade.services.dtos.IndexReindexInfo;
 import co.hyperflex.upgrade.services.dtos.ReindexProgressInfo;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -21,12 +24,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class IndexMigrationService {
   private static final Logger logger = LoggerFactory.getLogger(IndexMigrationService.class);
-
-  // Regex to capture the base data stream name from a backing index.
-  // Example: .ds-.loggers-deprecation.elasticsearch-default-2026.04.22-000001
-  // Group 1 extracts: .loggers-deprecation.elasticsearch-default
-  private static final Pattern DATA_STREAM_PATTERN = Pattern.compile("^\\.ds-(.+)-\\d{4}\\.\\d{2}\\.\\d{2}-\\d{6}$");
-
   private final ElasticsearchClientProvider elasticsearchClientProvider;
   private final ClusterUpgradeJobService clusterUpgradeJobService;
   private final IndexUtils indexUtils;
@@ -43,172 +40,130 @@ public class IndexMigrationService {
     var upgradeJob = clusterUpgradeJobService.getLatestJobByClusterId(clusterId);
     if (VersionUtils.isVersionGte(upgradeJob.getCurrentVersion(), "8.18.0")) {
       var client = elasticsearchClientProvider.getClient(clusterId);
-      client.execute(ApiRequest.builder(JsonNode.class).post().uri("\n" + "/_migration/reindex").build());
-
+      client.execute(ApiRequest.builder(JsonNode.class).post().uri("/_migration/reindex").build());
     }
     return new IndexMigrationResponse();
   }
 
   public List<IndexReindexInfo> getReindexIndicesMetadata(String clusterId) {
-    var upgradeJob = clusterUpgradeJobService.getLatestJobByClusterId(clusterId);
     var client = elasticsearchClientProvider.getClient(clusterId);
 
-    long minAllowedVersionCode = indexUtils.calculateMinAllowedVersionOfElasticForIndex(upgradeJob.getTargetVersion());
+    // 1. Fetch data from your Deprecations API
+    GetElasticDeprecationResponse deprecations = client.getDeprecation();
 
-    // Fetch Settings
-    String settingsUri = "/_all/_settings?filter_path=**.settings.index.version.created,"
-        + "**.settings.index.routing.allocation.include._tier_preference&expand_wildcards=hidden,all";
-
-    JsonNode settingsResponse = client.execute(
-        ApiRequest.builder(JsonNode.class).get().uri(settingsUri).build()
-    );
-
-    // Map indices to their storage tier
-    Map<String, String> indicesToReindexWithTier = parseIndicesNeedingReindex(settingsResponse, minAllowedVersionCode);
-
-    // Fetch sizes and map to the UI payload
-    List<IndicesRecord> allIndices = client.getAllIndices();
-
-    return allIndices.stream()
-        .filter(record -> indicesToReindexWithTier.containsKey(record.getIndex()))
-        .map(record -> buildReindexInfo(clusterId, record, indicesToReindexWithTier))
-        .toList();
-  }
-
-  private Map<String, String> parseIndicesNeedingReindex(JsonNode settingsResponse, long minAllowedVersionCode) {
-    Map<String, String> indicesToReindex = new HashMap<>();
-
-    if (settingsResponse == null || !settingsResponse.isObject()) {
-      return indicesToReindex;
+    Set<String> incompatibleIndices = new HashSet<>();
+    if (deprecations.indexSettings() != null) {
+      incompatibleIndices.addAll(deprecations.indexSettings().keySet());
     }
 
-    settingsResponse.fieldNames().forEachRemaining(indexName -> {
-      JsonNode indexSettings = settingsResponse.path(indexName).path("settings").path("index");
-      long createdVersion = indexSettings.path("version").path("created").asLong(-1L);
+    Set<String> incompatibleDataStreams = new HashSet<>();
+    if (deprecations.dataStreams() != null) {
+      incompatibleDataStreams.addAll(deprecations.dataStreams().keySet());
+    }
 
-      if (createdVersion != -1L && createdVersion < minAllowedVersionCode) {
-        String tier = indexUtils.extractStorageTier(indexSettings);
-        indicesToReindex.put(indexName, tier);
-      }
-    });
+    // 2. Fetch Settings specifically to keep the UI's Storage Tier column populated
+    String settingsUri =
+        "/_all/_settings?filter_path=**.settings.index.routing.allocation.include._tier_preference&expand_wildcards=hidden,all";
+    JsonNode settingsResponse = client.execute(ApiRequest.builder(JsonNode.class).get().uri(settingsUri).build());
+    Map<String, String> tierMap = extractStorageTiers(settingsResponse);
 
-    return indicesToReindex;
+    // 3. Fetch sizes and document counts
+    List<IndicesRecord> allIndices = client.getAllIndices();
+    if (allIndices == null) {
+      allIndices = List.of();
+    }
+
+    Map<String, IndicesRecord> indicesStatsMap = allIndices.stream()
+        .filter(r -> r.getIndex() != null)
+        .collect(Collectors.toMap(IndicesRecord::getIndex, r -> r, (r1, r2) -> r1));
+
+    List<IndexReindexInfo> results = new ArrayList<>();
+
+    // 4. Map Standard Indices
+    for (String indexName : incompatibleIndices) {
+      IndicesRecord record = indicesStatsMap.get(indexName);
+      String tier = tierMap.getOrDefault(indexName, "Unknown");
+      results.add(buildInfoObject(clusterId, indexName, record, tier, false));
+    }
+
+    // 5. Map Data Streams
+    for (String dsName : incompatibleDataStreams) {
+      results.add(buildInfoObject(clusterId, dsName, null, "Data Stream", true));
+    }
+
+    return results;
   }
 
-  private IndexReindexInfo buildReindexInfo(String clusterId, IndicesRecord record, Map<String, String> indicesTierMap) {
-    String indexName = record.getIndex();
-    assert indexName != null;
-    boolean isSystem = indexName.startsWith(".");
-    assert record.getDocsCount() != null;
-    long docsCount = Long.parseLong(record.getDocsCount());
+  private Map<String, String> extractStorageTiers(JsonNode settingsResponse) {
+    Map<String, String> map = new HashMap<>();
+    if (settingsResponse != null && settingsResponse.isObject()) {
+      settingsResponse.fieldNames().forEachRemaining(idx -> {
+        JsonNode indexSettings = settingsResponse.path(idx).path("settings").path("index");
+        map.put(idx, indexUtils.extractStorageTier(indexSettings));
+      });
+    }
+    return map;
+  }
 
-    String estimateSummary = indexUtils.calculateEstimateSummary(docsCount);
-    String estimateTime = indexUtils.calculateEstimateTime(docsCount);
-    String storageTier = indicesTierMap.get(indexName);
+  private IndexReindexInfo buildInfoObject(String clusterId, String name, IndicesRecord record, String storageTier, boolean isDataStream) {
+
+    boolean isSystem = name.startsWith(".");
+    long docsCount = 0L;
+    String docsSize = "-";
+    long rawBytesSize = 0L;
+
+    if (record != null) {
+      docsCount = Long.parseLong(record.getDocsCount());
+      rawBytesSize = indexUtils.parseByteSize(docsSize);
+    }
+
+    String estimateSummary = indexUtils.calculateEstimateSummary(docsCount, rawBytesSize);
+    String estimateTime = indexUtils.calculateEstimateTime(docsCount, rawBytesSize);
 
     return new IndexReindexInfo(
-        indexName,
-        record.getDocsSize(),
+        name,
+        docsSize,
         String.valueOf(docsCount),
         storageTier,
         isSystem,
+        isDataStream,
         estimateSummary,
         estimateTime,
-        checkAndUpdateReindexStatus(clusterId, indexName)
+        checkAndUpdateReindexStatus(clusterId, name)
     );
   }
 
-  /**
-   * Safely evaluates and deletes an index, handling Data Stream write locks automatically.
-   *
-   * @param clusterId The ID of the cluster to execute against.
-   * @param indexName The exact name of the index to delete.
-   * @return true if successfully deleted, false otherwise.
-   */
   public boolean safeDeleteIndex(String clusterId, String indexName) {
-    logger.info("Initiating safe delete process for index: [{}] on cluster: [{}]", indexName, clusterId);
 
     try {
-      Matcher matcher = DATA_STREAM_PATTERN.matcher(indexName);
+      var client = elasticsearchClientProvider.getClient(clusterId);
 
-      // Phase 1: Categorize & Validate
-      if (matcher.matches()) {
-        String dataStreamName = matcher.group(1);
-        logger.debug("Identified as Data Stream backing index. Base stream name: [{}]", dataStreamName);
+      // 1. CHECK ALIAS SAFETY
+      JsonNode aliasResponse = client.execute(ApiRequest.builder(JsonNode.class)
+          .get()
+          .uri("/" + indexName + "/_alias")
+          .build());
 
-        if (isWriteIndex(clusterId, dataStreamName, indexName)) {
-          logger.info("Index [{}] is the active write index. Initiating rollover...", indexName);
+      if (aliasResponse != null && aliasResponse.has(indexName)) {
+        JsonNode aliases = aliasResponse.get(indexName).path("aliases");
 
-          // Phase 2: Rollover (Unlock)
-          boolean rolledOver = rolloverDataStream(clusterId, dataStreamName);
-          if (!rolledOver) {
-            logger.error("Failed to rollover data stream [{}]. Aborting delete for safety.", dataStreamName);
+        var it = aliases.fieldNames();
+        while (it.hasNext()) {
+          String alias = it.next();
+          boolean isWrite = aliases.get(alias).path("is_write_index").asBoolean(false);
+
+          if (isWrite) {
+            logger.warn("Skipping delete. [{}] is write index for alias [{}]", indexName, alias);
             return false;
           }
-        } else {
-          logger.debug("Index [{}] is an older segment. No rollover needed.", indexName);
         }
       }
 
-      // Phase 3: Commit (Execute Delete)
+      // 2. DELETE
       return executeDelete(clusterId, indexName);
 
     } catch (Exception e) {
-      logger.error("Elasticsearch operation failed while processing index [{}]: {}", indexName, e.getMessage(), e);
-      return false;
-    }
-  }
-
-  /**
-   * Queries the Data Stream to check if the target index is the current write index using the custom ApiRequest.
-   */
-  private boolean isWriteIndex(String clusterId, String dataStreamName, String targetIndexName) {
-    try {
-      var client = elasticsearchClientProvider.getClient(clusterId);
-      JsonNode response = client.execute(ApiRequest.builder(JsonNode.class)
-          .get()
-          .uri("/_data_stream/" + dataStreamName)
-          .build());
-
-      if (response == null || !response.has("data_streams") || response.get("data_streams").isEmpty()) {
-        logger.warn("Data stream [{}] not found or response was empty.", dataStreamName);
-        return false;
-      }
-
-      JsonNode indices = response.get("data_streams").get(0).path("indices");
-      if (indices.isMissingNode() || indices.isEmpty()) {
-        return false;
-      }
-
-      // The last index in the backing indices array is ALWAYS the active write index
-      String currentWriteIndex = indices.get(indices.size() - 1).path("index_name").asText();
-      return targetIndexName.equals(currentWriteIndex);
-
-    } catch (Exception e) {
-      // Catching generic exception assuming the custom client might throw it on a 404
-      logger.debug("Data stream [{}] check failed (it might not exist or returned 404): {}", dataStreamName, e.getMessage());
-      return false;
-    }
-  }
-
-  /**
-   * Forces a rollover on the specified Data Stream using the custom ApiRequest.
-   */
-  private boolean rolloverDataStream(String clusterId, String dataStreamName) {
-    try {
-      var client = elasticsearchClientProvider.getClient(clusterId);
-      JsonNode response = client.execute(ApiRequest.builder(JsonNode.class)
-          .post()
-          .uri("/" + dataStreamName + "/_rollover")
-          .build());
-
-      if (response != null && response.path("acknowledged").asBoolean(false)) {
-        logger.info("Successfully rolled over data stream: [{}]", dataStreamName);
-        return true;
-      }
-      return false;
-    } catch (Exception e) {
-      logger.error("Exception occurred during rollover for data stream [{}]: {}", dataStreamName, e.getMessage(), e);
+      logger.error("Safe delete failed [{}]: {}", indexName, e.getMessage());
       return false;
     }
   }
@@ -239,174 +194,200 @@ public class IndexMigrationService {
   }
 
   /**
-   * Triggers the reindex asynchronously and saves the Task ID.
+   * Safe Reindexing (handles data streams natively + manual standard indices).
    */
   public boolean safeReindexIndexAsync(String clusterId, String indexName) {
-    logger.info("Initiating ASYNC reindex for index: [{}]", indexName);
-    String destIndexName = indexName + "-reindexed";
+    logger.info("Initiating SAFE ASYNC reindex for [{}]", indexName);
 
     try {
-      Matcher matcher = DATA_STREAM_PATTERN.matcher(indexName);
+      var client = elasticsearchClientProvider.getClient(clusterId);
 
-      // 1. Rollover Data Streams if active
-      if (matcher.matches()) {
-        String dataStreamName = matcher.group(1);
-        if (isWriteIndex(clusterId, dataStreamName, indexName)) {
-          if (!rolloverDataStream(clusterId, dataStreamName)) {
-            return false;
-          }
+      // 1. NATIVE DATA STREAM REINDEX
+      if (indexUtils.isDataStream(clusterId, indexName)) {
+        logger.info("Detected Data Stream. Using native Data Stream Reindex API for [{}]", indexName);
+
+        // Uses the official Elasticsearch 8.x+ Data Stream Reindex API
+        JsonNode response = client.execute(ApiRequest.builder(JsonNode.class)
+            .post()
+            .uri("/_data_stream/_reindex/" + indexName + "?wait_for_completion=false")
+            .build());
+
+        if (response != null && response.has("task")) {
+          String taskId = response.get("task").asText();
+          clusterUpgradeJobService.saveActiveReindexTask(clusterId, indexName, taskId);
+          return true;
         }
-      }
-
-      // 2. Lock Source Index
-      if (!applyWriteBlock(clusterId, indexName)) {
         return false;
       }
 
-      // 3. Trigger Async Reindex (?wait_for_completion=false)
-      var client = elasticsearchClientProvider.getClient(clusterId);
-      String requestBody = String.format("{\"source\": {\"index\": \"%s\"}, \"dest\": {\"index\": \"%s\"}}", indexName, destIndexName);
+      // 2. STANDARD INDEX REINDEX
+      String destIndexName = indexName + "-reindexed";
+
+      // Lock source index
+      if (!applyWriteBlock(clusterId, indexName)) {
+        logger.error("Failed to apply write block on [{}]", indexName);
+        return false;
+      }
+
+      String body = String.format("""
+          {
+            "source": { "index": "%s" },
+            "dest": { "index": "%s" }
+          }
+          """, indexName, destIndexName);
 
       JsonNode response = client.execute(ApiRequest.builder(JsonNode.class)
           .post()
           .uri("/_reindex?wait_for_completion=false")
-          .body(requestBody)
+          .body(body)
           .build());
 
-      // 4. Save Task ID to Database
       if (response != null && response.has("task")) {
         String taskId = response.get("task").asText();
-
         clusterUpgradeJobService.saveActiveReindexTask(clusterId, indexName, taskId);
-
         return true;
       }
-      return false;
+
     } catch (Exception e) {
-      logger.error("Async reindex failed for [{}]: {}", indexName, e.getMessage());
-      return false;
+      logger.error("Reindex failed [{}]: {}", indexName, e.getMessage(), e);
     }
+
+    return false;
   }
 
-  /**
-   * Called by the frontend "Refresh" button. Checks ES for progress.
-   * If 100% complete, it deletes the old index automatically.
-   */
   public ReindexProgressInfo checkAndUpdateReindexStatus(String clusterId, String indexName) {
-    // 1. Get Task ID from DB
     String taskId = clusterUpgradeJobService.getTaskIdForIndex(clusterId, indexName);
 
     if (taskId == null) {
-      return new ReindexProgressInfo(false, null, 0, 0); // Not currently reindexing
+      return new ReindexProgressInfo(false, null, 0, 0);
     }
 
     try {
       var client = elasticsearchClientProvider.getClient(clusterId);
-      JsonNode response = client.execute(ApiRequest.builder(JsonNode.class).get().uri("/_tasks/" + taskId).build());
+      JsonNode response = client.execute(ApiRequest.builder(JsonNode.class)
+          .get()
+          .uri("/_tasks/" + taskId)
+          .build());
 
       if (response != null) {
-        boolean isCompleted = response.path("completed").asBoolean(false);
-        JsonNode statusNode = response.path("task").path("status");
+        boolean completed = response.path("completed").asBoolean(false);
+        JsonNode status = response.path("task").path("status");
 
-        if (isCompleted) {
-          // Task Finished! Cleanup Phase.
-          logger.info("Reindex task [{}] completed! Cleaning up legacy index [{}].", taskId, indexName);
+        if (completed) {
+          logger.info("Reindex task completed for [{}]", indexName);
 
+          // 1. DATA STREAM CLEANUP (Automatic)
+          if (indexUtils.isDataStream(clusterId, indexName)) {
+            logger.info("Data Stream [{}] was natively reindexed. No manual cleanup needed.", indexName);
+            clusterUpgradeJobService.removeActiveReindexTask(clusterId, indexName);
+            return new ReindexProgressInfo(false, null, 100, 0);
+          }
+
+          // 2. STANDARD INDEX CLEANUP (Manual Swaps)
           String destIndexName = indexName + "-reindexed";
 
-          // 1. Copy aliases to prevent application downtime!
-          copyAliasesToNewIndex(clusterId, indexName, destIndexName);
+          switchAliases(clusterId, indexName, destIndexName);
+          safeDeleteIndex(clusterId, indexName);
 
-          // 2. Delete the old index (this automatically removes it from the alias pool)
-          executeDelete(clusterId, indexName);
-
-          // 3. Remove task from DB
           clusterUpgradeJobService.removeActiveReindexTask(clusterId, indexName);
 
           return new ReindexProgressInfo(false, null, 100, 0);
         }
 
-        // Calculate Progress
-        long total = statusNode.path("total").asLong(1); // Avoid div by 0
-        long created = statusNode.path("created").asLong(0);
-        long updated = statusNode.path("updated").asLong(0);
-        long deleted = statusNode.path("deleted").asLong(0);
+        // Calculate active progress percentage
+        long total = status.path("total").asLong(1);
+        long processed = status.path("created").asLong(0)
+            + status.path("updated").asLong(0)
+            + status.path("deleted").asLong(0);
 
-        long processed = created + updated + deleted;
         int progress = (int) ((processed * 100) / total);
-        long remaining = total - processed;
-
-        return new ReindexProgressInfo(true, taskId, progress, remaining);
+        return new ReindexProgressInfo(true, taskId, progress, total - processed);
       }
+
     } catch (Exception e) {
-      logger.error("Failed to check task status for [{}]: {}", taskId, e.getMessage());
+      logger.error("Task check failed [{}]: {}", taskId, e.getMessage());
     }
 
-    return new ReindexProgressInfo(true, taskId, 0, 0); // Fallback if API glitch
+    return new ReindexProgressInfo(true, taskId, 0, 0);
   }
 
   // --- Helper Methods ---
   private boolean applyWriteBlock(String clusterId, String indexName) {
     try {
       var client = elasticsearchClientProvider.getClient(clusterId);
+
       return client.execute(ApiRequest.builder(JsonNode.class)
-          .put()
-          .uri("/" + indexName + "/_settings")
-          .body("{\"index.blocks.write\": true}")
-          .build()).path("acknowledged").asBoolean(false);
+              .put()
+              .uri("/" + indexName + "/_settings")
+              .body("{\"index.blocks.write\": true}")
+              .build())
+          .path("acknowledged")
+          .asBoolean(false);
+
     } catch (Exception e) {
       return false;
     }
   }
 
-  /**
-   * Fetches all aliases from the old index and safely applies them to the new index.
-   * This ensures zero-downtime for applications relying on alias routing.
-   */
-  private void copyAliasesToNewIndex(String clusterId, String oldIndexName, String newIndexName) {
+
+  private void switchAliases(String clusterId, String oldIndex, String newIndex) {
     try {
       var client = elasticsearchClientProvider.getClient(clusterId);
 
-      // 1. Get existing aliases for the old index
-      JsonNode aliasResponse = client.execute(ApiRequest.builder(JsonNode.class)
+      JsonNode response = client.execute(ApiRequest.builder(JsonNode.class)
           .get()
-          .uri("/" + oldIndexName + "/_alias")
+          .uri("/" + oldIndex + "/_alias")
           .build());
 
-      if (aliasResponse != null && aliasResponse.has(oldIndexName)) {
-        JsonNode aliasesNode = aliasResponse.get(oldIndexName).path("aliases");
-
-        // 2. If it has aliases, build the bulk update request
-        if (!aliasesNode.isMissingNode() && !aliasesNode.isEmpty()) {
-          StringBuilder actions = new StringBuilder("{\"actions\": [");
-          boolean isFirst = true;
-
-          var iterator = aliasesNode.fieldNames();
-          while (iterator.hasNext()) {
-            String aliasName = iterator.next();
-            if (!isFirst) {
-              actions.append(",");
-            }
-            actions.append(String.format("{\"add\": {\"index\": \"%s\", \"alias\": \"%s\"}}", newIndexName, aliasName));
-            isFirst = false;
-          }
-          actions.append("]}");
-
-          // 3. Execute the Alias assignment
-          if (!isFirst) { // ensures we actually added something to the builder
-            client.execute(ApiRequest.builder(JsonNode.class)
-                .post()
-                .uri("/_aliases")
-                .body(actions.toString())
-                .build());
-            logger.info("Successfully copied aliases from [{}] to [{}]", oldIndexName, newIndexName);
-          }
-        } else {
-          logger.debug("Index [{}] has no standard aliases to copy.", oldIndexName);
-        }
+      if (response == null || !response.has(oldIndex)) {
+        return;
       }
+
+      JsonNode aliases = response.get(oldIndex).path("aliases");
+
+      if (aliases.isEmpty()) {
+        return;
+      }
+
+      StringBuilder actions = new StringBuilder("{\"actions\":[");
+      boolean first = true;
+
+      var it = aliases.fieldNames();
+      while (it.hasNext()) {
+        String alias = it.next();
+        boolean isWrite = aliases.get(alias).path("is_write_index").asBoolean(false);
+
+        if (!first) {
+          actions.append(",");
+        }
+
+        // REMOVE old
+        actions.append(String.format(
+            "{\"remove\":{\"index\":\"%s\",\"alias\":\"%s\"}},",
+            oldIndex, alias
+        ));
+
+        // ADD new
+        actions.append(String.format(
+            "{\"add\":{\"index\":\"%s\",\"alias\":\"%s\",\"is_write_index\":%s}}",
+            newIndex, alias, isWrite
+        ));
+
+        first = false;
+      }
+
+      actions.append("]}");
+
+      client.execute(ApiRequest.builder(JsonNode.class)
+          .post()
+          .uri("/_aliases")
+          .body(actions.toString())
+          .build());
+
+      logger.info("Aliases switched [{} -> {}]", oldIndex, newIndex);
+
     } catch (Exception e) {
-      logger.error("Failed to copy aliases from [{}] to [{}]: {}", oldIndexName, newIndexName, e.getMessage());
+      logger.error("Alias switch failed: {}", e.getMessage());
     }
   }
 }

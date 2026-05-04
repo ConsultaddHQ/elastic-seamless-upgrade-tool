@@ -142,8 +142,13 @@ function ManageIndices() {
 	// =========================================================================
 
 	const allIndices = migrationInfo?.reindexNeedingIndices || []
-	const systemIndicesList = allIndices.filter((item: any) => item.systemIndex)
-	const customIndicesList = allIndices.filter((item: any) => !item.systemIndex)
+
+	// 1. Extract Data Streams
+	const dataStreamList = allIndices.filter((item: any) => item.dataStream)
+
+	// 2. Extract System & Custom (Ensure we exclude data streams from these tabs)
+	const systemIndicesList = allIndices.filter((item: any) => item.systemIndex && !item.dataStream)
+	const customIndicesList = allIndices.filter((item: any) => !item.systemIndex && !item.dataStream)
 
 	const handleReindex = (indexName: string) => {
 		if (clusterId) {
@@ -477,6 +482,37 @@ function ManageIndices() {
 								systemIndicesList,
 								"System Data Ready",
 								"No older system data requires manual reindexing."
+							)}
+						</Box>
+					</Tab>
+
+					<Tab key="data-streams" title={`Data Streams (${dataStreamList.length})`}>
+						<Box className="flex flex-col gap-6 pt-4">
+							<Box className="flex flex-col gap-1 max-w-7xl">
+								<Box className="flex flex-row items-center gap-2">
+									<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
+										Data Streams
+									</Typography>
+									<Tooltip
+										content="Time-series data append-only streams used for logs and metrics."
+										placement="top"
+									>
+										<Box className="cursor-pointer">
+											<InfoCircle size="16" color="#ADADAD" />
+										</Box>
+									</Tooltip>
+								</Box>
+								<Typography color="#6E6E6E" fontSize="13px" fontWeight="400">
+									These are your continuous time-series data streams. Initiating a{" "}
+									<strong>Reindex</strong> will utilize the native Data Stream API to automatically
+									rollover and update backing indices behind the scenes with zero downtime.
+								</Typography>
+							</Box>
+
+							{renderIndicesTable(
+								dataStreamList,
+								"Data Streams Ready",
+								"All of your data streams are already compatible with the target version."
 							)}
 						</Box>
 					</Tab>

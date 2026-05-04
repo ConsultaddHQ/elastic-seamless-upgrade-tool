@@ -6,6 +6,7 @@ public record IndexReindexInfo(
     String docsCount,
     String storageTier,
     boolean systemIndex,
+    boolean dataStream,
     String estimateSummary,
     String estimateTime,
     ReindexProgressInfo progress
