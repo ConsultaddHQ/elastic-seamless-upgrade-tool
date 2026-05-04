@@ -114,6 +114,7 @@ public class IndexMigrationService {
 
     if (record != null) {
       docsCount = Long.parseLong(record.getDocsCount());
+      docsSize = record.getDocsSize();
       rawBytesSize = indexUtils.parseByteSize(docsSize);
     }
 
