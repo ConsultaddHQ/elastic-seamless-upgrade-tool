@@ -24,13 +24,16 @@ public class MigrationService {
   private static final Logger log = LoggerFactory.getLogger(MigrationService.class);
   private final ElasticsearchClientProvider elasticsearchClientProvider;
   private final ClusterUpgradeJobService clusterUpgradeJobService;
+  private final IndexMigrationService indexMigrationService;
   private final IndexUtils indexUtils;
 
   public MigrationService(ElasticsearchClientProvider elasticsearchClientProvider,
                           ClusterUpgradeJobService clusterUpgradeJobService,
+                          IndexMigrationService indexMigrationService,
                           IndexUtils indexUtils) {
     this.elasticsearchClientProvider = elasticsearchClientProvider;
     this.clusterUpgradeJobService = clusterUpgradeJobService;
+    this.indexMigrationService = indexMigrationService;
     this.indexUtils = indexUtils;
   }
 
@@ -42,7 +45,7 @@ public class MigrationService {
       String targetVer = upgradeJob.getTargetVersion();
 
       boolean isValidUpgradePath = VersionUtils.isValidUpgrade(currentVer, targetVer);
-      List<IndexReindexInfo> reindexNeedingIndices = getReindexIndicesMetadata(clusterId, upgradeJob);
+      List<IndexReindexInfo> reindexNeedingIndices = indexMigrationService.getReindexIndicesMetadata(clusterId);
       GetFeatureMigrationResponse featureMigrationResponse = getFeatureMigrationResponse(clusterId, upgradeJob);
 
       ReindexStatus status = determineReindexStatus(reindexNeedingIndices, isValidUpgradePath, currentVer, featureMigrationResponse);
@@ -85,19 +88,6 @@ public class MigrationService {
     }
     return new FeatureMigrationResponse();
   }
-
-
-  public List<IndexReindexInfo> getReindexIndicesMetadata(String clusterId, ClusterUpgradeJobEntity upgradeJob) {
-    var client = elasticsearchClientProvider.getClient(clusterId);
-    var indices = client.getIndices();
-    int targetLucene = IndexUtils.mapEsVersionToLucene(upgradeJob.getTargetVersion());
-
-    return indices.stream()
-        .filter(indicesRecord -> !indexUtils.isLuceneCompatible(clusterId, indicesRecord.getIndex(), targetLucene))
-        .map(indicesRecord -> new IndexReindexInfo(indicesRecord.getIndex(), indicesRecord.getDocsSize(), indicesRecord.getDocsCount()))
-        .toList();
-  }
-
 
   public @NotNull GetFeatureMigrationResponse getFeatureMigrationResponse(String clusterId, ClusterUpgradeJobEntity upgradeJob) {
     if (VersionUtils.isVersionGte(upgradeJob.getCurrentVersion(), "7.16.0")) {

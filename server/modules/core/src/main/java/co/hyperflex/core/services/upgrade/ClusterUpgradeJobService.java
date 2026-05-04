@@ -164,4 +164,45 @@ public class ClusterUpgradeJobService {
         upgradeJob.getStatus()
     );
   }
+
+  // --- Reindex Task Tracking Methods ---
+
+  public void saveActiveReindexTask(String clusterId, String indexName, String taskId) {
+    ClusterUpgradeJobEntity job = getActiveJobByClusterId(clusterId);
+
+    // Replace dots to prevent MongoDB MappingExceptions
+    String safeIndexKey = indexName.replace(".", "_dot_");
+
+    job.getActiveReindexTasks().put(safeIndexKey, taskId);
+    clusterUpgradeJobRepository.save(job);
+    logger.info("Saved active reindex task [{}] for index [{}] on cluster [{}]", taskId, indexName, clusterId);
+  }
+
+  public String getTaskIdForIndex(String clusterId, String indexName) {
+    try {
+      ClusterUpgradeJobEntity job = getActiveJobByClusterId(clusterId);
+      String safeIndexKey = indexName.replace(".", "_dot_");
+
+      return job.getActiveReindexTasks().get(safeIndexKey);
+    } catch (NotFoundException e) {
+      logger.warn("Could not retrieve task ID for [{}]. No active upgrade job found.", indexName);
+      return null;
+    }
+  }
+
+  public void removeActiveReindexTask(String clusterId, String indexName) {
+    try {
+      ClusterUpgradeJobEntity job = getActiveJobByClusterId(clusterId);
+      String safeIndexKey = indexName.replace(".", "_dot_");
+
+      if (job.getActiveReindexTasks().containsKey(safeIndexKey)) {
+        job.getActiveReindexTasks().remove(safeIndexKey);
+        clusterUpgradeJobRepository.save(job);
+        logger.info("Removed completed reindex task for index [{}] on cluster [{}]", indexName, clusterId);
+      }
+    } catch (NotFoundException e) {
+      // Safely ignore if the job is already completed or missing
+      logger.debug("Ignored task removal for [{}]. Job no longer active.", indexName);
+    }
+  }
 }
