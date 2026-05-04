@@ -220,12 +220,10 @@ public class IndexMigrationService {
             .body(body)
             .build());
 
-        if (response != null && response.has("task")) {
-          String taskId = response.get("task").asText();
-          clusterUpgradeJobService.saveActiveReindexTask(clusterId, indexName, taskId);
-          return true;
-        }
-        return false;
+        // The Migration API doesn't return a standard task ID, so we save a dummy one
+        // to tell our system that this data stream is actively migrating!
+        clusterUpgradeJobService.saveActiveReindexTask(clusterId, indexName, "MIGRATING_DATA_STREAM");
+        return true;
       }
 
       // 2. STANDARD INDEX REINDEX
@@ -272,6 +270,42 @@ public class IndexMigrationService {
 
     try {
       var client = elasticsearchClientProvider.getClient(clusterId);
+
+      // DATA STREAM STATUS CHECK
+      if (indexUtils.isDataStream(clusterId, indexName)) {
+        JsonNode response = client.execute(ApiRequest.builder(JsonNode.class)
+            .get()
+            .uri("/_migration/reindex/" + indexName + "/_status")
+            .build());
+
+        if (response != null) {
+          boolean isComplete = response.path("complete").asBoolean(false);
+
+          if (isComplete) {
+            logger.info("Data stream migration natively completed for [{}]", indexName);
+            clusterUpgradeJobService.removeActiveReindexTask(clusterId, indexName);
+            return new ReindexProgressInfo(false, null, 100, 0);
+          }
+
+          // Parse the specific Data Stream progress JSON
+          JsonNode inProgress = response.path("in_progress");
+          int progress = 0;
+          long remaining = 0;
+
+          if (inProgress.isArray() && !inProgress.isEmpty()) {
+            JsonNode currentIdx = inProgress.get(0);
+            long totalDocs = currentIdx.path("total_doc_count").asLong(1); // Avoid div by 0
+            long processedDocs = currentIdx.path("reindexed_doc_count").asLong(0);
+
+            progress = (int) ((processedDocs * 100) / totalDocs);
+            remaining = totalDocs - processedDocs;
+          }
+
+          return new ReindexProgressInfo(true, taskId, progress, remaining);
+        }
+        return new ReindexProgressInfo(false, null, 0, 0);
+      }
+      
       JsonNode response = client.execute(ApiRequest.builder(JsonNode.class)
           .get()
           .uri("/_tasks/" + taskId)
