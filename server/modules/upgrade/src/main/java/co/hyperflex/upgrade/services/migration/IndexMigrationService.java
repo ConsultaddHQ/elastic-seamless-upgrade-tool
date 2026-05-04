@@ -170,26 +170,37 @@ public class IndexMigrationService {
   }
 
   /**
-   * Executes the actual DELETE command using the custom ApiRequest.
+   * Executes the actual DELETE command, dynamically routing between
+   * standard Index deletion and Data Stream deletion.
    */
   private boolean executeDelete(String clusterId, String indexName) {
-    logger.info("Executing DELETE command for index: [{}]", indexName);
+    logger.info("Executing DELETE command for: [{}]", indexName);
     try {
       var client = elasticsearchClientProvider.getClient(clusterId);
+      String deleteUri = "/" + indexName;
+
+      // 1. Dynamically route the URI
+      if (indexUtils.isDataStream(clusterId, indexName)) {
+        logger.info("Detected Data Stream. Using Data Stream Delete API for: [{}]", indexName);
+        deleteUri = "/_data_stream/" + indexName;
+      }
+
+      // 2. Execute the Delete
       JsonNode response = client.execute(ApiRequest.builder(JsonNode.class)
           .delete()
-          .uri("/" + indexName)
+          .uri(deleteUri)
           .build());
 
       if (response != null && response.path("acknowledged").asBoolean(false)) {
-        logger.info("Successfully deleted index: [{}]", indexName);
+        logger.info("Successfully deleted: [{}]", indexName);
         return true;
       } else {
-        logger.warn("Delete command acknowledged as false by cluster for index: [{}]", indexName);
+        logger.warn("Delete command acknowledged as false by cluster for: [{}]", indexName);
         return false;
       }
     } catch (Exception e) {
-      logger.error("Exception occurred during delete for index [{}]: {}", indexName, e.getMessage(), e);
+      // Shortened the error log slightly to reduce console noise on expected 404s
+      logger.error("Exception occurred during delete for [{}]: {}", indexName, e.getMessage());
       return false;
     }
   }
@@ -305,7 +316,7 @@ public class IndexMigrationService {
         }
         return new ReindexProgressInfo(false, null, 0, 0);
       }
-      
+
       JsonNode response = client.execute(ApiRequest.builder(JsonNode.class)
           .get()
           .uri("/_tasks/" + taskId)
