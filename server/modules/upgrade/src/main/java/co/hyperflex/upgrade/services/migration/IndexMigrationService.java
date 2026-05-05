@@ -331,26 +331,34 @@ public class IndexMigrationService {
             logger.error("Reindex task failed internally for [{}]. Aborting cleanup. Failures: {}", indexName,
                 taskResponse.path("failures"));
 
-            // Rollback: Remove the write block
             removeWriteBlock(clusterId, indexName);
             clusterUpgradeJobService.removeActiveReindexTask(clusterId, indexName);
-
-            return new ReindexProgressInfo(false, null, 0, 0); // Reset UI state
+            return new ReindexProgressInfo(false, null, 0, 0);
           }
 
-          logger.info("Reindex task completed successfully for [{}]", indexName);
-
-          // 2. STANDARD INDEX CLEANUP
           String destIndexName = indexName + "-reindexed";
 
-          // Only delete if the alias swap actually succeeds
+          // Verify destination index was actually created
+          try {
+            client.execute(ApiRequest.builder(JsonNode.class).get().uri("/" + destIndexName).build());
+          } catch (Exception e) {
+            logger.error("Destination index [{}] was not created (source likely had 0 documents or blocked). Aborting cleanup.",
+                destIndexName);
+            removeWriteBlock(clusterId, indexName);
+            clusterUpgradeJobService.removeActiveReindexTask(clusterId, indexName);
+            return new ReindexProgressInfo(false, null, 0, 0); // Reset UI so user can try again or just delete it
+          }
+
+          logger.info("Reindex task completed successfully and destination exists for [{}]", indexName);
+
+          // 2. STANDARD INDEX CLEANUP
           boolean aliasesSwapped = switchAliases(clusterId, indexName, destIndexName);
 
           if (aliasesSwapped) {
             safeDeleteIndex(clusterId, indexName);
           } else {
             logger.error("Alias swap failed. Aborting delete and unlocking source index [{}]", indexName);
-            removeWriteBlock(clusterId, indexName); // Rollback lock
+            removeWriteBlock(clusterId, indexName);
           }
 
           clusterUpgradeJobService.removeActiveReindexTask(clusterId, indexName);
