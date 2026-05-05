@@ -280,7 +280,7 @@ public class IndexMigrationService {
     try {
       var client = elasticsearchClientProvider.getClient(clusterId);
 
-      // DATA STREAM STATUS CHECK
+      // A. DATA STREAM STATUS CHECK
       if (indexUtils.isDataStream(clusterId, indexName)) {
         JsonNode response = client.execute(ApiRequest.builder(JsonNode.class)
             .get()
@@ -296,14 +296,13 @@ public class IndexMigrationService {
             return new ReindexProgressInfo(false, null, 100, 0);
           }
 
-          // Parse the specific Data Stream progress JSON
           JsonNode inProgress = response.path("in_progress");
           int progress = 0;
           long remaining = 0;
 
           if (inProgress.isArray() && !inProgress.isEmpty()) {
             JsonNode currentIdx = inProgress.get(0);
-            long totalDocs = currentIdx.path("total_doc_count").asLong(1); // Avoid div by 0
+            long totalDocs = currentIdx.path("total_doc_count").asLong(1);
             long processedDocs = currentIdx.path("reindexed_doc_count").asLong(0);
 
             progress = (int) ((processedDocs * 100) / totalDocs);
@@ -315,6 +314,7 @@ public class IndexMigrationService {
         return new ReindexProgressInfo(false, null, 0, 0);
       }
 
+      // B. STANDARD INDEX STATUS CHECK
       JsonNode response = client.execute(ApiRequest.builder(JsonNode.class)
           .get()
           .uri("/_tasks/" + taskId)
@@ -323,25 +323,37 @@ public class IndexMigrationService {
       if (response != null) {
         boolean completed = response.path("completed").asBoolean(false);
         JsonNode status = response.path("task").path("status");
+        JsonNode taskResponse = response.path("response"); // Exists when completed=true
 
         if (completed) {
-          logger.info("Reindex task completed for [{}]", indexName);
+          // 1. CHECK FOR ELASTICSEARCH FAILURES!
+          if (taskResponse != null && taskResponse.has("failures") && !taskResponse.path("failures").isEmpty()) {
+            logger.error("Reindex task failed internally for [{}]. Aborting cleanup. Failures: {}", indexName,
+                taskResponse.path("failures"));
 
-          // 1. DATA STREAM CLEANUP (Automatic)
-          if (indexUtils.isDataStream(clusterId, indexName)) {
-            logger.info("Data Stream [{}] was natively reindexed. No manual cleanup needed.", indexName);
+            // Rollback: Remove the write block
+            removeWriteBlock(clusterId, indexName);
             clusterUpgradeJobService.removeActiveReindexTask(clusterId, indexName);
-            return new ReindexProgressInfo(false, null, 100, 0);
+
+            return new ReindexProgressInfo(false, null, 0, 0); // Reset UI state
           }
 
-          // 2. STANDARD INDEX CLEANUP (Manual Swaps)
+          logger.info("Reindex task completed successfully for [{}]", indexName);
+
+          // 2. STANDARD INDEX CLEANUP
           String destIndexName = indexName + "-reindexed";
 
-          switchAliases(clusterId, indexName, destIndexName);
-          safeDeleteIndex(clusterId, indexName);
+          // Only delete if the alias swap actually succeeds
+          boolean aliasesSwapped = switchAliases(clusterId, indexName, destIndexName);
+
+          if (aliasesSwapped) {
+            safeDeleteIndex(clusterId, indexName);
+          } else {
+            logger.error("Alias swap failed. Aborting delete and unlocking source index [{}]", indexName);
+            removeWriteBlock(clusterId, indexName); // Rollback lock
+          }
 
           clusterUpgradeJobService.removeActiveReindexTask(clusterId, indexName);
-
           return new ReindexProgressInfo(false, null, 100, 0);
         }
 
@@ -381,7 +393,7 @@ public class IndexMigrationService {
   }
 
 
-  private void switchAliases(String clusterId, String oldIndex, String newIndex) {
+  private boolean switchAliases(String clusterId, String oldIndex, String newIndex) {
     try {
       var client = elasticsearchClientProvider.getClient(clusterId);
 
@@ -390,14 +402,14 @@ public class IndexMigrationService {
           .uri("/" + oldIndex + "/_alias")
           .build());
 
+      // If there are no aliases, there is nothing to swap, so we return true (success)
       if (response == null || !response.has(oldIndex)) {
-        return;
+        return true;
       }
 
       JsonNode aliases = response.get(oldIndex).path("aliases");
-
       if (aliases.isEmpty()) {
-        return;
+        return true;
       }
 
       StringBuilder actions = new StringBuilder("{\"actions\":[");
@@ -412,17 +424,8 @@ public class IndexMigrationService {
           actions.append(",");
         }
 
-        // REMOVE old
-        actions.append(String.format(
-            "{\"remove\":{\"index\":\"%s\",\"alias\":\"%s\"}},",
-            oldIndex, alias
-        ));
-
-        // ADD new
-        actions.append(String.format(
-            "{\"add\":{\"index\":\"%s\",\"alias\":\"%s\",\"is_write_index\":%s}}",
-            newIndex, alias, isWrite
-        ));
+        actions.append(String.format("{\"remove\":{\"index\":\"%s\",\"alias\":\"%s\"}},", oldIndex, alias));
+        actions.append(String.format("{\"add\":{\"index\":\"%s\",\"alias\":\"%s\",\"is_write_index\":%s}}", newIndex, alias, isWrite));
 
         first = false;
       }
@@ -436,9 +439,11 @@ public class IndexMigrationService {
           .build());
 
       logger.info("Aliases switched [{} -> {}]", oldIndex, newIndex);
+      return true; // Success!
 
     } catch (Exception e) {
       logger.error("Alias switch failed: {}", e.getMessage());
+      return false; // Failed!
     }
   }
 
@@ -461,5 +466,23 @@ public class IndexMigrationService {
         estimateTime,
         checkAndUpdateReindexStatus(clusterId, name)
     );
+  }
+
+  private boolean removeWriteBlock(String clusterId, String indexName) {
+    try {
+      var client = elasticsearchClientProvider.getClient(clusterId);
+
+      return client.execute(ApiRequest.builder(JsonNode.class)
+              .put()
+              .uri("/" + indexName + "/_settings")
+              .body("{\"index.blocks.write\": false}") // Set to false to unlock
+              .build())
+          .path("acknowledged")
+          .asBoolean(false);
+
+    } catch (Exception e) {
+      logger.error("Failed to remove write block for [{}]: {}", indexName, e.getMessage());
+      return false;
+    }
   }
 }
