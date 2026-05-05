@@ -67,7 +67,7 @@ public class IndexMigrationService {
     JsonNode settingsResponse = client.execute(ApiRequest.builder(JsonNode.class).get().uri(settingsUri).build());
     Map<String, String> tierMap = extractStorageTiers(settingsResponse);
 
-    // 3. Fetch sizes and document counts
+    // 3. Fetch sizes and document counts for Standard Indices
     List<IndicesRecord> allIndices = client.getAllIndices();
     if (allIndices == null) {
       allIndices = List.of();
@@ -83,12 +83,39 @@ public class IndexMigrationService {
     for (String indexName : incompatibleIndices) {
       IndicesRecord record = indicesStatsMap.get(indexName);
       String tier = tierMap.getOrDefault(indexName, "Unknown");
-      results.add(buildInfoObject(clusterId, indexName, record, tier, false));
+
+      String count = record != null ? record.getDocsCount() : "0";
+      String size = record != null ? record.getDocsSize() : "0b";
+
+      results.add(buildInfoObject(clusterId, indexName, count, size, tier, false));
     }
 
-    // 5. Map Data Streams
+    // 5. Map Data Streams using the _stats API
     for (String dsName : incompatibleDataStreams) {
-      results.add(buildInfoObject(clusterId, dsName, null, "Data Stream", true));
+      String dsCount = "0";
+      String dsSize = "0b";
+
+      try {
+        JsonNode statsResponse = client.execute(ApiRequest.builder(JsonNode.class)
+            .get()
+            .uri("/" + dsName + "/_stats/docs,store?human=true")
+            .build());
+
+        if (statsResponse != null && statsResponse.has("_all")) {
+          JsonNode primaries = statsResponse.path("_all").path("primaries");
+
+          long count = primaries.path("docs").path("count").asLong(0L);
+
+          String size = primaries.path("store").path("size").asText("0b");
+
+          dsCount = String.valueOf(count);
+          dsSize = size;
+        }
+      } catch (Exception e) {
+        logger.warn("Failed to fetch exact stats for data stream [{}]: {}", dsName, e.getMessage());
+      }
+
+      results.add(buildInfoObject(clusterId, dsName, dsCount, dsSize, "Data Stream", true));
     }
 
     return results;
@@ -105,16 +132,21 @@ public class IndexMigrationService {
     return map;
   }
 
-  private IndexReindexInfo buildInfoObject(String clusterId, String name, IndicesRecord record, String storageTier, boolean isDataStream) {
-
+  private IndexReindexInfo buildInfoObject(String clusterId, String name, String stringDocsCount, String stringDocsSize, String storageTier,
+                                           boolean isDataStream) {
     boolean isSystem = name.startsWith(".");
     long docsCount = 0L;
-    String docsSize = "-";
+    String docsSize = stringDocsSize != null ? stringDocsSize : "-";
     long rawBytesSize = 0L;
 
-    if (record != null) {
-      docsCount = Long.parseLong(record.getDocsCount());
-      docsSize = record.getDocsSize();
+    if (stringDocsCount != null && !stringDocsCount.isBlank()) {
+      try {
+        docsCount = Long.parseLong(stringDocsCount);
+      } catch (NumberFormatException ignored) {
+      }
+    }
+
+    if (!"-".equals(docsSize)) {
       rawBytesSize = indexUtils.parseByteSize(docsSize);
     }
 
