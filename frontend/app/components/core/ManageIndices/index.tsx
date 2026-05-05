@@ -122,6 +122,27 @@ function ManageIndices() {
 			indicesToPoll.forEach(async (indexName) => {
 				try {
 					const status = await clusterUpgradeApi.checkReindexStatus(clusterId, indexName)
+
+					// Detect if the backend aborted the task (e.g., 0 doc failure)
+					// If progress is 0 and the backend returns no taskId, it was killed.
+					if (status.progressPercentage === 0 && !status.taskId) {
+						toast.error(
+							`Reindex aborted for ${indexName}. It is likely empty (0 docs). Please use the Delete button instead.`,
+							{ duration: 6000 }
+						)
+
+						// Remove the ghost task from the UI state to reset the row
+						setActiveTasks((prev) => {
+							const newTasks = { ...prev }
+							delete newTasks[indexName]
+							return newTasks
+						})
+
+						setActiveActionIndex(null)
+						return // Stop processing this row
+					}
+
+					// Standard progress update
 					setActiveTasks((prev) => ({
 						...prev,
 						[indexName]: {
