@@ -133,11 +133,10 @@ public class IndexMigrationService {
   }
 
   public boolean safeDeleteIndex(String clusterId, String indexName) {
-
     try {
       var client = elasticsearchClientProvider.getClient(clusterId);
 
-      // 1. CHECK ALIAS SAFETY
+      // 1. CHECK ALIAS STATUS
       JsonNode aliasResponse = client.execute(ApiRequest.builder(JsonNode.class)
           .get()
           .uri("/" + indexName + "/_alias")
@@ -145,24 +144,35 @@ public class IndexMigrationService {
 
       if (aliasResponse != null && aliasResponse.has(indexName)) {
         JsonNode aliases = aliasResponse.get(indexName).path("aliases");
+        String activeWriteAlias = null;
 
+        // Find out if this index is a write index for any alias
         var it = aliases.fieldNames();
         while (it.hasNext()) {
           String alias = it.next();
-          boolean isWrite = aliases.get(alias).path("is_write_index").asBoolean(false);
+          if (aliases.get(alias).path("is_write_index").asBoolean(false)) {
+            activeWriteAlias = alias;
+            break;
+          }
+        }
 
-          if (isWrite) {
-            logger.warn("Skipping delete. [{}] is write index for alias [{}]", indexName, alias);
-            return false;
+        // 2. HANDLE WRITE INDEX LOGIC (Rollover automatically)
+        if (activeWriteAlias != null) {
+          logger.info("Active write index detected [{}]. Rolling over alias [{}] before deletion.", indexName, activeWriteAlias);
+
+          boolean rolledOver = executeRollover(clusterId, activeWriteAlias);
+          if (!rolledOver) {
+            logger.error("Failed to rollover alias [{}]. Aborting deletion to prevent data pipeline corruption.", activeWriteAlias);
+            return false; // Stop the deletion if the rollover failed!
           }
         }
       }
 
-      // 2. DELETE
+      // 3. EXECUTE DELETE (Now completely safe)
       return executeDelete(clusterId, indexName);
 
     } catch (Exception e) {
-      logger.error("Safe delete failed [{}]: {}", indexName, e.getMessage());
+      logger.error("Delete failed [{}]: {}", indexName, e.getMessage());
       return false;
     }
   }
@@ -490,6 +500,36 @@ public class IndexMigrationService {
 
     } catch (Exception e) {
       logger.error("Failed to remove write block for [{}]: {}", indexName, e.getMessage());
+      return false;
+    }
+  }
+
+  /**
+   * Forces an immediate rollover for an alias or data stream.
+   */
+  private boolean executeRollover(String clusterId, String targetName) {
+    logger.info("Executing forced rollover for [{}]", targetName);
+    try {
+      var client = elasticsearchClientProvider.getClient(clusterId);
+
+      JsonNode response = client.execute(ApiRequest.builder(JsonNode.class)
+          .post()
+          .uri("/" + targetName + "/_rollover")
+          .body("{}") // Empty body forces immediate rollover
+          .build());
+
+      boolean rolledOver = response != null && response.path("rolled_over").asBoolean(false);
+
+      if (rolledOver) {
+        logger.info("Successfully rolled over [{}]", targetName);
+      } else {
+        logger.warn("Rollover API called for [{}], but cluster reported rolled_over=false", targetName);
+      }
+
+      return rolledOver;
+
+    } catch (Exception e) {
+      logger.error("Rollover failed for [{}]: {}", targetName, e.getMessage());
       return false;
     }
   }
