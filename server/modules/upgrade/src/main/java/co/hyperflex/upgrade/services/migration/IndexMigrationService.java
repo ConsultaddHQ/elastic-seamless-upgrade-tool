@@ -132,40 +132,6 @@ public class IndexMigrationService {
     return map;
   }
 
-  private IndexReindexInfo buildInfoObject(String clusterId, String name, String stringDocsCount, String stringDocsSize, String storageTier,
-                                           boolean isDataStream) {
-    boolean isSystem = name.startsWith(".");
-    long docsCount = 0L;
-    String docsSize = stringDocsSize != null ? stringDocsSize : "-";
-    long rawBytesSize = 0L;
-
-    if (stringDocsCount != null && !stringDocsCount.isBlank()) {
-      try {
-        docsCount = Long.parseLong(stringDocsCount);
-      } catch (NumberFormatException ignored) {
-      }
-    }
-
-    if (!"-".equals(docsSize)) {
-      rawBytesSize = indexUtils.parseByteSize(docsSize);
-    }
-
-    String estimateSummary = indexUtils.calculateEstimateSummary(docsCount, rawBytesSize);
-    String estimateTime = indexUtils.calculateEstimateTime(docsCount, rawBytesSize);
-
-    return new IndexReindexInfo(
-        name,
-        docsSize,
-        String.valueOf(docsCount),
-        storageTier,
-        isSystem,
-        isDataStream,
-        estimateSummary,
-        estimateTime,
-        checkAndUpdateReindexStatus(clusterId, name)
-    );
-  }
-
   public boolean safeDeleteIndex(String clusterId, String indexName) {
 
     try {
@@ -474,5 +440,26 @@ public class IndexMigrationService {
     } catch (Exception e) {
       logger.error("Alias switch failed: {}", e.getMessage());
     }
+  }
+
+  private IndexReindexInfo buildInfoObject(String clusterId, String name, String docsCount, String docsSize, String storageTier,
+                                           boolean isDataStream) {
+    boolean isSystem = name.startsWith(".");
+    long rawBytesSize = indexUtils.parseByteSize(docsSize);
+    long docsCountLong = Long.parseLong(docsCount);
+
+    String estimateSummary = indexUtils.calculateEstimateSummary(docsCountLong, rawBytesSize);
+    String estimateTime = indexUtils.calculateEstimateTime(docsCountLong, rawBytesSize);
+
+    return new IndexReindexInfo(
+        name,
+        docsSize, docsCount,
+        storageTier,
+        isSystem,
+        isDataStream,
+        estimateSummary,
+        estimateTime,
+        checkAndUpdateReindexStatus(clusterId, name)
+    );
   }
 }
