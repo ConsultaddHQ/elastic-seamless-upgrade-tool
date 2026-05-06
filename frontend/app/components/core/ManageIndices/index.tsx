@@ -13,8 +13,8 @@ import {
 } from "@heroui/react"
 import { Box, Typography } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { Convertshape2, TickCircle, Warning2, Trash, Refresh } from "iconsax-react"
-import { useCallback, type Key, useState, useEffect } from "react"
+import { Convertshape2, InfoCircle, TickCircle, Warning2, Trash, Refresh, DocumentCopy } from "iconsax-react"
+import { useCallback, type Key, useState, useEffect, useMemo } from "react"
 import { useNavigate, useParams } from "react-router"
 import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"
@@ -48,6 +48,11 @@ function ManageIndices() {
 	// Multi-Select State
 	const [selectedKeys, setSelectedKeys] = useState<any>(new Set([]))
 
+	// Memoize disabled keys so React doesn't recalculate on every tick
+	const disabledKeys = useMemo(() => {
+		return new Set([...deletedIndices, ...Object.keys(activeTasks)])
+	}, [deletedIndices, activeTasks])
+
 	const {
 		data: migrationInfo,
 		refetch: refetchMigrationInfo,
@@ -64,17 +69,22 @@ function ManageIndices() {
 			toast.success("System features migration initiated.")
 			refetchMigrationInfo()
 		},
+		onError: (error: any) => {
+			toast.error(error?.message || "Failed to initiate system migration.")
+		},
 	})
 
 	const { isPending: isReindexingSingle, mutate: reindexSingleIndex } = useMutation({
 		mutationFn: (data: { clusterId: string; indexName: string }) =>
 			clusterUpgradeApi.reindexSingle(data.clusterId, data.indexName),
 		onSuccess: (data: any, variables) => {
-			toast.success(data?.message || `Reindex started for ${variables.indexName}`)
 			setActiveTasks((prev) => ({
 				...prev,
 				[variables.indexName]: { progressPercentage: 0, remainingDocs: 0, isCompleted: false },
 			}))
+		},
+		onError: (error: any) => {
+			toast.error(error?.message || "Failed to start reindex process.")
 		},
 		onSettled: () => setActiveActionIndex(null),
 	})
@@ -83,8 +93,10 @@ function ManageIndices() {
 		mutationFn: (data: { clusterId: string; indexName: string }) =>
 			clusterUpgradeApi.deleteIndex(data.clusterId, data.indexName),
 		onSuccess: (data: any, variables) => {
-			toast.success(data?.message || `Index deleted: ${variables.indexName}`)
 			setDeletedIndices((prev) => [...prev, variables.indexName])
+		},
+		onError: (error: any) => {
+			toast.error(error?.message || "Failed to delete index.")
 		},
 		onSettled: () => setActiveActionIndex(null),
 	})
@@ -147,10 +159,12 @@ function ManageIndices() {
 	const systemIndicesList = allIndices.filter((item: any) => item.systemIndex && !item.dataStream)
 	const customIndicesList = allIndices.filter((item: any) => !item.systemIndex && !item.dataStream)
 
+	// INDIVIDUAL ACTIONS
 	const handleReindex = (indexName: string) => {
 		if (clusterId) {
 			setActiveActionIndex(indexName)
 			reindexSingleIndex({ clusterId, indexName })
+			toast.success(`Reindex started for ${indexName}`)
 		}
 	}
 
@@ -158,47 +172,45 @@ function ManageIndices() {
 		if (clusterId) {
 			setActiveActionIndex(indexName)
 			deleteSingleIndex({ clusterId, indexName })
+			toast.success(`Index deleted: ${indexName}`)
 		}
 	}
 
-	// Bulk Action Handlers
+	// BULK ACTIONS (Single Toast Pop-up)
 	const handleBulkReindex = (currentList: any[]) => {
 		if (!clusterId) return
 
-		let keysToProcess: string[] = []
-		if (selectedKeys === "all") {
-			keysToProcess = currentList.map((i: any) => i.name)
-		} else {
-			keysToProcess = Array.from(selectedKeys) as string[]
+		const keysToProcess =
+			selectedKeys === "all" ? currentList.map((i: any) => i.name) : (Array.from(selectedKeys) as string[])
+
+		const validKeys = keysToProcess.filter((name) => !activeTasks[name] && !deletedIndices.includes(name))
+
+		if (validKeys.length > 0) {
+			validKeys.forEach((name) => {
+				reindexSingleIndex({ clusterId, indexName: name })
+			})
+			toast.success(`Bulk reindex initiated for ${validKeys.length} indices`)
 		}
 
-		keysToProcess.forEach((name) => {
-			// Only reindex if not already processing or deleted
-			if (!activeTasks[name] && !deletedIndices.includes(name)) {
-				reindexSingleIndex({ clusterId, indexName: name })
-			}
-		})
-
-		setSelectedKeys(new Set([])) // Clear checkboxes after firing
+		setSelectedKeys(new Set([]))
 	}
 
 	const handleBulkDelete = (currentList: any[]) => {
 		if (!clusterId) return
 
-		let keysToProcess: string[] = []
-		if (selectedKeys === "all") {
-			keysToProcess = currentList.map((i: any) => i.name)
-		} else {
-			keysToProcess = Array.from(selectedKeys) as string[]
+		const keysToProcess =
+			selectedKeys === "all" ? currentList.map((i: any) => i.name) : (Array.from(selectedKeys) as string[])
+
+		const validKeys = keysToProcess.filter((name) => !activeTasks[name] && !deletedIndices.includes(name))
+
+		if (validKeys.length > 0) {
+			validKeys.forEach((name) => {
+				deleteSingleIndex({ clusterId, indexName: name })
+			})
+			toast.success(`Bulk delete initiated for ${validKeys.length} indices`)
 		}
 
-		keysToProcess.forEach((name) => {
-			if (!activeTasks[name] && !deletedIndices.includes(name)) {
-				deleteSingleIndex({ clusterId, indexName: name })
-			}
-		})
-
-		setSelectedKeys(new Set([])) // Clear checkboxes after firing
+		setSelectedKeys(new Set([]))
 	}
 
 	const renderCell = useCallback(
@@ -207,7 +219,22 @@ function ManageIndices() {
 
 			switch (columnKey) {
 				case "name":
-					return <span className="text-[#ADADAD] font-medium">{cellValue}</span>
+					return (
+						<Box className="flex items-center gap-2 group">
+							<span className="text-[#ADADAD] font-medium">{cellValue}</span>
+							<Tooltip content="Copy name" placement="top">
+								<button
+									onClick={() => {
+										navigator.clipboard.writeText(cellValue)
+										toast.success("Copied to clipboard", { duration: 2000 })
+									}}
+									className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-[#2F2F2F] text-[#6E6E6E] hover:text-[#BDA0FF]"
+								>
+									<DocumentCopy size="14" />
+								</button>
+							</Tooltip>
+						</Box>
+					)
 				case "docsCount":
 				case "size":
 				case "storageTier":
@@ -278,7 +305,7 @@ function ManageIndices() {
 									className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
 										isAnyActionRunning
 											? "opacity-50 cursor-not-allowed border-[#FF6B6B]/30 bg-[#FF6B6B]/5"
-											: "cursor-pointer border-[#FF6B6B]/30 bg-[#FF6B6B]/10 hover:bg-[#FF6B6B]/20 hover:border-[#FF6B6B]/50"
+											: "cursor-pointer border-[#FF6B6B]/30 bg-[#FF6B6B]/10 hover:bg-[#FF6B6B]/20 hover:border-[#FF6B6B]/50 active:scale-95"
 									}`}
 									onClick={() => !isAnyActionRunning && handleDelete(row.name)}
 								>
@@ -289,21 +316,22 @@ function ManageIndices() {
 									)}
 								</Box>
 							</Tooltip>
+
+							{/* Upgraded Reindex Button: Minimalist Icon to match Delete */}
 							<Tooltip content="Convert to new format" placement="top">
-								<Box>
-									<OutlinedBorderButton
-										onClick={() => handleReindex(row.name)}
-										disabled={!isValidUpgradePath || isAnyActionRunning}
-									>
-										<Box className="flex items-center gap-[6px]">
-											{isThisRowReindexing ? (
-												<Spinner size="sm" color="current" />
-											) : (
-												<Refresh size="14" />
-											)}
-											<span>Reindex</span>
-										</Box>
-									</OutlinedBorderButton>
+								<Box
+									className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
+										!isValidUpgradePath || isAnyActionRunning
+											? "opacity-50 cursor-not-allowed border-[#BDA0FF]/20 bg-[#BDA0FF]/5"
+											: "cursor-pointer border-[#BDA0FF]/30 bg-[#BDA0FF]/10 hover:bg-[#BDA0FF]/20 hover:border-[#BDA0FF]/50 active:scale-95"
+									}`}
+									onClick={() => isValidUpgradePath && !isAnyActionRunning && handleReindex(row.name)}
+								>
+									{isThisRowReindexing ? (
+										<Spinner size="sm" color="current" className="text-[#BDA0FF]" />
+									) : (
+										<Refresh size="16" color="#BDA0FF" />
+									)}
 								</Box>
 							</Tooltip>
 						</Box>
@@ -316,7 +344,6 @@ function ManageIndices() {
 	)
 
 	const renderIndicesTable = (dataList: any[], emptyTitle: string, emptySub: string) => {
-		// Build Dynamic Toolbar when items are selected
 		const hasSelection = selectedKeys === "all" || selectedKeys.size > 0
 		const selectedCount = selectedKeys === "all" ? dataList.length : selectedKeys.size
 
@@ -328,7 +355,7 @@ function ManageIndices() {
 				<Box className="flex items-center gap-3">
 					<button
 						onClick={() => handleBulkDelete(dataList)}
-						className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#FF6B6B]/30 bg-[#FF6B6B]/10 text-[#FF6B6B] text-[13px] font-medium hover:bg-[#FF6B6B]/20 transition-all"
+						className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#FF6B6B]/30 bg-[#FF6B6B]/10 text-[#FF6B6B] text-[13px] font-medium hover:bg-[#FF6B6B]/20 transition-all active:scale-95"
 					>
 						<Trash size="14" />
 						Delete Selected
@@ -338,7 +365,7 @@ function ManageIndices() {
 						disabled={!isValidUpgradePath}
 						className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[13px] font-medium transition-all ${
 							isValidUpgradePath
-								? "bg-[#BDA0FF] border-[#BDA0FF] text-[#0D0D0D] hover:bg-[#A886FF]"
+								? "bg-[#BDA0FF] border-[#BDA0FF] text-[#0D0D0D] hover:bg-[#A886FF] active:scale-95"
 								: "bg-[#3A3A3A] border-[#2F2F2F] text-[#6E6E6E] cursor-not-allowed"
 						}`}
 					>
@@ -353,9 +380,10 @@ function ManageIndices() {
 			<Table
 				removeWrapper
 				layout="fixed"
-				selectionMode="multiple" // Enables checkboxes
+				selectionMode="multiple"
 				selectedKeys={selectedKeys}
 				onSelectionChange={setSelectedKeys}
+				disabledKeys={disabledKeys} // Passes the disabled rows to HeroUI
 				topContent={topContent}
 				classNames={{
 					base: "w-full h-auto",
