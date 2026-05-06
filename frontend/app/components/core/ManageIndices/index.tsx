@@ -45,10 +45,8 @@ function ManageIndices() {
 	const [activeActionIndex, setActiveActionIndex] = useState<string | null>(null)
 	const [activeTasks, setActiveTasks] = useState<Record<string, TaskProgress>>({})
 
-	// Multi-Select State
 	const [selectedKeys, setSelectedKeys] = useState<any>(new Set([]))
 
-	// Memoize disabled keys so React doesn't recalculate on every tick
 	const disabledKeys = useMemo(() => {
 		return new Set([...deletedIndices, ...Object.keys(activeTasks)])
 	}, [deletedIndices, activeTasks])
@@ -176,12 +174,12 @@ function ManageIndices() {
 		}
 	}
 
-	// BULK ACTIONS (Single Toast Pop-up)
-	const handleBulkReindex = (currentList: any[]) => {
+	// BULK ACTIONS
+	const handleBulkReindex = (filteredList: any[]) => {
 		if (!clusterId) return
 
 		const keysToProcess =
-			selectedKeys === "all" ? currentList.map((i: any) => i.name) : (Array.from(selectedKeys) as string[])
+			selectedKeys === "all" ? filteredList.map((i: any) => i.name) : (Array.from(selectedKeys) as string[])
 
 		const validKeys = keysToProcess.filter((name) => !activeTasks[name] && !deletedIndices.includes(name))
 
@@ -195,11 +193,11 @@ function ManageIndices() {
 		setSelectedKeys(new Set([]))
 	}
 
-	const handleBulkDelete = (currentList: any[]) => {
+	const handleBulkDelete = (filteredList: any[]) => {
 		if (!clusterId) return
 
 		const keysToProcess =
-			selectedKeys === "all" ? currentList.map((i: any) => i.name) : (Array.from(selectedKeys) as string[])
+			selectedKeys === "all" ? filteredList.map((i: any) => i.name) : (Array.from(selectedKeys) as string[])
 
 		const validKeys = keysToProcess.filter((name) => !activeTasks[name] && !deletedIndices.includes(name))
 
@@ -216,19 +214,24 @@ function ManageIndices() {
 	const renderCell = useCallback(
 		(row: any, columnKey: Key) => {
 			const cellValue = row[columnKey as keyof typeof row]
+			const localProgress = activeTasks[row.name]
+			const isThisRowReindexing = isReindexingSingle && activeActionIndex === row.name
+			const isThisRowDeleting = isDeleting && activeActionIndex === row.name
+			const isAnyActionRunning = isReindexingSingle || isDeleting
 
 			switch (columnKey) {
 				case "name":
 					return (
-						<Box className="flex items-center gap-2 group">
-							<span className="text-[#ADADAD] font-medium">{cellValue}</span>
+						<Box className="flex items-center gap-3 w-full">
+							<span className="text-[#ADADAD] font-medium break-all">{cellValue}</span>
 							<Tooltip content="Copy name" placement="top">
 								<button
-									onClick={() => {
+									onClick={(e) => {
+										e.stopPropagation()
 										navigator.clipboard.writeText(cellValue)
 										toast.success("Copied to clipboard", { duration: 2000 })
 									}}
-									className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-[#2F2F2F] text-[#6E6E6E] hover:text-[#BDA0FF]"
+									className="p-1.5 rounded-md bg-[#2F2F2F]/40 text-[#6E6E6E] hover:bg-[#2F2F2F] hover:text-[#BDA0FF] transition-all flex-shrink-0"
 								>
 									<DocumentCopy size="14" />
 								</button>
@@ -242,36 +245,14 @@ function ManageIndices() {
 				case "estimateTime":
 					return <span className="text-[#ADADAD]">{cellValue || "-"}</span>
 				case "actions":
-					if (deletedIndices.includes(row.name)) {
-						return (
-							<Box className="flex flex-row items-center justify-end w-full h-full">
-								<Box className="bg-[#FF6B6B]/10 border border-[#FF6B6B]/20 px-3 py-1 rounded-md">
-									<Typography color="#FF6B6B" fontSize="12px" fontWeight="600">
-										Index Deleted
-									</Typography>
-								</Box>
-							</Box>
-						)
-					}
-
-					const localProgress = activeTasks[row.name]
-					const isThisRowReindexing = isReindexingSingle && activeActionIndex === row.name
-					const isThisRowDeleting = isDeleting && activeActionIndex === row.name
-					const isAnyActionRunning = isReindexingSingle || isDeleting
-
+					// If reindexing is actively happening, show progress bar
 					if (localProgress) {
-						const isTaskCompleted = localProgress.isCompleted
 						return (
 							<Box className="flex flex-row items-center justify-end w-full h-full">
 								<Box className="flex flex-col w-[200px] gap-1 justify-center">
 									<Box className="flex justify-between items-center w-full">
-										<Typography
-											color={isTaskCompleted ? "#52D97F" : "#BDA0FF"}
-											fontSize="12px"
-											fontWeight="600"
-											lineHeight="1"
-										>
-											{isTaskCompleted ? "Completed" : "Reindexing..."}
+										<Typography color="#BDA0FF" fontSize="12px" fontWeight="600" lineHeight="1">
+											Reindexing...
 										</Typography>
 										<Typography color="#FFF" fontSize="12px" fontWeight="600" lineHeight="1">
 											{localProgress.progressPercentage}%
@@ -283,69 +264,68 @@ function ManageIndices() {
 										value={localProgress.progressPercentage}
 										classNames={{
 											track: "bg-[#2F2F2F] h-[4px]",
-											indicator: isTaskCompleted
-												? "bg-[#52D97F] h-[4px]"
-												: "bg-[#BDA0FF] h-[4px]",
+											indicator: "bg-[#BDA0FF] h-[4px]",
 										}}
 									/>
 									<Typography color="#6E6E6E" fontSize="10px" textAlign="right" lineHeight="1">
-										{isTaskCompleted
-											? "Data converted successfully"
-											: `${localProgress.remainingDocs.toLocaleString()} docs remaining`}
+										{`${localProgress.remainingDocs.toLocaleString()} docs remaining`}
 									</Typography>
 								</Box>
 							</Box>
 						)
 					}
 
+					// Otherwise, show the buttons
 					return (
-						<Box className="flex flex-row items-center justify-end gap-2 w-full h-full">
-							<Tooltip content="Delete Data (Permanent)" placement="top">
-								<Box
-									className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
-										isAnyActionRunning
-											? "opacity-50 cursor-not-allowed border-[#FF6B6B]/30 bg-[#FF6B6B]/5"
-											: "cursor-pointer border-[#FF6B6B]/30 bg-[#FF6B6B]/10 hover:bg-[#FF6B6B]/20 hover:border-[#FF6B6B]/50 active:scale-95"
-									}`}
-									onClick={() => !isAnyActionRunning && handleDelete(row.name)}
-								>
-									{isThisRowDeleting ? (
-										<Spinner size="sm" color="danger" />
-									) : (
-										<Trash size="16" color="#FF6B6B" />
-									)}
-								</Box>
-							</Tooltip>
+						<Box className="flex flex-row items-center justify-end gap-3 w-full h-full">
+							<button
+								onClick={(e) => {
+									e.stopPropagation()
+									!isAnyActionRunning && handleDelete(row.name)
+								}}
+								disabled={isAnyActionRunning}
+								className={`flex items-center gap-[6px] px-3 py-[6px] rounded-lg border transition-all text-[12px] font-medium outline-none ${
+									isAnyActionRunning
+										? "opacity-50 cursor-not-allowed border-[#FF6B6B]/20 bg-[#FF6B6B]/5 text-[#FF6B6B]/50"
+										: "cursor-pointer border-[#FF6B6B]/30 bg-[#FF6B6B]/10 hover:bg-[#FF6B6B]/20 hover:border-[#FF6B6B]/50 text-[#FF6B6B] active:scale-95"
+								}`}
+							>
+								{isThisRowDeleting ? <Spinner size="sm" color="danger" /> : <Trash size="14" />}
+								<span>Delete</span>
+							</button>
 
-							{/* Upgraded Reindex Button: Minimalist Icon to match Delete */}
-							<Tooltip content="Convert to new format" placement="top">
-								<Box
-									className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
-										!isValidUpgradePath || isAnyActionRunning
-											? "opacity-50 cursor-not-allowed border-[#BDA0FF]/20 bg-[#BDA0FF]/5"
-											: "cursor-pointer border-[#BDA0FF]/30 bg-[#BDA0FF]/10 hover:bg-[#BDA0FF]/20 hover:border-[#BDA0FF]/50 active:scale-95"
-									}`}
-									onClick={() => isValidUpgradePath && !isAnyActionRunning && handleReindex(row.name)}
-								>
-									{isThisRowReindexing ? (
-										<Spinner size="sm" color="current" className="text-[#BDA0FF]" />
-									) : (
-										<Refresh size="16" color="#BDA0FF" />
-									)}
-								</Box>
-							</Tooltip>
+							<button
+								onClick={(e) => {
+									e.stopPropagation()
+									isValidUpgradePath && !isAnyActionRunning && handleReindex(row.name)
+								}}
+								disabled={!isValidUpgradePath || isAnyActionRunning}
+								className={`flex items-center gap-[6px] px-3 py-[6px] rounded-lg border transition-all text-[12px] font-medium outline-none ${
+									!isValidUpgradePath || isAnyActionRunning
+										? "opacity-50 cursor-not-allowed border-[#BDA0FF]/20 bg-[#BDA0FF]/5 text-[#BDA0FF]/50"
+										: "cursor-pointer border-[#BDA0FF]/30 bg-[#BDA0FF]/10 hover:bg-[#BDA0FF]/20 hover:border-[#BDA0FF]/50 text-[#BDA0FF] active:scale-95"
+								}`}
+							>
+								{isThisRowReindexing ? <Spinner size="sm" color="current" /> : <Refresh size="14" />}
+								<span>Reindex</span>
+							</button>
 						</Box>
 					)
 				default:
 					return cellValue
 			}
 		},
-		[isValidUpgradePath, isReindexingSingle, isDeleting, activeActionIndex, activeTasks, deletedIndices]
+		[isValidUpgradePath, isReindexingSingle, isDeleting, activeActionIndex, activeTasks]
 	)
 
 	const renderIndicesTable = (dataList: any[], emptyTitle: string, emptySub: string) => {
+		// FILTER: Completely remove deleted and fully reindexed items from the array
+		const filteredList = dataList.filter(
+			(item: any) => !deletedIndices.includes(item.name) && !activeTasks[item.name]?.isCompleted
+		)
+
 		const hasSelection = selectedKeys === "all" || selectedKeys.size > 0
-		const selectedCount = selectedKeys === "all" ? dataList.length : selectedKeys.size
+		const selectedCount = selectedKeys === "all" ? filteredList.length : selectedKeys.size
 
 		const topContent = hasSelection ? (
 			<Box className="flex flex-row items-center justify-between w-full bg-[#BDA0FF]/10 border border-[#BDA0FF]/20 rounded-xl p-3 mb-2 animate-appearance-in">
@@ -354,16 +334,16 @@ function ManageIndices() {
 				</Typography>
 				<Box className="flex items-center gap-3">
 					<button
-						onClick={() => handleBulkDelete(dataList)}
-						className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#FF6B6B]/30 bg-[#FF6B6B]/10 text-[#FF6B6B] text-[13px] font-medium hover:bg-[#FF6B6B]/20 transition-all active:scale-95"
+						onClick={() => handleBulkDelete(filteredList)}
+						className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#FF6B6B]/30 bg-[#FF6B6B]/10 text-[#FF6B6B] text-[13px] font-medium hover:bg-[#FF6B6B]/20 transition-all active:scale-95 outline-none"
 					>
 						<Trash size="14" />
 						Delete Selected
 					</button>
 					<button
-						onClick={() => handleBulkReindex(dataList)}
+						onClick={() => handleBulkReindex(filteredList)}
 						disabled={!isValidUpgradePath}
-						className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[13px] font-medium transition-all ${
+						className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[13px] font-medium transition-all outline-none ${
 							isValidUpgradePath
 								? "bg-[#BDA0FF] border-[#BDA0FF] text-[#0D0D0D] hover:bg-[#A886FF] active:scale-95"
 								: "bg-[#3A3A3A] border-[#2F2F2F] text-[#6E6E6E] cursor-not-allowed"
@@ -381,9 +361,10 @@ function ManageIndices() {
 				removeWrapper
 				layout="fixed"
 				selectionMode="multiple"
+				selectionBehavior="toggle" // Restricts selection strictly to the checkbox click
 				selectedKeys={selectedKeys}
 				onSelectionChange={setSelectedKeys}
-				disabledKeys={disabledKeys} // Passes the disabled rows to HeroUI
+				disabledKeys={disabledKeys}
 				topContent={topContent}
 				classNames={{
 					base: "w-full h-auto",
@@ -395,14 +376,21 @@ function ManageIndices() {
 			>
 				<TableHeader columns={columns}>
 					{(column) => (
-						<TableColumn key={column.key} align={column.align}>
+						<TableColumn
+							key={column.key}
+							align={column.align}
+							// Adjusting widths for better readability (larger Name column)
+							className={
+								column.key === "name" ? "w-[35%]" : column.key === "actions" ? "w-[22%]" : "w-auto"
+							}
+						>
 							{column.label}
 						</TableColumn>
 					)}
 				</TableHeader>
 				<TableBody
 					items={
-						dataList.map((item: any) => ({
+						filteredList.map((item: any) => ({
 							...item,
 							uid: item.index || item.name,
 							name: item.index || item.name,
@@ -478,7 +466,7 @@ function ManageIndices() {
 				<Tabs
 					aria-label="Indices Categories"
 					variant="underlined"
-					onSelectionChange={() => setSelectedKeys(new Set([]))} // Clear selections on tab switch
+					onSelectionChange={() => setSelectedKeys(new Set([]))}
 					classNames={{
 						tabList: "gap-6 w-full relative rounded-none p-0 border-b border-[#2F2F2F]",
 						cursor: "w-full bg-[#BDA0FF]",
