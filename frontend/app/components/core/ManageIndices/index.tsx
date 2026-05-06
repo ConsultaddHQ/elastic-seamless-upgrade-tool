@@ -13,7 +13,7 @@ import {
 } from "@heroui/react"
 import { Box, Typography } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { Convertshape2, InfoCircle, TickCircle, Warning2, Trash, Refresh, DocumentCopy } from "iconsax-react"
+import { Convertshape2, TickCircle, Warning2, Trash, Refresh, DocumentCopy } from "iconsax-react"
 import { useCallback, type Key, useState, useEffect, useMemo } from "react"
 import { useNavigate, useParams } from "react-router"
 import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
@@ -47,6 +47,7 @@ function ManageIndices() {
 
 	const [selectedKeys, setSelectedKeys] = useState<any>(new Set([]))
 
+	// Disable checkboxes for rows that are already processing or deleted
 	const disabledKeys = useMemo(() => {
 		return new Set([...deletedIndices, ...Object.keys(activeTasks)])
 	}, [deletedIndices, activeTasks])
@@ -67,9 +68,7 @@ function ManageIndices() {
 			toast.success("System features migration initiated.")
 			refetchMigrationInfo()
 		},
-		onError: (error: any) => {
-			toast.error(error?.message || "Failed to initiate system migration.")
-		},
+		onError: (error: any) => toast.error(error?.message || "Failed to initiate system migration."),
 	})
 
 	const { isPending: isReindexingSingle, mutate: reindexSingleIndex } = useMutation({
@@ -81,9 +80,7 @@ function ManageIndices() {
 				[variables.indexName]: { progressPercentage: 0, remainingDocs: 0, isCompleted: false },
 			}))
 		},
-		onError: (error: any) => {
-			toast.error(error?.message || "Failed to start reindex process.")
-		},
+		onError: (error: any) => toast.error(error?.message || "Failed to start reindex process."),
 		onSettled: () => setActiveActionIndex(null),
 	})
 
@@ -93,9 +90,7 @@ function ManageIndices() {
 		onSuccess: (data: any, variables) => {
 			setDeletedIndices((prev) => [...prev, variables.indexName])
 		},
-		onError: (error: any) => {
-			toast.error(error?.message || "Failed to delete index.")
-		},
+		onError: (error: any) => toast.error(error?.message || "Failed to delete index."),
 		onSettled: () => setActiveActionIndex(null),
 	})
 
@@ -157,7 +152,9 @@ function ManageIndices() {
 	const systemIndicesList = allIndices.filter((item: any) => item.systemIndex && !item.dataStream)
 	const customIndicesList = allIndices.filter((item: any) => !item.systemIndex && !item.dataStream)
 
-	// INDIVIDUAL ACTIONS
+	// =========================================================================
+	// ACTION HANDLERS
+	// =========================================================================
 	const handleReindex = (indexName: string) => {
 		if (clusterId) {
 			setActiveActionIndex(indexName)
@@ -174,42 +171,34 @@ function ManageIndices() {
 		}
 	}
 
-	// BULK ACTIONS
 	const handleBulkReindex = (filteredList: any[]) => {
 		if (!clusterId) return
-
 		const keysToProcess =
 			selectedKeys === "all" ? filteredList.map((i: any) => i.name) : (Array.from(selectedKeys) as string[])
-
 		const validKeys = keysToProcess.filter((name) => !activeTasks[name] && !deletedIndices.includes(name))
 
 		if (validKeys.length > 0) {
-			validKeys.forEach((name) => {
-				reindexSingleIndex({ clusterId, indexName: name })
-			})
+			validKeys.forEach((name) => reindexSingleIndex({ clusterId, indexName: name }))
 			toast.success(`Bulk reindex initiated for ${validKeys.length} indices`)
 		}
-
 		setSelectedKeys(new Set([]))
 	}
 
 	const handleBulkDelete = (filteredList: any[]) => {
 		if (!clusterId) return
-
 		const keysToProcess =
 			selectedKeys === "all" ? filteredList.map((i: any) => i.name) : (Array.from(selectedKeys) as string[])
-
 		const validKeys = keysToProcess.filter((name) => !activeTasks[name] && !deletedIndices.includes(name))
 
 		if (validKeys.length > 0) {
-			validKeys.forEach((name) => {
-				deleteSingleIndex({ clusterId, indexName: name })
-			})
+			validKeys.forEach((name) => deleteSingleIndex({ clusterId, indexName: name }))
 			toast.success(`Bulk delete initiated for ${validKeys.length} indices`)
 		}
-
 		setSelectedKeys(new Set([]))
 	}
+
+	// Intercept row clicks so clicking text doesn't select the checkbox
+	const stopClick = (e: React.MouseEvent) => e.stopPropagation()
 
 	const renderCell = useCallback(
 		(row: any, columnKey: Key) => {
@@ -222,7 +211,7 @@ function ManageIndices() {
 			switch (columnKey) {
 				case "name":
 					return (
-						<Box className="flex items-center gap-3 w-full">
+						<div onClick={stopClick} className="flex items-center gap-3 w-full cursor-default py-2 group">
 							<span className="text-[#ADADAD] font-medium break-all">{cellValue}</span>
 							<Tooltip content="Copy name" placement="top">
 								<button
@@ -231,24 +220,30 @@ function ManageIndices() {
 										navigator.clipboard.writeText(cellValue)
 										toast.success("Copied to clipboard", { duration: 2000 })
 									}}
-									className="p-1.5 rounded-md bg-[#2F2F2F]/40 text-[#6E6E6E] hover:bg-[#2F2F2F] hover:text-[#BDA0FF] transition-all flex-shrink-0"
+									className="opacity-0 group-hover:opacity-100 p-[5px] rounded border border-[#2F2F2F] bg-[#1E1E1E] text-[#ADADAD] hover:bg-[#BDA0FF]/10 hover:border-[#BDA0FF]/30 hover:text-[#BDA0FF] transition-all flex-shrink-0"
 								>
 									<DocumentCopy size="14" />
 								</button>
 							</Tooltip>
-						</Box>
+						</div>
 					)
 				case "docsCount":
 				case "size":
 				case "storageTier":
 				case "estimateSummary":
 				case "estimateTime":
-					return <span className="text-[#ADADAD]">{cellValue || "-"}</span>
+					return (
+						<div onClick={stopClick} className="w-full h-full flex items-center cursor-default">
+							<span className="text-[#ADADAD]">{cellValue || "-"}</span>
+						</div>
+					)
 				case "actions":
-					// If reindexing is actively happening, show progress bar
 					if (localProgress) {
 						return (
-							<Box className="flex flex-row items-center justify-end w-full h-full">
+							<div
+								onClick={stopClick}
+								className="flex flex-row items-center justify-end w-full h-full cursor-default"
+							>
 								<Box className="flex flex-col w-[200px] gap-1 justify-center">
 									<Box className="flex justify-between items-center w-full">
 										<Typography color="#BDA0FF" fontSize="12px" fontWeight="600" lineHeight="1">
@@ -271,20 +266,22 @@ function ManageIndices() {
 										{`${localProgress.remainingDocs.toLocaleString()} docs remaining`}
 									</Typography>
 								</Box>
-							</Box>
+							</div>
 						)
 					}
 
-					// Otherwise, show the buttons
 					return (
-						<Box className="flex flex-row items-center justify-end gap-3 w-full h-full">
+						<div
+							onClick={stopClick}
+							className="flex flex-row items-center justify-end gap-3 w-full h-full cursor-default"
+						>
 							<button
 								onClick={(e) => {
 									e.stopPropagation()
 									!isAnyActionRunning && handleDelete(row.name)
 								}}
 								disabled={isAnyActionRunning}
-								className={`flex items-center gap-[6px] px-3 py-[6px] rounded-lg border transition-all text-[12px] font-medium outline-none ${
+								className={`flex items-center justify-center gap-[6px] px-3 py-1.5 rounded-lg border transition-all text-[12px] font-medium outline-none ${
 									isAnyActionRunning
 										? "opacity-50 cursor-not-allowed border-[#FF6B6B]/20 bg-[#FF6B6B]/5 text-[#FF6B6B]/50"
 										: "cursor-pointer border-[#FF6B6B]/30 bg-[#FF6B6B]/10 hover:bg-[#FF6B6B]/20 hover:border-[#FF6B6B]/50 text-[#FF6B6B] active:scale-95"
@@ -300,7 +297,7 @@ function ManageIndices() {
 									isValidUpgradePath && !isAnyActionRunning && handleReindex(row.name)
 								}}
 								disabled={!isValidUpgradePath || isAnyActionRunning}
-								className={`flex items-center gap-[6px] px-3 py-[6px] rounded-lg border transition-all text-[12px] font-medium outline-none ${
+								className={`flex items-center justify-center gap-[6px] px-3 py-1.5 rounded-lg border transition-all text-[12px] font-medium outline-none ${
 									!isValidUpgradePath || isAnyActionRunning
 										? "opacity-50 cursor-not-allowed border-[#BDA0FF]/20 bg-[#BDA0FF]/5 text-[#BDA0FF]/50"
 										: "cursor-pointer border-[#BDA0FF]/30 bg-[#BDA0FF]/10 hover:bg-[#BDA0FF]/20 hover:border-[#BDA0FF]/50 text-[#BDA0FF] active:scale-95"
@@ -309,7 +306,7 @@ function ManageIndices() {
 								{isThisRowReindexing ? <Spinner size="sm" color="current" /> : <Refresh size="14" />}
 								<span>Reindex</span>
 							</button>
-						</Box>
+						</div>
 					)
 				default:
 					return cellValue
@@ -319,7 +316,7 @@ function ManageIndices() {
 	)
 
 	const renderIndicesTable = (dataList: any[], emptyTitle: string, emptySub: string) => {
-		// FILTER: Completely remove deleted and fully reindexed items from the array
+		// FILTER: Completely remove deleted and fully reindexed items from the UI array instantly
 		const filteredList = dataList.filter(
 			(item: any) => !deletedIndices.includes(item.name) && !activeTasks[item.name]?.isCompleted
 		)
@@ -361,7 +358,6 @@ function ManageIndices() {
 				removeWrapper
 				layout="fixed"
 				selectionMode="multiple"
-				selectionBehavior="toggle" // Restricts selection strictly to the checkbox click
 				selectedKeys={selectedKeys}
 				onSelectionChange={setSelectedKeys}
 				disabledKeys={disabledKeys}
@@ -379,9 +375,8 @@ function ManageIndices() {
 						<TableColumn
 							key={column.key}
 							align={column.align}
-							// Adjusting widths for better readability (larger Name column)
 							className={
-								column.key === "name" ? "w-[35%]" : column.key === "actions" ? "w-[22%]" : "w-auto"
+								column.key === "name" ? "w-[40%]" : column.key === "actions" ? "w-[24%]" : "w-auto"
 							}
 						>
 							{column.label}
