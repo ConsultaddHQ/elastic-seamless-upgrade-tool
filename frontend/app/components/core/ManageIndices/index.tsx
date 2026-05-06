@@ -13,7 +13,7 @@ import {
 } from "@heroui/react"
 import { Box, Typography } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { Convertshape2, TickCircle, Warning2, Trash, Refresh, DocumentCopy, Copy } from "iconsax-react"
+import { Convertshape2, TickCircle, Warning2, Trash, Refresh, DocumentCopy } from "iconsax-react"
 import { useCallback, type Key, useState, useEffect, useMemo } from "react"
 import { useNavigate, useParams } from "react-router"
 import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
@@ -89,6 +89,8 @@ function ManageIndices() {
 			clusterUpgradeApi.deleteIndex(data.clusterId, data.indexName),
 		onSuccess: (data: any, variables) => {
 			setDeletedIndices((prev) => [...prev, variables.indexName])
+			// Fetch new list immediately after deletion
+			refetchMigrationInfo()
 		},
 		onError: (error: any) => toast.error(error?.message || "Failed to delete index."),
 		onSettled: () => setActiveActionIndex(null),
@@ -131,14 +133,21 @@ function ManageIndices() {
 						return
 					}
 
+					const isCompleted = status.progressPercentage === 100
+
 					setActiveTasks((prev) => ({
 						...prev,
 						[indexName]: {
 							progressPercentage: status.progressPercentage || 0,
 							remainingDocs: status.remainingDocs || 0,
-							isCompleted: status.progressPercentage === 100,
+							isCompleted: isCompleted,
 						},
 					}))
+
+					// Fetch new list immediately after reindexing hits 100%
+					if (isCompleted) {
+						refetchMigrationInfo()
+					}
 				} catch (error) {
 					console.error(`Failed to fetch status for ${indexName}`, error)
 				}
@@ -222,7 +231,7 @@ function ManageIndices() {
 									}}
 									className="opacity-0 group-hover:opacity-100 p-[5px] rounded border border-[#2F2F2F] bg-[#1E1E1E] text-[#ADADAD] hover:bg-[#BDA0FF]/10 hover:border-[#BDA0FF]/30 hover:text-[#BDA0FF] transition-all flex-shrink-0"
 								>
-									<DocumentCopy size="14" color="#FF8A65" />
+									<DocumentCopy size="16" color="#FF8A65" />
 								</button>
 							</Tooltip>
 						</div>
@@ -324,7 +333,6 @@ function ManageIndices() {
 	)
 
 	const renderIndicesTable = (dataList: any[], emptyTitle: string, emptySub: string) => {
-		// FILTER: Completely remove deleted and fully reindexed items from the UI array instantly
 		const filteredList = dataList.filter(
 			(item: any) => !deletedIndices.includes(item.name) && !activeTasks[item.name]?.isCompleted
 		)
