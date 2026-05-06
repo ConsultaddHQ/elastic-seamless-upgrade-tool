@@ -166,7 +166,8 @@ public class IndexMigrationService {
         if (activeWriteAlias != null) {
           logger.info("Active write index detected [{}]. Rolling over alias [{}] before deletion.", indexName, activeWriteAlias);
 
-          boolean rolledOver = executeRollover(clusterId, activeWriteAlias);
+          boolean rolledOver = executeRollover(clusterId, activeWriteAlias, indexName);
+
           if (!rolledOver) {
             logger.error("Failed to rollover alias [{}]. Aborting deletion to prevent data pipeline corruption.", activeWriteAlias);
             return false; // Stop the deletion if the rollover failed!
@@ -512,30 +513,58 @@ public class IndexMigrationService {
 
   /**
    * Forces an immediate rollover for an alias or data stream.
+   * Includes smart-retry logic for legacy indices that lack the -000001 suffix.
    */
-  private boolean executeRollover(String clusterId, String targetName) {
-    logger.info("Executing forced rollover for [{}]", targetName);
+  private boolean executeRollover(String clusterId, String aliasName, String currentIndexName) {
+    logger.info("Executing forced rollover for alias [{}]", aliasName);
     try {
       var client = elasticsearchClientProvider.getClient(clusterId);
 
+      // Attempt standard rollover
       JsonNode response = client.execute(ApiRequest.builder(JsonNode.class)
           .post()
-          .uri("/" + targetName + "/_rollover")
-          .body("{}") // Empty body forces immediate rollover
+          .uri("/" + aliasName + "/_rollover")
+          .body("{}")
           .build());
 
       boolean rolledOver = response != null && response.path("rolled_over").asBoolean(false);
-
       if (rolledOver) {
-        logger.info("Successfully rolled over [{}]", targetName);
-      } else {
-        logger.warn("Rollover API called for [{}], but cluster reported rolled_over=false", targetName);
+        logger.info("Successfully rolled over [{}]", aliasName);
       }
-
       return rolledOver;
 
     } catch (Exception e) {
-      logger.error("Rollover failed for [{}]: {}", targetName, e.getMessage());
+      String errorMsg = e.getMessage();
+
+      // RETRY: If Elasticsearch complains about the missing number pattern, we force it!
+      if (errorMsg != null && errorMsg.contains("does not match pattern")) {
+        logger.warn("Index [{}] lacks a numeric suffix. Retrying rollover with explicit target name.", currentIndexName);
+
+        // Create the valid ILM pattern for the new index
+        String explicitTargetName = currentIndexName + "-000001";
+
+        try {
+          var client = elasticsearchClientProvider.getClient(clusterId);
+          JsonNode retryResponse = client.execute(ApiRequest.builder(JsonNode.class)
+              .post()
+              .uri("/" + aliasName + "/_rollover/" + explicitTargetName)
+              .body("{}")
+              .build());
+
+          boolean retryRolledOver = retryResponse != null && retryResponse.path("rolled_over").asBoolean(false);
+          if (retryRolledOver) {
+            logger.info("Successfully rolled over [{}] to explicit target [{}]", aliasName, explicitTargetName);
+          }
+          return retryRolledOver;
+
+        } catch (Exception retryEx) {
+          logger.error("Explicit rollover retry failed for [{}]: {}", aliasName, retryEx.getMessage());
+          return false;
+        }
+      }
+
+      // If it failed for any other reason, log it and abort
+      logger.error("Rollover failed for [{}]: {}", aliasName, errorMsg);
       return false;
     }
   }
