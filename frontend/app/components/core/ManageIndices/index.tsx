@@ -13,7 +13,7 @@ import {
 } from "@heroui/react"
 import { Box, Typography } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { Convertshape2, TickCircle, Warning2, Trash, Refresh, DocumentCopy } from "iconsax-react"
+import { Convertshape2, TickCircle, Warning2, Trash, Refresh, DocumentCopy, Copy } from "iconsax-react"
 import { useCallback, type Key, useState, useEffect, useMemo } from "react"
 import { useNavigate, useParams } from "react-router"
 import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
@@ -214,16 +214,15 @@ function ManageIndices() {
 						<div onClick={stopClick} className="flex items-center gap-3 w-full cursor-default py-2 group">
 							<span className="text-[#ADADAD] font-medium break-all">{cellValue}</span>
 							<Tooltip content="Copy name" placement="top">
-								<button
+								<Copy
 									onClick={(e) => {
 										e.stopPropagation()
 										navigator.clipboard.writeText(cellValue)
 										toast.success("Copied")
 									}}
-									className="p-1 rounded-md border border-[#2F2F2F] bg-[#1E1E1E]text-[#ADADAD] hover:bg-[#BDA0FF]/10 hover:text-[#BDA0FF] transition-all flex-shrink-0"
-								>
-									<DocumentCopy size="16" />
-								</button>
+									size="32"
+									color="#FF8A65"
+								/>
 							</Tooltip>
 						</div>
 					)
@@ -287,7 +286,11 @@ function ManageIndices() {
 										: "cursor-pointer border-[#FF6B6B]/30 bg-[#FF6B6B]/10 hover:bg-[#FF6B6B]/20 hover:border-[#FF6B6B]/50 text-[#FF6B6B] active:scale-95"
 								}`}
 							>
-								{isThisRowDeleting ? <Spinner size="sm" color="danger" /> : <Trash size="14" />}
+								{isThisRowDeleting ? (
+									<Spinner size="sm" color="danger" />
+								) : (
+									<Trash size="14" color="white" />
+								)}
 								<span>Delete</span>
 							</button>
 
@@ -303,7 +306,11 @@ function ManageIndices() {
 										: "cursor-pointer border-[#BDA0FF]/30 bg-[#BDA0FF]/10 hover:bg-[#BDA0FF]/20 hover:border-[#BDA0FF]/50 text-[#BDA0FF] active:scale-95"
 								}`}
 							>
-								{isThisRowReindexing ? <Spinner size="sm" color="current" /> : <Refresh size="14" />}
+								{isThisRowReindexing ? (
+									<Spinner size="sm" color="current" />
+								) : (
+									<Refresh size="14" color="white" />
+								)}
 								<span>Reindex</span>
 							</button>
 						</div>
@@ -334,7 +341,7 @@ function ManageIndices() {
 						onClick={() => handleBulkDelete(filteredList)}
 						className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#FF6B6B]/30 bg-[#FF6B6B]/10 text-[#FF6B6B] text-[13px] font-medium hover:bg-[#FF6B6B]/20 transition-all active:scale-95 outline-none"
 					>
-						<Trash size="14" />
+						<Trash color="white" size="14" />
 						Delete Selected
 					</button>
 					<button
@@ -346,7 +353,7 @@ function ManageIndices() {
 								: "bg-[#3A3A3A] border-[#2F2F2F] text-[#6E6E6E] cursor-not-allowed"
 						}`}
 					>
-						<Refresh size="14" variant="Bold" />
+						<Refresh color="white" size="14" variant="Bold" />
 						Reindex Selected
 					</button>
 				</Box>
