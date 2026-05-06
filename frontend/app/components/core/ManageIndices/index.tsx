@@ -13,7 +13,7 @@ import {
 } from "@heroui/react"
 import { Box, Typography } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { Convertshape2, InfoCircle, TickCircle, Warning2, Trash, Refresh } from "iconsax-react"
+import { Convertshape2, TickCircle, Warning2, Trash, Refresh } from "iconsax-react"
 import { useCallback, type Key, useState, useEffect } from "react"
 import { useNavigate, useParams } from "react-router"
 import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
@@ -31,7 +31,6 @@ const columns = [
 	{ key: "actions", label: "Actions", align: "end" as const },
 ]
 
-// Define our local progress state type
 type TaskProgress = {
 	progressPercentage: number
 	remainingDocs: number
@@ -43,10 +42,11 @@ function ManageIndices() {
 	const navigate = useNavigate()
 
 	const [deletedIndices, setDeletedIndices] = useState<string[]>([])
-
 	const [activeActionIndex, setActiveActionIndex] = useState<string | null>(null)
-
 	const [activeTasks, setActiveTasks] = useState<Record<string, TaskProgress>>({})
+
+	// Multi-Select State
+	const [selectedKeys, setSelectedKeys] = useState<any>(new Set([]))
 
 	const {
 		data: migrationInfo,
@@ -70,8 +70,7 @@ function ManageIndices() {
 		mutationFn: (data: { clusterId: string; indexName: string }) =>
 			clusterUpgradeApi.reindexSingle(data.clusterId, data.indexName),
 		onSuccess: (data: any, variables) => {
-			toast.success(data?.message || "Reindex started in background.")
-
+			toast.success(data?.message || `Reindex started for ${variables.indexName}`)
 			setActiveTasks((prev) => ({
 				...prev,
 				[variables.indexName]: { progressPercentage: 0, remainingDocs: 0, isCompleted: false },
@@ -84,16 +83,12 @@ function ManageIndices() {
 		mutationFn: (data: { clusterId: string; indexName: string }) =>
 			clusterUpgradeApi.deleteIndex(data.clusterId, data.indexName),
 		onSuccess: (data: any, variables) => {
-			toast.success(data?.message || "Index deleted successfully.")
-
+			toast.success(data?.message || `Index deleted: ${variables.indexName}`)
 			setDeletedIndices((prev) => [...prev, variables.indexName])
 		},
 		onSettled: () => setActiveActionIndex(null),
 	})
 
-	// =========================================================================
-	// SMART POLLING ARCHITECTURE
-	// =========================================================================
 	const systemIndicesStatus = migrationInfo?.systemIndices?.status
 	const isSystemMigrationInProgress = systemIndicesStatus === "IN_PROGRESS"
 	const isSystemMigrationCompleted =
@@ -101,21 +96,15 @@ function ManageIndices() {
 	const isValidUpgradePath = migrationInfo?.isValidUpgradePath
 
 	useEffect(() => {
-		// If the system migration is currently running, poll globally to get its status
 		if (isSystemMigrationInProgress) {
-			const interval = setInterval(() => {
-				refetchMigrationInfo()
-			}, 2000)
-
+			const interval = setInterval(() => refetchMigrationInfo(), 2000)
 			return () => clearInterval(interval)
 		}
 	}, [isSystemMigrationInProgress, refetchMigrationInfo])
 
 	useEffect(() => {
 		if (!clusterId) return
-
 		const indicesToPoll = Object.keys(activeTasks).filter((name) => !activeTasks[name].isCompleted)
-
 		if (indicesToPoll.length === 0) return
 
 		const intervalId = setInterval(() => {
@@ -123,26 +112,20 @@ function ManageIndices() {
 				try {
 					const status = await clusterUpgradeApi.checkReindexStatus(clusterId, indexName)
 
-					// Detect if the backend aborted the task (e.g., 0 doc failure)
-					// If progress is 0 and the backend returns no taskId, it was killed.
 					if (status.progressPercentage === 0 && !status.taskId) {
 						toast.error(
-							`Reindex aborted for ${indexName}. It is likely empty (0 docs). Please use the Delete button instead.`,
+							`Reindex aborted for ${indexName}. It is likely empty. Please use Delete instead.`,
 							{ duration: 6000 }
 						)
-
-						// Remove the ghost task from the UI state to reset the row
 						setActiveTasks((prev) => {
 							const newTasks = { ...prev }
 							delete newTasks[indexName]
 							return newTasks
 						})
-
 						setActiveActionIndex(null)
-						return // Stop processing this row
+						return
 					}
 
-					// Standard progress update
 					setActiveTasks((prev) => ({
 						...prev,
 						[indexName]: {
@@ -156,18 +139,11 @@ function ManageIndices() {
 				}
 			})
 		}, 4000)
-
 		return () => clearInterval(intervalId)
 	}, [activeTasks, clusterId])
 
-	// =========================================================================
-
 	const allIndices = migrationInfo?.reindexNeedingIndices || []
-
-	// 1. Extract Data Streams
 	const dataStreamList = allIndices.filter((item: any) => item.dataStream)
-
-	// 2. Extract System & Custom (Ensure we exclude data streams from these tabs)
 	const systemIndicesList = allIndices.filter((item: any) => item.systemIndex && !item.dataStream)
 	const customIndicesList = allIndices.filter((item: any) => !item.systemIndex && !item.dataStream)
 
@@ -185,6 +161,46 @@ function ManageIndices() {
 		}
 	}
 
+	// Bulk Action Handlers
+	const handleBulkReindex = (currentList: any[]) => {
+		if (!clusterId) return
+
+		let keysToProcess: string[] = []
+		if (selectedKeys === "all") {
+			keysToProcess = currentList.map((i: any) => i.name)
+		} else {
+			keysToProcess = Array.from(selectedKeys) as string[]
+		}
+
+		keysToProcess.forEach((name) => {
+			// Only reindex if not already processing or deleted
+			if (!activeTasks[name] && !deletedIndices.includes(name)) {
+				reindexSingleIndex({ clusterId, indexName: name })
+			}
+		})
+
+		setSelectedKeys(new Set([])) // Clear checkboxes after firing
+	}
+
+	const handleBulkDelete = (currentList: any[]) => {
+		if (!clusterId) return
+
+		let keysToProcess: string[] = []
+		if (selectedKeys === "all") {
+			keysToProcess = currentList.map((i: any) => i.name)
+		} else {
+			keysToProcess = Array.from(selectedKeys) as string[]
+		}
+
+		keysToProcess.forEach((name) => {
+			if (!activeTasks[name] && !deletedIndices.includes(name)) {
+				deleteSingleIndex({ clusterId, indexName: name })
+			}
+		})
+
+		setSelectedKeys(new Set([])) // Clear checkboxes after firing
+	}
+
 	const renderCell = useCallback(
 		(row: any, columnKey: Key) => {
 			const cellValue = row[columnKey as keyof typeof row]
@@ -199,7 +215,6 @@ function ManageIndices() {
 				case "estimateTime":
 					return <span className="text-[#ADADAD]">{cellValue || "-"}</span>
 				case "actions":
-					// 1. Handle Deleted State First
 					if (deletedIndices.includes(row.name)) {
 						return (
 							<Box className="flex flex-row items-center justify-end w-full h-full">
@@ -217,10 +232,8 @@ function ManageIndices() {
 					const isThisRowDeleting = isDeleting && activeActionIndex === row.name
 					const isAnyActionRunning = isReindexingSingle || isDeleting
 
-					// 2. Handle Reindexing/Completed Progress State
 					if (localProgress) {
 						const isTaskCompleted = localProgress.isCompleted
-
 						return (
 							<Box className="flex flex-row items-center justify-end w-full h-full">
 								<Box className="flex flex-col w-[200px] gap-1 justify-center">
@@ -258,7 +271,6 @@ function ManageIndices() {
 						)
 					}
 
-					// 3. Default State (Buttons)
 					return (
 						<Box className="flex flex-row items-center justify-end gap-2 w-full h-full">
 							<Tooltip content="Delete Data (Permanent)" placement="top">
@@ -277,7 +289,6 @@ function ManageIndices() {
 									)}
 								</Box>
 							</Tooltip>
-
 							<Tooltip content="Convert to new format" placement="top">
 								<Box>
 									<OutlinedBorderButton
@@ -304,59 +315,98 @@ function ManageIndices() {
 		[isValidUpgradePath, isReindexingSingle, isDeleting, activeActionIndex, activeTasks, deletedIndices]
 	)
 
-	const renderIndicesTable = (dataList: any[], emptyTitle: string, emptySub: string) => (
-		<Table
-			removeWrapper
-			layout="fixed"
-			classNames={{
-				base: "w-full h-auto",
-				table: "w-full min-w-full",
-				th: "text-[#9D90BB] text-xs bg-[#161616] first:rounded-l-xl last:rounded-r-xl border-none",
-				td: "text-sm font-normal leading-normal border-b-[0.5px] border-solid border-[#1E1E1E] first:rounded-l-xl last:rounded-r-xl",
-				tr: "[&>th]:h-[42px] [&>td]:h-[60px] hover:bg-[#28282A] transition-colors",
-			}}
-		>
-			<TableHeader columns={columns}>
-				{(column) => (
-					<TableColumn key={column.key} align={column.align}>
-						{column.label}
-					</TableColumn>
-				)}
-			</TableHeader>
-			<TableBody
-				items={
-					dataList.map((item: any) => ({
-						...item,
-						uid: item.index || item.name,
-						name: item.index || item.name,
-					})) || []
-				}
-				isLoading={isLoadingMigrationInfo}
-				loadingContent={<Spinner color="secondary" />}
-				emptyContent={
-					<Box className="flex flex-col items-center h-full w-full gap-4 py-10">
-						<Box className="flex items-center justify-center bg-[#1A1A1A] rounded-[10px] size-12">
-							<TickCircle size="24px" color="#52D97F" />
-						</Box>
-						<Box className="flex flex-col items-center gap-[5px]">
-							<Typography color="#F1F0F0" fontSize="16px" fontWeight="400">
-								{emptyTitle}
-							</Typography>
-							<Typography color="#A6A6A6" fontSize="12px" fontWeight="400">
-								{emptySub}
-							</Typography>
-						</Box>
-					</Box>
-				}
+	const renderIndicesTable = (dataList: any[], emptyTitle: string, emptySub: string) => {
+		// Build Dynamic Toolbar when items are selected
+		const hasSelection = selectedKeys === "all" || selectedKeys.size > 0
+		const selectedCount = selectedKeys === "all" ? dataList.length : selectedKeys.size
+
+		const topContent = hasSelection ? (
+			<Box className="flex flex-row items-center justify-between w-full bg-[#BDA0FF]/10 border border-[#BDA0FF]/20 rounded-xl p-3 mb-2 animate-appearance-in">
+				<Typography color="#BDA0FF" fontSize="14px" fontWeight="600">
+					{selectedCount} item{selectedCount !== 1 ? "s" : ""} selected
+				</Typography>
+				<Box className="flex items-center gap-3">
+					<button
+						onClick={() => handleBulkDelete(dataList)}
+						className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#FF6B6B]/30 bg-[#FF6B6B]/10 text-[#FF6B6B] text-[13px] font-medium hover:bg-[#FF6B6B]/20 transition-all"
+					>
+						<Trash size="14" />
+						Delete Selected
+					</button>
+					<button
+						onClick={() => handleBulkReindex(dataList)}
+						disabled={!isValidUpgradePath}
+						className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[13px] font-medium transition-all ${
+							isValidUpgradePath
+								? "bg-[#BDA0FF] border-[#BDA0FF] text-[#0D0D0D] hover:bg-[#A886FF]"
+								: "bg-[#3A3A3A] border-[#2F2F2F] text-[#6E6E6E] cursor-not-allowed"
+						}`}
+					>
+						<Refresh size="14" variant="Bold" />
+						Reindex Selected
+					</button>
+				</Box>
+			</Box>
+		) : null
+
+		return (
+			<Table
+				removeWrapper
+				layout="fixed"
+				selectionMode="multiple" // Enables checkboxes
+				selectedKeys={selectedKeys}
+				onSelectionChange={setSelectedKeys}
+				topContent={topContent}
+				classNames={{
+					base: "w-full h-auto",
+					table: "w-full min-w-full",
+					th: "text-[#9D90BB] text-xs bg-[#161616] first:rounded-l-xl last:rounded-r-xl border-none",
+					td: "text-sm font-normal leading-normal border-b-[0.5px] border-solid border-[#1E1E1E] first:rounded-l-xl last:rounded-r-xl",
+					tr: "[&>th]:h-[42px] [&>td]:h-[60px] hover:bg-[#28282A] transition-colors group-data-[selected=true]:bg-[#BDA0FF]/5",
+				}}
 			>
-				{(item: any) => (
-					<TableRow key={item.uid}>
-						{(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
-					</TableRow>
-				)}
-			</TableBody>
-		</Table>
-	)
+				<TableHeader columns={columns}>
+					{(column) => (
+						<TableColumn key={column.key} align={column.align}>
+							{column.label}
+						</TableColumn>
+					)}
+				</TableHeader>
+				<TableBody
+					items={
+						dataList.map((item: any) => ({
+							...item,
+							uid: item.index || item.name,
+							name: item.index || item.name,
+						})) || []
+					}
+					isLoading={isLoadingMigrationInfo}
+					loadingContent={<Spinner color="secondary" />}
+					emptyContent={
+						<Box className="flex flex-col items-center h-full w-full gap-4 py-10">
+							<Box className="flex items-center justify-center bg-[#1A1A1A] rounded-[10px] size-12">
+								<TickCircle size="24px" color="#52D97F" />
+							</Box>
+							<Box className="flex flex-col items-center gap-[5px]">
+								<Typography color="#F1F0F0" fontSize="16px" fontWeight="400">
+									{emptyTitle}
+								</Typography>
+								<Typography color="#A6A6A6" fontSize="12px" fontWeight="400">
+									{emptySub}
+								</Typography>
+							</Box>
+						</Box>
+					}
+				>
+					{(item: any) => (
+						<TableRow key={item.uid}>
+							{(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
+						</TableRow>
+					)}
+				</TableBody>
+			</Table>
+		)
+	}
 
 	return (
 		<Box className="flex flex-col w-full min-h-full gap-6 pb-10">
@@ -382,9 +432,7 @@ function ManageIndices() {
 				</Typography>
 				<Typography color="#A6A6A6" fontSize="14px" fontWeight="400" className="max-w-7xl">
 					Before upgrading your cluster, older data formats need to be converted to match the new system
-					requirements. This conversion process is called <strong>Reindexing</strong>. Below, you can
-					automatically migrate system configurations and manually convert your application data so everything
-					works smoothly after the upgrade.
+					requirements.
 				</Typography>
 			</Box>
 
@@ -402,6 +450,7 @@ function ManageIndices() {
 				<Tabs
 					aria-label="Indices Categories"
 					variant="underlined"
+					onSelectionChange={() => setSelectedKeys(new Set([]))} // Clear selections on tab switch
 					classNames={{
 						tabList: "gap-6 w-full relative rounded-none p-0 border-b border-[#2F2F2F]",
 						cursor: "w-full bg-[#BDA0FF]",
@@ -416,26 +465,12 @@ function ManageIndices() {
 									<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
 										Your Application Data
 									</Typography>
-									<Tooltip
-										content="Indices created by your applications and data ingestion pipelines."
-										placement="top"
-									>
-										<Box className="cursor-pointer">
-											<InfoCircle size="16" color="#ADADAD" />
-										</Box>
-									</Tooltip>
 								</Box>
-								<Typography color="#6E6E6E" fontSize="13px" fontWeight="400">
-									This is your actual business data and application logs. You must manually initiate a{" "}
-									<strong>Reindex</strong> for these older indices so your applications can continue
-									reading them after the upgrade. Unneeded logs can safely be deleted.
-								</Typography>
 							</Box>
-
 							{renderIndicesTable(
 								customIndicesList,
 								"Application Data Ready",
-								"All of your custom data is already compatible with the target version."
+								"All of your custom data is already compatible."
 							)}
 						</Box>
 					</Tab>
@@ -444,27 +479,10 @@ function ManageIndices() {
 						<Box className="flex flex-col gap-6 pt-4">
 							<Box className="flex flex-row justify-between items-start">
 								<Box className="flex flex-col gap-1 max-w-4xl">
-									<Box className="flex flex-row items-center gap-2">
-										<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
-											Internal System Data
-										</Typography>
-										<Tooltip
-											content="Hidden indices that store Kibana dashboards, users, and automated tasks."
-											placement="top"
-										>
-											<Box className="cursor-pointer">
-												<InfoCircle size="16" color="#ADADAD" />
-											</Box>
-										</Tooltip>
-									</Box>
-									<Typography color="#6E6E6E" fontSize="13px" fontWeight="400">
-										These indices power the internal mechanics of your cluster. Click{" "}
-										<strong>Migrate</strong> to let the system automatically update standard
-										configurations. Any leftover legacy system files shown in the table below must
-										be manually reindexed or deleted.
+									<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
+										Internal System Data
 									</Typography>
 								</Box>
-
 								<Box className="pt-2">
 									{isSystemMigrationInProgress ? (
 										<Box className="flex flex-row w-fit items-center gap-2 px-[12px] py-[6px] rounded-3xl bg-[#BDA0FF]/10 text-[#BDA0FF] border border-[#BDA0FF]/20">
@@ -472,24 +490,16 @@ function ManageIndices() {
 											<span className="text-[13px] font-medium">Migrating System...</span>
 										</Box>
 									) : !isSystemMigrationCompleted || !isValidUpgradePath ? (
-										<Tooltip
-											content={!isValidUpgradePath ? "Cluster is in view only mode" : null}
-											isDisabled={!!isValidUpgradePath}
-											placement="top"
+										<OutlinedBorderButton
+											disabled={
+												!isValidUpgradePath ||
+												isMigratingSystemFeatures ||
+												systemIndicesStatus === "MIGRATION_UNAVAILABLE"
+											}
+											onClick={() => migrateSystemFeatures({ clusterId: clusterId! })}
 										>
-											<Box>
-												<OutlinedBorderButton
-													disabled={
-														!isValidUpgradePath ||
-														isMigratingSystemFeatures ||
-														systemIndicesStatus === "MIGRATION_UNAVAILABLE"
-													}
-													onClick={() => migrateSystemFeatures({ clusterId: clusterId! })}
-												>
-													Auto-Migrate System
-												</OutlinedBorderButton>
-											</Box>
-										</Tooltip>
+											Auto-Migrate System
+										</OutlinedBorderButton>
 									) : (
 										<Box className="flex flex-row w-fit items-center gap-2 px-[7px] py-[5px] rounded-3xl bg-[#52D97F21] text-[#52D97F]">
 											<TickCircle size="16" color="#52D97F" variant="Bold" />
@@ -498,7 +508,6 @@ function ManageIndices() {
 									)}
 								</Box>
 							</Box>
-
 							{renderIndicesTable(
 								systemIndicesList,
 								"System Data Ready",
@@ -510,30 +519,14 @@ function ManageIndices() {
 					<Tab key="data-streams" title={`Data Streams (${dataStreamList.length})`}>
 						<Box className="flex flex-col gap-6 pt-4">
 							<Box className="flex flex-col gap-1 max-w-7xl">
-								<Box className="flex flex-row items-center gap-2">
-									<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
-										Data Streams
-									</Typography>
-									<Tooltip
-										content="Time-series data append-only streams used for logs and metrics."
-										placement="top"
-									>
-										<Box className="cursor-pointer">
-											<InfoCircle size="16" color="#ADADAD" />
-										</Box>
-									</Tooltip>
-								</Box>
-								<Typography color="#6E6E6E" fontSize="13px" fontWeight="400">
-									These are your continuous time-series data streams. Initiating a{" "}
-									<strong>Reindex</strong> will utilize the native Data Stream API to automatically
-									rollover and update backing indices behind the scenes with zero downtime.
+								<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
+									Data Streams
 								</Typography>
 							</Box>
-
 							{renderIndicesTable(
 								dataStreamList,
 								"Data Streams Ready",
-								"All of your data streams are already compatible with the target version."
+								"All of your data streams are already compatible."
 							)}
 						</Box>
 					</Tab>
