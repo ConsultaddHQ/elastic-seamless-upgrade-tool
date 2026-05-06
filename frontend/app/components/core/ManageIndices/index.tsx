@@ -222,7 +222,7 @@ function ManageIndices() {
 									}}
 									className="opacity-0 group-hover:opacity-100 p-[5px] rounded border border-[#2F2F2F] bg-[#1E1E1E] text-[#ADADAD] hover:bg-[#BDA0FF]/10 hover:border-[#BDA0FF]/30 hover:text-[#BDA0FF] transition-all flex-shrink-0"
 								>
-									<DocumentCopy size="14" color="text-blue-600" />
+									<DocumentCopy size="14" color="#FF8A65" />
 								</button>
 							</Tooltip>
 						</div>
