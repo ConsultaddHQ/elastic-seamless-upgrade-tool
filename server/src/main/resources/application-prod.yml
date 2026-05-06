@@ -5,4 +5,4 @@ spring:
       database: seamless-upgrade
 logging:
   level:
-    root: WARN
+    root: INFO
