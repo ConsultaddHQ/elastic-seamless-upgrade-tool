@@ -172,7 +172,7 @@ public class IndexUtils {
 
   /**
    * Find the parent data stream of any backing index.
-   * Calls GET /<indexName> and extracts the hidden "data_stream" metadata field.
+   * Calls GET /indexName and extract the hidden "data_stream" metadata field.
    *
    * @return The parent data stream name, or null if it is a standard index.
    */
