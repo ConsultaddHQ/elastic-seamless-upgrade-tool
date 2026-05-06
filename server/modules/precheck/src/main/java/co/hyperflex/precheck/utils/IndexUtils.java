@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class IndexUtils {
-  private static final Logger log = LoggerFactory.getLogger(IndexUtils.class);
+  private static final Logger logger = LoggerFactory.getLogger(IndexUtils.class);
   private static final Map<String, Integer> ES_TO_LUCENE = Map.of("5", 6, "6", 7, "7", 8, "8", 9, "9", 10);
   // Thresholds for Document Count
   private static final long DOCS_HARD_THRESHOLD = 5_000_000L;
@@ -60,7 +60,7 @@ public class IndexUtils {
 
             int major = Integer.parseInt(versionStr.split("\\.")[0]);
             if (major < minAllowed) {
-              log.info("Index [{}] requires reindexing (lucene={}, minAllowed={})", indexName, major, minAllowed);
+              logger.info("Index [{}] requires reindexing (lucene={}, minAllowed={})", indexName, major, minAllowed);
               return false; // reindex required
             }
           }
@@ -70,7 +70,7 @@ public class IndexUtils {
       return true; // compatible
 
     } catch (Exception e) {
-      log.error("Skipping index : [{}], Error Message : {} ", indexName, e.getMessage());
+      logger.error("Skipping index : [{}], Error Message : {} ", indexName, e.getMessage());
       return true;
     }
   }
@@ -142,7 +142,7 @@ public class IndexUtils {
         return (long) Double.parseDouble(lowerStr);
       }
     } catch (NumberFormatException e) {
-      log.warn("Failed to parse byte size string: {}", sizeStr);
+      logger.warn("Failed to parse byte size string: {}", sizeStr);
       return 0L;
     }
   }
@@ -168,5 +168,38 @@ public class IndexUtils {
       // it means this is just a standard index.
       return false;
     }
+  }
+
+  /**
+   * Find the parent data stream of any backing index.
+   * Calls GET /<indexName> and extracts the hidden "data_stream" metadata field.
+   *
+   * @return The parent data stream name, or null if it is a standard index.
+   */
+  public String getParentDataStreamName(String clusterId, String indexName) {
+    try {
+      var client = elasticsearchClientProvider.getClient(clusterId);
+
+      // Call GET /<indexName>
+      JsonNode response = client.execute(ApiRequest.builder(JsonNode.class)
+          .get()
+          .uri("/" + indexName)
+          .build());
+
+      // Navigate to the index object in the JSON
+      if (response != null && response.has(indexName)) {
+        JsonNode indexMetadata = response.get(indexName);
+
+        // Check if the "data_stream" field exists at the root level
+        if (indexMetadata.has("data_stream")) {
+          return indexMetadata.path("data_stream").asText();
+        }
+      }
+    } catch (Exception e) {
+      logger.error("Failed to fetch data stream metadata for index [{}]: {}", indexName, e.getMessage());
+    }
+
+    // Returns null if the API fails or if it's just a normal index (not a backing index)
+    return null;
   }
 }

@@ -52,16 +52,24 @@ public class IndexMigrationService {
     GetElasticDeprecationResponse deprecations = client.getDeprecation();
 
     Set<String> incompatibleIndices = new HashSet<>();
+    Set<String> incompatibleDataStreams = new HashSet<>();
+
     if (deprecations.indexSettings() != null) {
-      incompatibleIndices.addAll(deprecations.indexSettings().keySet());
+
+      for (String idx : deprecations.indexSettings().keySet()) {
+        if (idx.contains(".ds-")) {
+          incompatibleDataStreams.add(indexUtils.getParentDataStreamName(clusterId, idx));
+        } else {
+          incompatibleIndices.add(idx);
+        }
+      }
     }
 
-    Set<String> incompatibleDataStreams = new HashSet<>();
     if (deprecations.dataStreams() != null) {
       incompatibleDataStreams.addAll(deprecations.dataStreams().keySet());
     }
 
-    // 2. Fetch Settings specifically to keep the UI's Storage Tier column populated
+    // 2. Fetch Settings specifically to Get Storage Tier
     String settingsUri =
         "/_all/_settings?filter_path=**.settings.index.routing.allocation.include._tier_preference&expand_wildcards=hidden,all";
     JsonNode settingsResponse = client.execute(ApiRequest.builder(JsonNode.class).get().uri(settingsUri).build());
@@ -103,9 +111,7 @@ public class IndexMigrationService {
 
         if (statsResponse != null && statsResponse.has("_all")) {
           JsonNode primaries = statsResponse.path("_all").path("primaries");
-
           long count = primaries.path("docs").path("count").asLong(0L);
-
           String size = primaries.path("store").path("size").asText("0b");
 
           dsCount = String.valueOf(count);
