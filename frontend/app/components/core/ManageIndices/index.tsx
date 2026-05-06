@@ -218,11 +218,11 @@ function ManageIndices() {
 									onClick={(e) => {
 										e.stopPropagation()
 										navigator.clipboard.writeText(cellValue)
-										toast.success("Copied to clipboard", { duration: 2000 })
+										toast.success("Copied")
 									}}
-									className="opacity-0 group-hover:opacity-100 p-[5px] rounded border border-[#2F2F2F] bg-[#1E1E1E] text-[#ADADAD] hover:bg-[#BDA0FF]/10 hover:border-[#BDA0FF]/30 hover:text-[#BDA0FF] transition-all flex-shrink-0"
+									className="p-1 rounded-md border border-[#2F2F2F] bg-[#1E1E1E]text-[#ADADAD] hover:bg-[#BDA0FF]/10 hover:text-[#BDA0FF] transition-all flex-shrink-0"
 								>
-									<DocumentCopy size="14" />
+									<DocumentCopy size="16" />
 								</button>
 							</Tooltip>
 						</div>
@@ -355,6 +355,9 @@ function ManageIndices() {
 
 		return (
 			<Table
+				selectionBehavior="toggle"
+				disallowEmptySelection={false}
+				onRowAction={() => {}} // disables row click selection
 				removeWrapper
 				layout="fixed"
 				selectionMode="multiple"
