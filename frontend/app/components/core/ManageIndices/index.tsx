@@ -62,6 +62,37 @@ function ManageIndices() {
 		enabled: !!clusterId,
 	})
 
+	// Restore progress bars if the user hard-refreshes the page
+	useEffect(() => {
+		if (migrationInfo?.reindexNeedingIndices) {
+			const restoredTasks: Record<string, TaskProgress> = {}
+
+			migrationInfo.reindexNeedingIndices.forEach((item: any) => {
+				if (item.progress && item.progress.isReindexing) {
+					restoredTasks[item.name] = {
+						progressPercentage: item.progress.progressPercentage || 0,
+						remainingDocs: item.progress.remainingDocs || 0,
+						isCompleted: false,
+					}
+				}
+			})
+
+			if (Object.keys(restoredTasks).length > 0) {
+				setActiveTasks((prev) => {
+					const merged = { ...prev }
+					let hasChanges = false
+					Object.keys(restoredTasks).forEach((key) => {
+						if (!merged[key]) {
+							merged[key] = restoredTasks[key]
+							hasChanges = true
+						}
+					})
+					return hasChanges ? merged : prev
+				})
+			}
+		}
+	}, [migrationInfo])
+
 	const { isPending: isMigratingSystemFeatures, mutate: migrateSystemFeatures } = useMutation({
 		mutationFn: (data: { clusterId: string }) => clusterUpgradeApi.migrateSystemFeatures(data.clusterId),
 		onSuccess: () => {
@@ -88,8 +119,9 @@ function ManageIndices() {
 		mutationFn: (data: { clusterId: string; indexName: string }) =>
 			clusterUpgradeApi.deleteIndex(data.clusterId, data.indexName),
 		onSuccess: (data: any, variables) => {
+			// Hides it locally instantly
 			setDeletedIndices((prev) => [...prev, variables.indexName])
-			// Fetch new list immediately after deletion
+			// Updates the list from the backend
 			refetchMigrationInfo()
 		},
 		onError: (error: any) => toast.error(error?.message || "Failed to delete index."),
@@ -144,7 +176,7 @@ function ManageIndices() {
 						},
 					}))
 
-					// Fetch new list immediately after reindexing hits 100%
+					// Remove from UI instantly and fetch new data from backend!
 					if (isCompleted) {
 						refetchMigrationInfo()
 					}
@@ -161,9 +193,7 @@ function ManageIndices() {
 	const systemIndicesList = allIndices.filter((item: any) => item.systemIndex && !item.dataStream)
 	const customIndicesList = allIndices.filter((item: any) => !item.systemIndex && !item.dataStream)
 
-	// =========================================================================
 	// ACTION HANDLERS
-	// =========================================================================
 	const handleReindex = (indexName: string) => {
 		if (clusterId) {
 			setActiveActionIndex(indexName)
@@ -206,7 +236,6 @@ function ManageIndices() {
 		setSelectedKeys(new Set([]))
 	}
 
-	// Intercept row clicks so clicking text doesn't select the checkbox
 	const stopClick = (e: React.MouseEvent) => e.stopPropagation()
 
 	const renderCell = useCallback(
@@ -222,7 +251,7 @@ function ManageIndices() {
 					return (
 						<div onClick={stopClick} className="flex items-center gap-3 w-full cursor-default py-2 group">
 							<span className="text-[#ADADAD] font-medium break-all">{cellValue}</span>
-							<Tooltip content="Copy name" placement="top">
+							<Tooltip content="copy name" placement="top">
 								<button
 									onClick={(e) => {
 										e.stopPropagation()
@@ -373,7 +402,7 @@ function ManageIndices() {
 			<Table
 				selectionBehavior="toggle"
 				disallowEmptySelection={false}
-				onRowAction={() => {}} // disables row click selection
+				onRowAction={() => {}}
 				removeWrapper
 				layout="fixed"
 				selectionMode="multiple"
@@ -395,7 +424,15 @@ function ManageIndices() {
 							key={column.key}
 							align={column.align}
 							className={
-								column.key === "name" ? "w-[40%]" : column.key === "actions" ? "w-[24%]" : "w-auto"
+								column.key === "name"
+									? "w-[25%]"
+									: column.key === "estimateSummary"
+									? "w-[15%]"
+									: column.key === "estimateTime"
+									? "w-[15%]"
+									: column.key === "actions"
+									? "w-[18%]"
+									: "w-[9%]"
 							}
 						>
 							{column.label}
