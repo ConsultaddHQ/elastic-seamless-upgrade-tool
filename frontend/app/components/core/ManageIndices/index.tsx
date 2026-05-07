@@ -62,7 +62,9 @@ function ManageIndices() {
 		enabled: !!clusterId,
 	})
 
-	// Restore progress bars if the user hard-refreshes the page
+	// =========================================================================
+	// STATE SYNC: Restore progress bars if the user hard-refreshes the page
+	// =========================================================================
 	useEffect(() => {
 		if (migrationInfo?.reindexNeedingIndices) {
 			const restoredTasks: Record<string, TaskProgress> = {}
@@ -119,9 +121,7 @@ function ManageIndices() {
 		mutationFn: (data: { clusterId: string; indexName: string }) =>
 			clusterUpgradeApi.deleteIndex(data.clusterId, data.indexName),
 		onSuccess: (data: any, variables) => {
-			// Hides it locally instantly
 			setDeletedIndices((prev) => [...prev, variables.indexName])
-			// Updates the list from the backend
 			refetchMigrationInfo()
 		},
 		onError: (error: any) => toast.error(error?.message || "Failed to delete index."),
@@ -176,7 +176,6 @@ function ManageIndices() {
 						},
 					}))
 
-					// Remove from UI instantly and fetch new data from backend!
 					if (isCompleted) {
 						refetchMigrationInfo()
 					}
@@ -193,7 +192,6 @@ function ManageIndices() {
 	const systemIndicesList = allIndices.filter((item: any) => item.systemIndex && !item.dataStream)
 	const customIndicesList = allIndices.filter((item: any) => !item.systemIndex && !item.dataStream)
 
-	// ACTION HANDLERS
 	const handleReindex = (indexName: string) => {
 		if (clusterId) {
 			setActiveActionIndex(indexName)
@@ -249,7 +247,10 @@ function ManageIndices() {
 			switch (columnKey) {
 				case "name":
 					return (
-						<div onClick={stopClick} className="flex items-center gap-3 w-full cursor-default py-2 group">
+						<div
+							onClick={stopClick}
+							className="flex items-center gap-3 w-full cursor-default py-2 group pl-4"
+						>
 							<span className="text-[#ADADAD] font-medium break-all">{cellValue}</span>
 							<Tooltip content="copy name" placement="top">
 								<button
@@ -425,14 +426,14 @@ function ManageIndices() {
 							align={column.align}
 							className={
 								column.key === "name"
-									? "w-[25%]"
+									? "w-[24%] pl-4"
 									: column.key === "estimateSummary"
-									? "w-[15%]"
+									? "w-[14%]"
 									: column.key === "estimateTime"
-									? "w-[15%]"
+									? "w-[14%]"
 									: column.key === "actions"
 									? "w-[18%]"
-									: "w-[9%]"
+									: "w-[8%]"
 							}
 						>
 							{column.label}
