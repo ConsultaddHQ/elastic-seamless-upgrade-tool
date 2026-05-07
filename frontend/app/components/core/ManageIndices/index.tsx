@@ -177,6 +177,7 @@ function ManageIndices() {
 					}))
 
 					if (isCompleted) {
+						toast.success(`Reindex completed for ${indexName}`)
 						refetchMigrationInfo()
 					}
 				} catch (error) {
