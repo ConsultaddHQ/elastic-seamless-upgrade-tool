@@ -226,10 +226,16 @@ public class IndexMigrationService {
   public boolean safeReindexIndexAsync(String clusterId, String indexName) {
     logger.info("Initiating SAFE ASYNC reindex for [{}]", indexName);
 
+    // 1. Empty Index Check
+    if (indexUtils.getDocumentCount(clusterId, indexName) == 0L) {
+      logger.error("Index [{}] has 0 documents. Reindex aborted.", indexName);
+      throw new RuntimeException("Cannot reindex an empty index (0 documents). Please use the Delete button instead.");
+    }
+
     try {
       var client = elasticsearchClientProvider.getClient(clusterId);
 
-      // 1. NATIVE DATA STREAM REINDEX
+      // 2. NATIVE DATA STREAM REINDEX
       if (indexUtils.isDataStream(clusterId, indexName)) {
         logger.info("Detected Data Stream. Using official Migration Reindex API for [{}]", indexName);
 
@@ -240,7 +246,7 @@ public class IndexMigrationService {
             }
             """, indexName);
 
-        JsonNode response = client.execute(ApiRequest.builder(JsonNode.class)
+        client.execute(ApiRequest.builder(JsonNode.class)
             .post()
             .uri("/_migration/reindex")
             .body(body)
@@ -252,13 +258,11 @@ public class IndexMigrationService {
         return true;
       }
 
-      // 2. STANDARD INDEX REINDEX
+      // 3. STANDARD INDEX REINDEX
       String destIndexName = indexName + "-reindexed";
 
-      // Lock source index
       if (!applyWriteBlock(clusterId, indexName)) {
-        logger.error("Failed to apply write block on [{}]", indexName);
-        return false;
+        throw new RuntimeException("Failed to lock source index [" + indexName + "] for reindexing.");
       }
 
       String body = String.format("""
@@ -281,7 +285,8 @@ public class IndexMigrationService {
       }
 
     } catch (Exception e) {
-      logger.error("Reindex failed [{}]: {}", indexName, e.getMessage(), e);
+      logger.error("Reindex failed [{}]: {}", indexName, e.getMessage());
+      throw new RuntimeException(e.getMessage());
     }
 
     return false;
@@ -413,7 +418,8 @@ public class IndexMigrationService {
           .asBoolean(false);
 
     } catch (Exception e) {
-      return false;
+      logger.error("Failed to apply write block on [{}], Msg: {}", indexName, e.getMessage());
+      throw new RuntimeException(e.getMessage());
     }
   }
 

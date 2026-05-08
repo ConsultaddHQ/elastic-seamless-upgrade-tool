@@ -65,17 +65,25 @@ public class MigrationController {
 
   @PostMapping("/indices/{indexName}/reindex")
   public ResponseEntity<Map<String, String>> reindexSingleIndex(@PathVariable String clusterId, @PathVariable String indexName) {
-    boolean isStarted = indexMigrationService.safeReindexIndexAsync(clusterId, indexName);
     Map<String, String> responseBody = new HashMap<>();
 
-    if (isStarted) {
-      responseBody.put("status", "success");
-      responseBody.put("message", "Reindex started in the background.");
-      return ResponseEntity.accepted().body(responseBody);
-    } else {
+    try {
+      boolean isStarted = indexMigrationService.safeReindexIndexAsync(clusterId, indexName);
+
+      if (isStarted) {
+        responseBody.put("status", "success");
+        responseBody.put("message", "Reindex started in the background.");
+        return ResponseEntity.accepted().body(responseBody);
+      } else {
+        responseBody.put("status", "error");
+        responseBody.put("message", "Failed to start reindex.");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseBody);
+      }
+
+    } catch (RuntimeException e) {
       responseBody.put("status", "error");
-      responseBody.put("message", "Failed to start reindex.");
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseBody);
+      responseBody.put("message", e.getMessage());
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseBody);
     }
   }
 

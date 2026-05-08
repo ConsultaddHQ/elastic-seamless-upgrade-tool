@@ -202,4 +202,34 @@ public class IndexUtils {
     // Returns null if the API fails or if it's just a normal index (not a backing index)
     return null;
   }
+
+  /**
+   * Fetches the exact document count for a specific index or data stream.
+   * Uses the lightweight /_count API for maximum performance.
+   *
+   * @param clusterId The ID of the cluster
+   * @param indexName The name of the index or data stream
+   * @return The total document count, or 0 if an error occurs (or if empty)
+   */
+  public long getDocumentCount(String clusterId, String indexName) {
+    try {
+      var client = elasticsearchClientProvider.getClient(clusterId);
+
+      // Call the GET /<indexName>/_count API
+      JsonNode response = client.execute(ApiRequest.builder(JsonNode.class)
+          .get()
+          .uri("/" + indexName + "/_count")
+          .build());
+
+      // The response looks like: { "count": 1595, "_shards": {...} }
+      if (response != null && response.has("count")) {
+        return response.path("count").asLong(0L);
+      }
+
+    } catch (Exception e) {
+      logger.error("Failed to fetch document count for [{}]: {}", indexName, e.getMessage());
+    }
+
+    return 0L;
+  }
 }

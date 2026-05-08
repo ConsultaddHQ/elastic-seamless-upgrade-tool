@@ -47,7 +47,6 @@ function ManageIndices() {
 
 	const [selectedKeys, setSelectedKeys] = useState<any>(new Set([]))
 
-	// Disable checkboxes for rows that are already processing or deleted
 	const disabledKeys = useMemo(() => {
 		return new Set([...deletedIndices, ...Object.keys(activeTasks)])
 	}, [deletedIndices, activeTasks])
@@ -62,9 +61,6 @@ function ManageIndices() {
 		enabled: !!clusterId,
 	})
 
-	// =========================================================================
-	// STATE SYNC: Restore progress bars if the user hard-refreshes the page
-	// =========================================================================
 	useEffect(() => {
 		if (migrationInfo?.reindexNeedingIndices) {
 			const restoredTasks: Record<string, TaskProgress> = {}
@@ -101,7 +97,9 @@ function ManageIndices() {
 			toast.success("System features migration initiated.")
 			refetchMigrationInfo()
 		},
-		onError: (error: any) => toast.error(error?.message || "Failed to initiate system migration."),
+		onError: (error: any) => {
+			toast.error(error?.response?.data?.message || error?.message || "Failed to initiate system migration.")
+		},
 	})
 
 	const { isPending: isReindexingSingle, mutate: reindexSingleIndex } = useMutation({
@@ -113,7 +111,9 @@ function ManageIndices() {
 				[variables.indexName]: { progressPercentage: 0, remainingDocs: 0, isCompleted: false },
 			}))
 		},
-		onError: (error: any) => toast.error(error?.message || "Failed to start reindex process."),
+		onError: (error: any) => {
+			toast.error(error?.response?.data?.message || error?.message || "Failed to start reindex process.")
+		},
 		onSettled: () => setActiveActionIndex(null),
 	})
 
@@ -124,7 +124,9 @@ function ManageIndices() {
 			setDeletedIndices((prev) => [...prev, variables.indexName])
 			refetchMigrationInfo()
 		},
-		onError: (error: any) => toast.error(error?.message || "Failed to delete index."),
+		onError: (error: any) => {
+			toast.error(error?.response?.data?.message || error?.message || "Failed to delete index.")
+		},
 		onSettled: () => setActiveActionIndex(null),
 	})
 
@@ -150,21 +152,6 @@ function ManageIndices() {
 			indicesToPoll.forEach(async (indexName) => {
 				try {
 					const status = await clusterUpgradeApi.checkReindexStatus(clusterId, indexName)
-
-					if (status.progressPercentage === 0 && !status.taskId) {
-						toast.error(
-							`Reindex aborted for ${indexName}. It is likely empty. Please use Delete instead.`,
-							{ duration: 6000 }
-						)
-						setActiveTasks((prev) => {
-							const newTasks = { ...prev }
-							delete newTasks[indexName]
-							return newTasks
-						})
-						setActiveActionIndex(null)
-						return
-					}
-
 					const isCompleted = status.progressPercentage === 100
 
 					setActiveTasks((prev) => ({
