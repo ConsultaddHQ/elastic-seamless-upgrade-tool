@@ -2,6 +2,7 @@ package co.hyperflex.controllers.advice;
 
 import co.hyperflex.core.exceptions.AppException;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -63,6 +64,16 @@ public class GlobalExceptionHandler {
 
     // Forward SPA routes to React
     return new ModelAndView("forward:/index.html");
+  }
+
+  @ExceptionHandler(RuntimeException.class)
+  public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
+    Map<String, String> responseBody = new HashMap<>();
+
+    responseBody.put("status", "error");
+    responseBody.put("message", ex.getMessage());
+
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseBody);
   }
 
   public record ErrorResponse(String err) {

@@ -165,22 +165,16 @@ public class IndexMigrationService {
         // 2. HANDLE WRITE INDEX LOGIC (Rollover automatically)
         if (activeWriteAlias != null) {
           logger.info("Active write index detected [{}]. Rolling over alias [{}] before deletion.", indexName, activeWriteAlias);
-
-          boolean rolledOver = executeRollover(clusterId, activeWriteAlias, indexName);
-
-          if (!rolledOver) {
-            logger.error("Failed to rollover alias [{}]. Aborting deletion to prevent data pipeline corruption.", activeWriteAlias);
-            return false; // Stop the deletion if the rollover failed!
-          }
+          executeRollover(clusterId, activeWriteAlias, indexName);
         }
       }
 
-      // 3. EXECUTE DELETE (Now completely safe)
+      // 3. EXECUTE DELETE
       return executeDelete(clusterId, indexName);
 
     } catch (Exception e) {
       logger.error("Delete failed [{}]: {}", indexName, e.getMessage());
-      return false;
+      throw new RuntimeException(e.getMessage());
     }
   }
 
@@ -194,13 +188,11 @@ public class IndexMigrationService {
       var client = elasticsearchClientProvider.getClient(clusterId);
       String deleteUri = "/" + indexName;
 
-      // 1. Dynamically route the URI
       if (indexUtils.isDataStream(clusterId, indexName)) {
         logger.info("Detected Data Stream. Using Data Stream Delete API for: [{}]", indexName);
         deleteUri = "/_data_stream/" + indexName;
       }
 
-      // 2. Execute the Delete
       JsonNode response = client.execute(ApiRequest.builder(JsonNode.class)
           .delete()
           .uri(deleteUri)
@@ -210,13 +202,11 @@ public class IndexMigrationService {
         logger.info("Successfully deleted: [{}]", indexName);
         return true;
       } else {
-        logger.warn("Delete command acknowledged as false by cluster for: [{}]", indexName);
-        return false;
+        throw new RuntimeException("Delete command was rejected: Cluster did not acknowledge the request.");
       }
     } catch (Exception e) {
-      // Shortened the error log slightly to reduce console noise on expected 404s
       logger.error("Exception occurred during delete for [{}]: {}", indexName, e.getMessage());
-      return false;
+      throw new RuntimeException(e.getMessage());
     }
   }
 
@@ -526,18 +516,17 @@ public class IndexMigrationService {
     try {
       var client = elasticsearchClientProvider.getClient(clusterId);
 
-      // Attempt standard rollover
       JsonNode response = client.execute(ApiRequest.builder(JsonNode.class)
           .post()
           .uri("/" + aliasName + "/_rollover")
           .body("{}")
           .build());
 
-      boolean rolledOver = response != null && response.path("rolled_over").asBoolean(false);
-      if (rolledOver) {
+      if (response != null && response.path("rolled_over").asBoolean(false)) {
         logger.info("Successfully rolled over [{}]", aliasName);
+        return true;
       }
-      return rolledOver;
+      throw new RuntimeException("Cluster rejected rollover for alias [" + aliasName + "].");
 
     } catch (Exception e) {
       String errorMsg = e.getMessage();
@@ -545,8 +534,6 @@ public class IndexMigrationService {
       // RETRY: If Elasticsearch complains about the missing number pattern, we force it!
       if (errorMsg != null && errorMsg.contains("does not match pattern")) {
         logger.warn("Index [{}] lacks a numeric suffix. Retrying rollover with explicit target name.", currentIndexName);
-
-        // Create the valid ILM pattern for the new index
         String explicitTargetName = currentIndexName + "-000001";
 
         try {
@@ -557,21 +544,19 @@ public class IndexMigrationService {
               .body("{}")
               .build());
 
-          boolean retryRolledOver = retryResponse != null && retryResponse.path("rolled_over").asBoolean(false);
-          if (retryRolledOver) {
+          if (retryResponse != null && retryResponse.path("rolled_over").asBoolean(false)) {
             logger.info("Successfully rolled over [{}] to explicit target [{}]", aliasName, explicitTargetName);
+            return true;
           }
-          return retryRolledOver;
-
+          throw new RuntimeException("Explicit rollover retry failed for [" + explicitTargetName + "].");
         } catch (Exception retryEx) {
           logger.error("Explicit rollover retry failed for [{}]: {}", aliasName, retryEx.getMessage());
-          return false;
+          throw new RuntimeException("Rollover retry failed: " + retryEx.getMessage());
         }
       }
 
-      // If it failed for any other reason, log it and abort
       logger.error("Rollover failed for [{}]: {}", aliasName, errorMsg);
-      return false;
+      throw new RuntimeException(errorMsg);
     }
   }
 }

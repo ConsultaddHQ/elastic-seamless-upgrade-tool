@@ -48,10 +48,9 @@ public class MigrationController {
 
   @DeleteMapping(value = "/indices/{indexName}", produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<Map<String, String>> deleteIndex(@PathVariable String clusterId, @PathVariable String indexName) {
-
     boolean isDeleted = indexMigrationService.safeDeleteIndex(clusterId, indexName);
-    Map<String, String> responseBody = new HashMap<>();
 
+    Map<String, String> responseBody = new HashMap<>();
     if (isDeleted) {
       responseBody.put("status", "success");
       responseBody.put("message", "Index [" + indexName + "] was successfully deleted.");
@@ -65,25 +64,17 @@ public class MigrationController {
 
   @PostMapping("/indices/{indexName}/reindex")
   public ResponseEntity<Map<String, String>> reindexSingleIndex(@PathVariable String clusterId, @PathVariable String indexName) {
+    boolean isStarted = indexMigrationService.safeReindexIndexAsync(clusterId, indexName);
+
     Map<String, String> responseBody = new HashMap<>();
-
-    try {
-      boolean isStarted = indexMigrationService.safeReindexIndexAsync(clusterId, indexName);
-
-      if (isStarted) {
-        responseBody.put("status", "success");
-        responseBody.put("message", "Reindex started in the background.");
-        return ResponseEntity.accepted().body(responseBody);
-      } else {
-        responseBody.put("status", "error");
-        responseBody.put("message", "Failed to start reindex.");
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseBody);
-      }
-
-    } catch (RuntimeException e) {
+    if (isStarted) {
+      responseBody.put("status", "success");
+      responseBody.put("message", "Reindex started in the background.");
+      return ResponseEntity.accepted().body(responseBody);
+    } else {
       responseBody.put("status", "error");
-      responseBody.put("message", e.getMessage());
-      return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseBody);
+      responseBody.put("message", "Failed to start reindex.");
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseBody);
     }
   }
 
