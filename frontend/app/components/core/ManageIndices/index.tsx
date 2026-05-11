@@ -13,7 +13,7 @@ import {
 } from "@heroui/react"
 import { Box, Typography } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { Convertshape2, TickCircle, Warning2, Trash, Refresh, DocumentCopy } from "iconsax-react"
+import { Convertshape2, TickCircle, Warning2, Trash, Refresh, DocumentCopy, InfoCircle } from "iconsax-react"
 import { useCallback, type Key, useState, useEffect, useMemo } from "react"
 import { useNavigate, useParams } from "react-router"
 import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
@@ -67,10 +67,13 @@ function ManageIndices() {
 
 			migrationInfo.reindexNeedingIndices.forEach((item: any) => {
 				if (item.progress && item.progress.isReindexing) {
-					restoredTasks[item.name] = {
-						progressPercentage: item.progress.progressPercentage || 0,
-						remainingDocs: item.progress.remainingDocs || 0,
-						isCompleted: false,
+					const itemName = item.index || item.name
+					if (itemName) {
+						restoredTasks[itemName] = {
+							progressPercentage: item.progress.progressPercentage || 0,
+							remainingDocs: item.progress.remainingDocs || 0,
+							isCompleted: false,
+						}
 					}
 				}
 			})
@@ -199,7 +202,10 @@ function ManageIndices() {
 	const handleBulkReindex = (filteredList: any[]) => {
 		if (!clusterId) return
 		const keysToProcess =
-			selectedKeys === "all" ? filteredList.map((i: any) => i.name) : (Array.from(selectedKeys) as string[])
+			selectedKeys === "all"
+				? filteredList.map((i: any) => i.index || i.name)
+				: (Array.from(selectedKeys) as string[])
+
 		const validKeys = keysToProcess.filter((name) => !activeTasks[name] && !deletedIndices.includes(name))
 
 		if (validKeys.length > 0) {
@@ -212,7 +218,10 @@ function ManageIndices() {
 	const handleBulkDelete = (filteredList: any[]) => {
 		if (!clusterId) return
 		const keysToProcess =
-			selectedKeys === "all" ? filteredList.map((i: any) => i.name) : (Array.from(selectedKeys) as string[])
+			selectedKeys === "all"
+				? filteredList.map((i: any) => i.index || i.name)
+				: (Array.from(selectedKeys) as string[])
+
 		const validKeys = keysToProcess.filter((name) => !activeTasks[name] && !deletedIndices.includes(name))
 
 		if (validKeys.length > 0) {
@@ -235,10 +244,7 @@ function ManageIndices() {
 			switch (columnKey) {
 				case "name":
 					return (
-						<div
-							onClick={stopClick}
-							className="flex items-center gap-3 w-full cursor-default py-2 group pl-4"
-						>
+						<div onClick={stopClick} className="flex items-center gap-3 w-full cursor-default py-2 group">
 							<span className="text-[#ADADAD] font-medium break-all">{cellValue}</span>
 							<Tooltip content="copy name" placement="top">
 								<button
@@ -351,9 +357,10 @@ function ManageIndices() {
 	)
 
 	const renderIndicesTable = (dataList: any[], emptyTitle: string, emptySub: string) => {
-		const filteredList = dataList.filter(
-			(item: any) => !deletedIndices.includes(item.name) && !activeTasks[item.name]?.isCompleted
-		)
+		const filteredList = dataList.filter((item: any) => {
+			const itemName = item.index || item.name
+			return !deletedIndices.includes(itemName) && !activeTasks[itemName]?.isCompleted
+		})
 
 		const hasSelection = selectedKeys === "all" || selectedKeys.size > 0
 		const selectedCount = selectedKeys === "all" ? filteredList.length : selectedKeys.size
@@ -521,7 +528,18 @@ function ManageIndices() {
 									<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
 										Your Application Data
 									</Typography>
+									<Tooltip content="Standard indices created by your applications." placement="top">
+										<Box className="cursor-pointer flex items-center">
+											<InfoCircle size="16" color="#ADADAD" />
+										</Box>
+									</Tooltip>
 								</Box>
+								<Typography color="#6E6E6E" fontSize="13px" fontWeight="400" className="mt-1">
+									These are standard indices containing your core business data, catalogs, and custom
+									application logs. You must manually initiate a <strong>Reindex</strong> for these
+									legacy formats so your applications can continue reading and writing data seamlessly
+									after the version upgrade. Unneeded legacy logs can be safely deleted.
+								</Typography>
 							</Box>
 							{renderIndicesTable(
 								customIndicesList,
@@ -535,8 +553,22 @@ function ManageIndices() {
 						<Box className="flex flex-col gap-6 pt-4">
 							<Box className="flex flex-row justify-between items-start">
 								<Box className="flex flex-col gap-1 max-w-4xl">
-									<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
-										Internal System Data
+									<Box className="flex flex-row items-center gap-2">
+										<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
+											Internal System Data
+										</Typography>
+										<Tooltip content="Hidden indices managing cluster state." placement="top">
+											<Box className="cursor-pointer flex items-center">
+												<InfoCircle size="16" color="#ADADAD" />
+											</Box>
+										</Tooltip>
+									</Box>
+									<Typography color="#6E6E6E" fontSize="13px" fontWeight="400" className="mt-1">
+										These hidden indices (starting with a dot) power the internal mechanics of your
+										cluster, storing Kibana dashboards, security roles, and automated tasks. Click{" "}
+										<strong>Auto-Migrate System</strong> to let Elasticsearch update its standard
+										configurations natively. Any leftover legacy system files shown below must be
+										manually reindexed or deleted.
 									</Typography>
 								</Box>
 								<Box className="pt-2">
@@ -575,8 +607,21 @@ function ManageIndices() {
 					<Tab key="data-streams" title={`Data Streams (${dataStreamList.length})`}>
 						<Box className="flex flex-col gap-6 pt-4">
 							<Box className="flex flex-col gap-1 max-w-7xl">
-								<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
-									Data Streams
+								<Box className="flex flex-row items-center gap-2">
+									<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
+										Data Streams
+									</Typography>
+									<Tooltip content="Append-only time-series data structures." placement="top">
+										<Box className="cursor-pointer flex items-center">
+											<InfoCircle size="16" color="#ADADAD" />
+										</Box>
+									</Tooltip>
+								</Box>
+								<Typography color="#6E6E6E" fontSize="13px" fontWeight="400" className="mt-1">
+									These are continuous, append-only time-series structures used for high-volume logs
+									and metrics. Initiating a <strong>Reindex</strong> utilizes the native Elastic Data
+									Stream API to automatically roll over the stream and upgrade all hidden backing
+									indices behind the scenes with zero ingestion downtime.
 								</Typography>
 							</Box>
 							{renderIndicesTable(
