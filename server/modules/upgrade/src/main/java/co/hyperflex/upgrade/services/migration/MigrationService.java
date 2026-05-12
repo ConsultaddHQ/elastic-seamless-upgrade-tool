@@ -101,12 +101,4 @@ public class MigrationService {
     }
   }
 
-  public IndexMigrationResponse reindexIndices(String clusterId) {
-    var upgradeJob = clusterUpgradeJobService.getLatestJobByClusterId(clusterId);
-    if (VersionUtils.isVersionGte(upgradeJob.getCurrentVersion(), "8.18.0")) {
-      var client = elasticsearchClientProvider.getClient(clusterId);
-      client.execute(ApiRequest.builder(JsonNode.class).post().uri("/_migration/reindex").build());
-    }
-    return new IndexMigrationResponse();
-  }
 }

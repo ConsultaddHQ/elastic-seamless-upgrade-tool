@@ -17,6 +17,7 @@ class ClusterUpgradeApi {
 		const response = await axiosJSON.get(`/clusters/${clusterId}/upgrades/info`)
 		return response.data
 	}
+	
 	async getUpgradeLogs(clusterId: string, nodeId: string) {
 		const response = await axiosJSON.get(`/clusters/${clusterId}/upgrades/nodes/${nodeId}/logs`)
 		return response.data.logs ?? []
@@ -63,16 +64,6 @@ class ClusterUpgradeApi {
 
 	async getMigrationInfo(clusterId: string) {
 		const response = await axiosJSON.get(`/clusters/${clusterId}/migrations/info`)
-		return response.data
-	}
-
-	async getCustomIndicesToMigrate(clusterId: string) {
-		const response = await axiosJSON.get(`/clusters/${clusterId}/upgrade/reindex-indices`)
-		return response.data
-	}
-
-	async reindexIndices(clusterId: string) {
-		const response = await axiosJSON.post(`/clusters/${clusterId}/migrations/reindex-indices`)
 		return response.data
 	}
 

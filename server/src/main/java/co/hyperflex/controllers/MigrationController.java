@@ -4,7 +4,6 @@ package co.hyperflex.controllers;
 import co.hyperflex.upgrade.services.dtos.MigrationInfoResponse;
 import co.hyperflex.upgrade.services.dtos.ReindexProgressInfo;
 import co.hyperflex.upgrade.services.migration.FeatureMigrationResponse;
-import co.hyperflex.upgrade.services.migration.IndexMigrationResponse;
 import co.hyperflex.upgrade.services.migration.IndexMigrationService;
 import co.hyperflex.upgrade.services.migration.MigrationService;
 import java.util.HashMap;
@@ -39,11 +38,6 @@ public class MigrationController {
   @PostMapping("/migrate-system-features")
   public FeatureMigrationResponse migrateSystemFeatures(@PathVariable String clusterId) {
     return migrationService.migrate(clusterId);
-  }
-
-  @PostMapping("/reindex-indices")
-  public IndexMigrationResponse reindexIndices(@PathVariable String clusterId) {
-    return migrationService.reindexIndices(clusterId);
   }
 
   @DeleteMapping(value = "/indices/{indexName}", produces = MediaType.APPLICATION_JSON_VALUE)

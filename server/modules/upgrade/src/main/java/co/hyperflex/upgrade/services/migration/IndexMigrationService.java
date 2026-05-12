@@ -5,7 +5,6 @@ import co.hyperflex.clients.elastic.ElasticsearchClientProvider;
 import co.hyperflex.clients.elastic.dto.GetElasticDeprecationResponse;
 import co.hyperflex.clients.elastic.dto.cat.indices.IndicesRecord;
 import co.hyperflex.core.services.upgrade.ClusterUpgradeJobService;
-import co.hyperflex.core.utils.VersionUtils;
 import co.hyperflex.precheck.utils.IndexUtils;
 import co.hyperflex.upgrade.services.dtos.IndexReindexInfo;
 import co.hyperflex.upgrade.services.dtos.ReindexProgressInfo;
@@ -34,15 +33,6 @@ public class IndexMigrationService {
     this.elasticsearchClientProvider = elasticsearchClientProvider;
     this.clusterUpgradeJobService = clusterUpgradeJobService;
     this.indexUtils = indexUtils;
-  }
-
-  public IndexMigrationResponse migrate(String clusterId) {
-    var upgradeJob = clusterUpgradeJobService.getLatestJobByClusterId(clusterId);
-    if (VersionUtils.isVersionGte(upgradeJob.getCurrentVersion(), "8.18.0")) {
-      var client = elasticsearchClientProvider.getClient(clusterId);
-      client.execute(ApiRequest.builder(JsonNode.class).post().uri("/_migration/reindex").build());
-    }
-    return new IndexMigrationResponse();
   }
 
   public List<IndexReindexInfo> getReindexIndicesMetadata(String clusterId) {
