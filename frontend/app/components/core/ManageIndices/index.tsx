@@ -184,14 +184,6 @@ function ManageIndices() {
 	const systemIndicesList = allIndices.filter((item: any) => item.systemIndex && !item.dataStream)
 	const customIndicesList = allIndices.filter((item: any) => !item.systemIndex && !item.dataStream)
 
-	// Calculate how many indices are completely finished (deleted or 100% reindexed)
-	const completedIndicesCount = deletedIndices.length + Object.values(activeTasks).filter((t) => t.isCompleted).length
-	const totalIndicesCount = allIndices.length
-
-	// Calculate overall percentage (If 0 total, we are at 100% already)
-	const overallProgress =
-		totalIndicesCount === 0 ? 100 : Math.round((completedIndicesCount / totalIndicesCount) * 100)
-
 	// Calculate purely pending items per category for the Summary Cards
 	const pendingCustom = customIndicesList.filter((item: any) => {
 		const name = item.index || item.name
@@ -546,7 +538,7 @@ function ManageIndices() {
 						tabContent: "group-data-[selected=true]:text-[#FFF] text-[#ADADAD] text-base font-medium",
 					}}
 				>
-					{/* NEW: OVERVIEW SUMMARY TAB */}
+					{/* SUMMARY TAB */}
 					<Tab key="summary" title="Overview">
 						<Box className="flex flex-col gap-6 pt-4">
 							<Box className="flex flex-col gap-1 max-w-7xl">
@@ -554,34 +546,9 @@ function ManageIndices() {
 									Migration Dashboard
 								</Typography>
 								<Typography color="#6E6E6E" fontSize="13px" fontWeight="400" className="mt-1">
-									A high-level summary of your cluster's data readiness. Track the live progress of
-									all conversion operations below.
+									Use the tabs to dive into specific categories and take necessary actions to ensure a
+									smooth upgrade process.
 								</Typography>
-							</Box>
-
-							{/* Main Progress Bar */}
-							<Box className="flex flex-col gap-3 p-5 rounded-xl border border-[#2F2F2F] bg-[#161616]">
-								<Box className="flex justify-between items-center w-full">
-									<Typography color="#FFF" fontSize="14px" fontWeight="500">
-										Overall Cluster Readiness
-									</Typography>
-									<Typography
-										color={overallProgress === 100 ? "#52D97F" : "#BDA0FF"}
-										fontSize="14px"
-										fontWeight="600"
-									>
-										{overallProgress}% ({completedIndicesCount} of {totalIndicesCount} Finalized)
-									</Typography>
-								</Box>
-								<Progress
-									size="md"
-									aria-label="Overall migration progress"
-									value={overallProgress}
-									classNames={{
-										track: "bg-[#2F2F2F]",
-										indicator: overallProgress === 100 ? "bg-[#52D97F]" : "bg-[#BDA0FF]",
-									}}
-								/>
 							</Box>
 
 							{/* Stat Cards Grid */}
