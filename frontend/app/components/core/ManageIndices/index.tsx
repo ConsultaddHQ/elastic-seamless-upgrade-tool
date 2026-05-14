@@ -184,22 +184,6 @@ function ManageIndices() {
 	const systemIndicesList = allIndices.filter((item: any) => item.systemIndex && !item.dataStream)
 	const customIndicesList = allIndices.filter((item: any) => !item.systemIndex && !item.dataStream)
 
-	// Calculate purely pending items per category for the Summary Cards
-	const pendingCustom = customIndicesList.filter((item: any) => {
-		const name = item.index || item.name
-		return !deletedIndices.includes(name) && !activeTasks[name]?.isCompleted
-	}).length
-
-	const pendingSystem = systemIndicesList.filter((item: any) => {
-		const name = item.index || item.name
-		return !deletedIndices.includes(name) && !activeTasks[name]?.isCompleted
-	}).length
-
-	const pendingStreams = dataStreamList.filter((item: any) => {
-		const name = item.index || item.name
-		return !deletedIndices.includes(name) && !activeTasks[name]?.isCompleted
-	}).length
-
 	const handleReindex = (indexName: string) => {
 		if (clusterId) {
 			setActiveActionIndex(indexName)
@@ -558,11 +542,11 @@ function ManageIndices() {
 										Application Data
 									</Typography>
 									<Typography
-										color={pendingCustom === 0 ? "#52D97F" : "#FFF"}
+										color={customIndicesList.length === 0 ? "#52D97F" : "#FFF"}
 										fontSize="28px"
 										fontWeight="600"
 									>
-										{pendingCustom}
+										{customIndicesList.length}
 									</Typography>
 									<Typography color="#6E6E6E" fontSize="12px">
 										Indices pending migration
@@ -574,11 +558,11 @@ function ManageIndices() {
 										Internal System Data
 									</Typography>
 									<Typography
-										color={pendingSystem === 0 ? "#52D97F" : "#FFF"}
+										color={systemIndicesList.length === 0 ? "#52D97F" : "#FFF"}
 										fontSize="28px"
 										fontWeight="600"
 									>
-										{pendingSystem}
+										{systemIndicesList.length}
 									</Typography>
 									<Typography color="#6E6E6E" fontSize="12px">
 										Indices pending migration
@@ -590,11 +574,11 @@ function ManageIndices() {
 										Data Streams
 									</Typography>
 									<Typography
-										color={pendingStreams === 0 ? "#52D97F" : "#FFF"}
+										color={dataStreamList.length === 0 ? "#52D97F" : "#FFF"}
 										fontSize="28px"
 										fontWeight="600"
 									>
-										{pendingStreams}
+										{dataStreamList.length}
 									</Typography>
 									<Typography color="#6E6E6E" fontSize="12px">
 										Streams pending migration
@@ -604,7 +588,7 @@ function ManageIndices() {
 						</Box>
 					</Tab>
 
-					<Tab key="custom" title={`Custom Indices (${pendingCustom})`}>
+					<Tab key="custom" title={`Custom Indices (${customIndicesList.length})`}>
 						<Box className="flex flex-col gap-6 pt-4">
 							<Box className="flex flex-col gap-1 max-w-7xl">
 								<Box className="flex flex-row items-center gap-2">
@@ -632,7 +616,7 @@ function ManageIndices() {
 						</Box>
 					</Tab>
 
-					<Tab key="system" title={`System Indices (${pendingSystem})`}>
+					<Tab key="system" title={`System Indices (${systemIndicesList.length})`}>
 						<Box className="flex flex-col gap-6 pt-4">
 							<Box className="flex flex-row justify-between items-start">
 								<Box className="flex flex-col gap-1 max-w-4xl">
@@ -687,7 +671,7 @@ function ManageIndices() {
 						</Box>
 					</Tab>
 
-					<Tab key="data-streams" title={`Data Streams (${pendingStreams})`}>
+					<Tab key="data-streams" title={`Data Streams (${dataStreamList.length})`}>
 						<Box className="flex flex-col gap-6 pt-4">
 							<Box className="flex flex-col gap-1 max-w-7xl">
 								<Box className="flex flex-row items-center gap-2">
