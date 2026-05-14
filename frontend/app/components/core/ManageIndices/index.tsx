@@ -178,10 +178,35 @@ function ManageIndices() {
 		return () => clearInterval(intervalId)
 	}, [activeTasks, clusterId])
 
+	// SUMMARY CALCULATIONS
 	const allIndices = migrationInfo?.reindexNeedingIndices || []
 	const dataStreamList = allIndices.filter((item: any) => item.dataStream)
 	const systemIndicesList = allIndices.filter((item: any) => item.systemIndex && !item.dataStream)
 	const customIndicesList = allIndices.filter((item: any) => !item.systemIndex && !item.dataStream)
+
+	// Calculate how many indices are completely finished (deleted or 100% reindexed)
+	const completedIndicesCount = deletedIndices.length + Object.values(activeTasks).filter((t) => t.isCompleted).length
+	const totalIndicesCount = allIndices.length
+
+	// Calculate overall percentage (If 0 total, we are at 100% already)
+	const overallProgress =
+		totalIndicesCount === 0 ? 100 : Math.round((completedIndicesCount / totalIndicesCount) * 100)
+
+	// Calculate purely pending items per category for the Summary Cards
+	const pendingCustom = customIndicesList.filter((item: any) => {
+		const name = item.index || item.name
+		return !deletedIndices.includes(name) && !activeTasks[name]?.isCompleted
+	}).length
+
+	const pendingSystem = systemIndicesList.filter((item: any) => {
+		const name = item.index || item.name
+		return !deletedIndices.includes(name) && !activeTasks[name]?.isCompleted
+	}).length
+
+	const pendingStreams = dataStreamList.filter((item: any) => {
+		const name = item.index || item.name
+		return !deletedIndices.includes(name) && !activeTasks[name]?.isCompleted
+	}).length
 
 	const handleReindex = (indexName: string) => {
 		if (clusterId) {
@@ -521,7 +546,98 @@ function ManageIndices() {
 						tabContent: "group-data-[selected=true]:text-[#FFF] text-[#ADADAD] text-base font-medium",
 					}}
 				>
-					<Tab key="custom" title={`Custom Indices (${customIndicesList.length})`}>
+					{/* NEW: OVERVIEW SUMMARY TAB */}
+					<Tab key="summary" title="Overview">
+						<Box className="flex flex-col gap-6 pt-4">
+							<Box className="flex flex-col gap-1 max-w-7xl">
+								<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
+									Migration Dashboard
+								</Typography>
+								<Typography color="#6E6E6E" fontSize="13px" fontWeight="400" className="mt-1">
+									A high-level summary of your cluster's data readiness. Track the live progress of
+									all conversion operations below.
+								</Typography>
+							</Box>
+
+							{/* Main Progress Bar */}
+							<Box className="flex flex-col gap-3 p-5 rounded-xl border border-[#2F2F2F] bg-[#161616]">
+								<Box className="flex justify-between items-center w-full">
+									<Typography color="#FFF" fontSize="14px" fontWeight="500">
+										Overall Cluster Readiness
+									</Typography>
+									<Typography
+										color={overallProgress === 100 ? "#52D97F" : "#BDA0FF"}
+										fontSize="14px"
+										fontWeight="600"
+									>
+										{overallProgress}% ({completedIndicesCount} of {totalIndicesCount} Finalized)
+									</Typography>
+								</Box>
+								<Progress
+									size="md"
+									aria-label="Overall migration progress"
+									value={overallProgress}
+									classNames={{
+										track: "bg-[#2F2F2F]",
+										indicator: overallProgress === 100 ? "bg-[#52D97F]" : "bg-[#BDA0FF]",
+									}}
+								/>
+							</Box>
+
+							{/* Stat Cards Grid */}
+							<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+								<Box className="flex flex-col gap-2 p-5 rounded-xl border border-[#2F2F2F] bg-[#161616]">
+									<Typography color="#ADADAD" fontSize="13px" fontWeight="500">
+										Application Data
+									</Typography>
+									<Typography
+										color={pendingCustom === 0 ? "#52D97F" : "#FFF"}
+										fontSize="28px"
+										fontWeight="600"
+									>
+										{pendingCustom}
+									</Typography>
+									<Typography color="#6E6E6E" fontSize="12px">
+										Indices pending migration
+									</Typography>
+								</Box>
+
+								<Box className="flex flex-col gap-2 p-5 rounded-xl border border-[#2F2F2F] bg-[#161616]">
+									<Typography color="#ADADAD" fontSize="13px" fontWeight="500">
+										Internal System Data
+									</Typography>
+									<Typography
+										color={pendingSystem === 0 ? "#52D97F" : "#FFF"}
+										fontSize="28px"
+										fontWeight="600"
+									>
+										{pendingSystem}
+									</Typography>
+									<Typography color="#6E6E6E" fontSize="12px">
+										Indices pending migration
+									</Typography>
+								</Box>
+
+								<Box className="flex flex-col gap-2 p-5 rounded-xl border border-[#2F2F2F] bg-[#161616]">
+									<Typography color="#ADADAD" fontSize="13px" fontWeight="500">
+										Data Streams
+									</Typography>
+									<Typography
+										color={pendingStreams === 0 ? "#52D97F" : "#FFF"}
+										fontSize="28px"
+										fontWeight="600"
+									>
+										{pendingStreams}
+									</Typography>
+									<Typography color="#6E6E6E" fontSize="12px">
+										Streams pending migration
+									</Typography>
+								</Box>
+							</div>
+						</Box>
+					</Tab>
+
+					<Tab key="custom" title={`Custom Indices (${pendingCustom})`}>
 						<Box className="flex flex-col gap-6 pt-4">
 							<Box className="flex flex-col gap-1 max-w-7xl">
 								<Box className="flex flex-row items-center gap-2">
@@ -549,7 +665,7 @@ function ManageIndices() {
 						</Box>
 					</Tab>
 
-					<Tab key="system" title={`System Indices (${systemIndicesList.length})`}>
+					<Tab key="system" title={`System Indices (${pendingSystem})`}>
 						<Box className="flex flex-col gap-6 pt-4">
 							<Box className="flex flex-row justify-between items-start">
 								<Box className="flex flex-col gap-1 max-w-4xl">
@@ -604,7 +720,7 @@ function ManageIndices() {
 						</Box>
 					</Tab>
 
-					<Tab key="data-streams" title={`Data Streams (${dataStreamList.length})`}>
+					<Tab key="data-streams" title={`Data Streams (${pendingStreams})`}>
 						<Box className="flex flex-col gap-6 pt-4">
 							<Box className="flex flex-col gap-1 max-w-7xl">
 								<Box className="flex flex-row items-center gap-2">
