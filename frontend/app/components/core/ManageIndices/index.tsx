@@ -232,7 +232,7 @@ function ManageIndices() {
 		if (!clusterId) return
 		openConfirmation({
 			title: "Reindex Data",
-			message: `Are you sure you want to reindex "${indexName}"? <br/>This will copy the data to a new format.`,
+			message: `Are you sure you want to reindex "${indexName}"? This will copy the data to a new format.`,
 			confirmText: "Reindex",
 			cancelText: "Cancel",
 			Icon: Refresh,
@@ -272,7 +272,7 @@ function ManageIndices() {
 
 		openConfirmation({
 			title: "Bulk Reindex",
-			message: `Are you sure you want to reindex ${validKeys.length} selected items?  <br/>This will copy the data to a new format.`,
+			message: `Are you sure you want to reindex ${validKeys.length} selected items? This will copy the data to a new format.`,
 			confirmText: "Reindex All",
 			cancelText: "Cancel",
 			Icon: Refresh,
@@ -461,7 +461,7 @@ function ManageIndices() {
 						placeholder="Search by index name..."
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
-						className="w-full md:w-80 px-4 py-2 bg-[#1A1A1A] border border-[#2F2F2F] rounded-xl text-sm text-[#FFF] placeholder:text-[#6E6E6E] focus:outline-none focus:border-[#BDA0FF] transition-colors"
+						className="w-full md:w-100 px-4 py-2 bg-[#1A1A1A] border border-[#2F2F2F] rounded-xl text-sm text-[#FFF] placeholder:text-[#6E6E6E] focus:outline-none focus:border-[#BDA0FF] transition-colors"
 					/>
 				</Box>
 
@@ -627,6 +627,72 @@ function ManageIndices() {
 						tabContent: "group-data-[selected=true]:text-[#FFF] text-[#ADADAD] text-base font-medium",
 					}}
 				>
+					{/* OVERVIEW SUMMARY TAB */}
+					<Tab key="summary" title="Overview">
+						<Box className="flex flex-col gap-6 pt-4">
+							<Box className="flex flex-col gap-1 max-w-7xl">
+								<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
+									Migration Dashboard
+								</Typography>
+								<Typography color="#6E6E6E" fontSize="13px" fontWeight="400" className="mt-1">
+									Use this dashboard to quickly identify how many indices and data streams require
+									migration before you can safely upgrade. Click into each category for detailed
+									actions.
+								</Typography>
+							</Box>
+
+							{/* Stat Cards Grid */}
+							<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+								<Box className="flex flex-col gap-2 p-5 rounded-xl border border-[#2F2F2F] bg-[#161616]">
+									<Typography color="#ADADAD" fontSize="13px" fontWeight="500">
+										Application Data
+									</Typography>
+									<Typography
+										color={customIndicesList.length === 0 ? "#52D97F" : "#FFF"}
+										fontSize="28px"
+										fontWeight="600"
+									>
+										{customIndicesList.length}
+									</Typography>
+									<Typography color="#6E6E6E" fontSize="12px">
+										Indices pending migration
+									</Typography>
+								</Box>
+
+								<Box className="flex flex-col gap-2 p-5 rounded-xl border border-[#2F2F2F] bg-[#161616]">
+									<Typography color="#ADADAD" fontSize="13px" fontWeight="500">
+										Internal System Data
+									</Typography>
+									<Typography
+										color={systemIndicesList.length === 0 ? "#52D97F" : "#FFF"}
+										fontSize="28px"
+										fontWeight="600"
+									>
+										{systemIndicesList.length}
+									</Typography>
+									<Typography color="#6E6E6E" fontSize="12px">
+										Indices pending migration
+									</Typography>
+								</Box>
+
+								<Box className="flex flex-col gap-2 p-5 rounded-xl border border-[#2F2F2F] bg-[#161616]">
+									<Typography color="#ADADAD" fontSize="13px" fontWeight="500">
+										Data Streams
+									</Typography>
+									<Typography
+										color={dataStreamList.length === 0 ? "#52D97F" : "#FFF"}
+										fontSize="28px"
+										fontWeight="600"
+									>
+										{dataStreamList.length}
+									</Typography>
+									<Typography color="#6E6E6E" fontSize="12px">
+										Streams pending migration
+									</Typography>
+								</Box>
+							</div>
+						</Box>
+					</Tab>
 					<Tab key="custom" title={`Custom Indices (${customIndicesList.length})`}>
 						<Box className="flex flex-col gap-6 pt-4">
 							<Box className="flex flex-col gap-1 max-w-7xl">
