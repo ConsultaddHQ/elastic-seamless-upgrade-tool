@@ -20,6 +20,48 @@ import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"
 import AppBreadcrumb from "~/components/utilities/AppBreadcrumb"
 import { toast } from "sonner"
+import ConfirmationModal from "~/components/utilities/ConfirmationModal"
+
+export interface OpenConfirmationOptions {
+	title: string
+	message: string | React.ReactNode
+	confirmText?: string
+	cancelText?: string
+	onConfirm: () => void
+	Icon?: React.ElementType<{ color?: string | undefined; size?: string | number | undefined }>
+}
+
+export function useConfirmationModal() {
+	const [modalOptions, setModalOptions] = useState<OpenConfirmationOptions | null>(null)
+
+	const openConfirmation = useCallback((options: OpenConfirmationOptions) => {
+		setModalOptions(options)
+	}, [])
+
+	const handleCancel = useCallback(() => {
+		setModalOptions(null)
+	}, [])
+
+	const handleConfirm = useCallback(() => {
+		if (modalOptions?.onConfirm) modalOptions.onConfirm()
+		setModalOptions(null)
+	}, [modalOptions])
+
+	const ConfirmationModalComponent = modalOptions ? (
+		<ConfirmationModal
+			isOpen={true}
+			title={modalOptions.title}
+			message={modalOptions.message}
+			confirmText={modalOptions.confirmText}
+			cancelText={modalOptions.cancelText}
+			onConfirm={handleConfirm}
+			onCancel={handleCancel}
+			Icon={modalOptions.Icon}
+		/>
+	) : null
+
+	return { openConfirmation, ConfirmationModal: ConfirmationModalComponent }
+}
 
 const columns = [
 	{ key: "name", label: "Index Name", align: "start" as const },
@@ -46,6 +88,9 @@ function ManageIndices() {
 	const [activeTasks, setActiveTasks] = useState<Record<string, TaskProgress>>({})
 
 	const [selectedKeys, setSelectedKeys] = useState<any>(new Set([]))
+	const [searchQuery, setSearchQuery] = useState("") // NEW: Search State
+
+	const { openConfirmation, ConfirmationModal } = useConfirmationModal() // NEW: Modal Hook
 
 	const disabledKeys = useMemo(() => {
 		return new Set([...deletedIndices, ...Object.keys(activeTasks)])
@@ -155,6 +200,21 @@ function ManageIndices() {
 			indicesToPoll.forEach(async (indexName) => {
 				try {
 					const status = await clusterUpgradeApi.checkReindexStatus(clusterId, indexName)
+
+					if (status.progressPercentage === 0 && !status.taskId) {
+						toast.error(
+							`Reindex aborted for ${indexName}. It is likely empty. Please use Delete instead.`,
+							{ duration: 6000 }
+						)
+						setActiveTasks((prev) => {
+							const newTasks = { ...prev }
+							delete newTasks[indexName]
+							return newTasks
+						})
+						setActiveActionIndex(null)
+						return
+					}
+
 					const isCompleted = status.progressPercentage === 100
 
 					setActiveTasks((prev) => ({
@@ -178,58 +238,89 @@ function ManageIndices() {
 		return () => clearInterval(intervalId)
 	}, [activeTasks, clusterId])
 
-	// SUMMARY CALCULATIONS
 	const allIndices = migrationInfo?.reindexNeedingIndices || []
 	const dataStreamList = allIndices.filter((item: any) => item.dataStream)
 	const systemIndicesList = allIndices.filter((item: any) => item.systemIndex && !item.dataStream)
 	const customIndicesList = allIndices.filter((item: any) => !item.systemIndex && !item.dataStream)
 
 	const handleReindex = (indexName: string) => {
-		if (clusterId) {
-			setActiveActionIndex(indexName)
-			reindexSingleIndex({ clusterId, indexName })
-			toast.success(`Reindex started for ${indexName}`)
-		}
+		if (!clusterId) return
+		openConfirmation({
+			title: "Reindex Data",
+			message: `Are you sure you want to reindex "${indexName}"? This will copy the data to a new format.`,
+			confirmText: "Reindex",
+			cancelText: "Cancel",
+			Icon: Refresh,
+			onConfirm: () => {
+				setActiveActionIndex(indexName)
+				reindexSingleIndex({ clusterId, indexName })
+				toast.success(`Reindex started for ${indexName}`)
+			},
+		})
 	}
 
 	const handleDelete = (indexName: string) => {
-		if (clusterId) {
-			setActiveActionIndex(indexName)
-			deleteSingleIndex({ clusterId, indexName })
-			toast.success(`Index deleted: ${indexName}`)
-		}
+		if (!clusterId) return
+		openConfirmation({
+			title: "Delete Data",
+			message: `Are you sure you want to permanently delete "${indexName}"? This action cannot be undone.`,
+			confirmText: "Delete",
+			cancelText: "Cancel",
+			Icon: Trash,
+			onConfirm: () => {
+				setActiveActionIndex(indexName)
+				deleteSingleIndex({ clusterId, indexName })
+				toast.success(`Index deleted: ${indexName}`)
+			},
+		})
 	}
 
-	const handleBulkReindex = (filteredList: any[]) => {
+	const handleBulkReindex = (searchedList: any[]) => {
 		if (!clusterId) return
 		const keysToProcess =
 			selectedKeys === "all"
-				? filteredList.map((i: any) => i.index || i.name)
+				? searchedList.map((i: any) => i.index || i.name)
 				: (Array.from(selectedKeys) as string[])
 
 		const validKeys = keysToProcess.filter((name) => !activeTasks[name] && !deletedIndices.includes(name))
+		if (validKeys.length === 0) return
 
-		if (validKeys.length > 0) {
-			validKeys.forEach((name) => reindexSingleIndex({ clusterId, indexName: name }))
-			toast.success(`Bulk reindex initiated for ${validKeys.length} indices`)
-		}
-		setSelectedKeys(new Set([]))
+		openConfirmation({
+			title: "Bulk Reindex",
+			message: `Are you sure you want to reindex ${validKeys.length} selected items?`,
+			confirmText: "Reindex All",
+			cancelText: "Cancel",
+			Icon: Refresh,
+			onConfirm: () => {
+				validKeys.forEach((name) => reindexSingleIndex({ clusterId, indexName: name }))
+				toast.success(`Bulk reindex initiated for ${validKeys.length} indices`)
+				setSelectedKeys(new Set([]))
+			},
+		})
 	}
 
-	const handleBulkDelete = (filteredList: any[]) => {
+	const handleBulkDelete = (searchedList: any[]) => {
 		if (!clusterId) return
 		const keysToProcess =
 			selectedKeys === "all"
-				? filteredList.map((i: any) => i.index || i.name)
+				? searchedList.map((i: any) => i.index || i.name)
 				: (Array.from(selectedKeys) as string[])
 
 		const validKeys = keysToProcess.filter((name) => !activeTasks[name] && !deletedIndices.includes(name))
+		if (validKeys.length === 0) return
 
-		if (validKeys.length > 0) {
-			validKeys.forEach((name) => deleteSingleIndex({ clusterId, indexName: name }))
-			toast.success(`Bulk delete initiated for ${validKeys.length} indices`)
-		}
-		setSelectedKeys(new Set([]))
+		openConfirmation({
+			title: "Bulk Delete",
+			message: `Are you sure you want to permanently delete ${validKeys.length} selected items? This action cannot be undone.`,
+			confirmText: "Delete All",
+			cancelText: "Cancel",
+			Icon: Trash,
+			onConfirm: () => {
+				validKeys.forEach((name) => deleteSingleIndex({ clusterId, indexName: name }))
+				toast.success(`Bulk delete initiated for ${validKeys.length} indices`)
+				setSelectedKeys(new Set([]))
+			},
+		})
 	}
 
 	const stopClick = (e: React.MouseEvent) => e.stopPropagation()
@@ -245,7 +336,10 @@ function ManageIndices() {
 			switch (columnKey) {
 				case "name":
 					return (
-						<div onClick={stopClick} className="flex items-center gap-3 w-full cursor-default py-2 group">
+						<div
+							onClick={stopClick}
+							className="flex items-center gap-3 w-full cursor-default py-2 group pl-4"
+						>
 							<span className="text-[#ADADAD] font-medium break-all">{cellValue}</span>
 							<Tooltip content="copy name" placement="top">
 								<button
@@ -358,42 +452,65 @@ function ManageIndices() {
 	)
 
 	const renderIndicesTable = (dataList: any[], emptyTitle: string, emptySub: string) => {
-		const filteredList = dataList.filter((item: any) => {
+		// First, filter out completed/deleted tasks
+		const baseFilteredList = dataList.filter((item: any) => {
 			const itemName = item.index || item.name
 			return !deletedIndices.includes(itemName) && !activeTasks[itemName]?.isCompleted
 		})
 
-		const hasSelection = selectedKeys === "all" || selectedKeys.size > 0
-		const selectedCount = selectedKeys === "all" ? filteredList.length : selectedKeys.size
+		// Filter by Search Query
+		const searchedList = baseFilteredList.filter((item: any) => {
+			const itemName = item.index || item.name
+			return itemName.toLowerCase().includes(searchQuery.toLowerCase())
+		})
 
-		const topContent = hasSelection ? (
-			<Box className="flex flex-row items-center justify-between w-full bg-[#BDA0FF]/10 border border-[#BDA0FF]/20 rounded-xl p-3 mb-2 animate-appearance-in">
-				<Typography color="#BDA0FF" fontSize="14px" fontWeight="600">
-					{selectedCount} item{selectedCount !== 1 ? "s" : ""} selected
-				</Typography>
-				<Box className="flex items-center gap-3">
-					<button
-						onClick={() => handleBulkDelete(filteredList)}
-						className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#FF6B6B]/30 bg-[#FF6B6B]/10 text-[#FF6B6B] text-[13px] font-medium hover:bg-[#FF6B6B]/20 transition-all active:scale-95 outline-none"
-					>
-						<Trash color="white" size="14" />
-						Delete Selected
-					</button>
-					<button
-						onClick={() => handleBulkReindex(filteredList)}
-						disabled={!isValidUpgradePath}
-						className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[13px] font-medium transition-all outline-none ${
-							isValidUpgradePath
-								? "bg-[#BDA0FF] border-[#BDA0FF] text-[#0D0D0D] hover:bg-[#A886FF] active:scale-95"
-								: "bg-[#3A3A3A] border-[#2F2F2F] text-[#6E6E6E] cursor-not-allowed"
-						}`}
-					>
-						<Refresh color="white" size="14" variant="Bold" />
-						Reindex Selected
-					</button>
+		const hasSelection = selectedKeys === "all" || selectedKeys.size > 0
+		const selectedCount = selectedKeys === "all" ? searchedList.length : selectedKeys.size
+
+		const topContent = (
+			<Box className="flex flex-col gap-4 mb-2">
+				{/* SEARCH INPUT BAR */}
+				<Box className="flex w-full">
+					<input
+						type="text"
+						placeholder="Search by index name..."
+						value={searchQuery}
+						onChange={(e) => setSearchQuery(e.target.value)}
+						className="w-full md:w-80 px-4 py-2 bg-[#1A1A1A] border border-[#2F2F2F] rounded-xl text-sm text-[#FFF] placeholder:text-[#6E6E6E] focus:outline-none focus:border-[#BDA0FF] transition-colors"
+					/>
 				</Box>
+
+				{/* BULK ACTIONS BANNER */}
+				{hasSelection && (
+					<Box className="flex flex-row items-center justify-between w-full bg-[#BDA0FF]/10 border border-[#BDA0FF]/20 rounded-xl p-3 animate-appearance-in">
+						<Typography color="#BDA0FF" fontSize="14px" fontWeight="600">
+							{selectedCount} item{selectedCount !== 1 ? "s" : ""} selected
+						</Typography>
+						<Box className="flex items-center gap-3">
+							<button
+								onClick={() => handleBulkDelete(searchedList)}
+								className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#FF6B6B]/30 bg-[#FF6B6B]/10 text-[#FF6B6B] text-[13px] font-medium hover:bg-[#FF6B6B]/20 transition-all active:scale-95 outline-none"
+							>
+								<Trash color="white" size="14" />
+								Delete Selected
+							</button>
+							<button
+								onClick={() => handleBulkReindex(searchedList)}
+								disabled={!isValidUpgradePath}
+								className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[13px] font-medium transition-all outline-none ${
+									isValidUpgradePath
+										? "bg-[#BDA0FF] border-[#BDA0FF] text-[#0D0D0D] hover:bg-[#A886FF] active:scale-95"
+										: "bg-[#3A3A3A] border-[#2F2F2F] text-[#6E6E6E] cursor-not-allowed"
+								}`}
+							>
+								<Refresh color="white" size="14" variant="Bold" />
+								Reindex Selected
+							</button>
+						</Box>
+					</Box>
+				)}
 			</Box>
-		) : null
+		)
 
 		return (
 			<Table
@@ -438,7 +555,7 @@ function ManageIndices() {
 				</TableHeader>
 				<TableBody
 					items={
-						filteredList.map((item: any) => ({
+						searchedList.map((item: any) => ({
 							...item,
 							uid: item.index || item.name,
 							name: item.index || item.name,
@@ -453,10 +570,10 @@ function ManageIndices() {
 							</Box>
 							<Box className="flex flex-col items-center gap-[5px]">
 								<Typography color="#F1F0F0" fontSize="16px" fontWeight="400">
-									{emptyTitle}
+									{searchQuery ? "No results match your search" : emptyTitle}
 								</Typography>
 								<Typography color="#A6A6A6" fontSize="12px" fontWeight="400">
-									{emptySub}
+									{searchQuery ? "Try a different keyword" : emptySub}
 								</Typography>
 							</Box>
 						</Box>
@@ -514,7 +631,10 @@ function ManageIndices() {
 				<Tabs
 					aria-label="Indices Categories"
 					variant="underlined"
-					onSelectionChange={() => setSelectedKeys(new Set([]))}
+					onSelectionChange={() => {
+						setSelectedKeys(new Set([]))
+						setSearchQuery("")
+					}}
 					classNames={{
 						tabList: "gap-6 w-full relative rounded-none p-0 border-b border-[#2F2F2F]",
 						cursor: "w-full bg-[#BDA0FF]",
@@ -522,72 +642,6 @@ function ManageIndices() {
 						tabContent: "group-data-[selected=true]:text-[#FFF] text-[#ADADAD] text-base font-medium",
 					}}
 				>
-					{/* SUMMARY TAB */}
-					<Tab key="summary" title="Overview">
-						<Box className="flex flex-col gap-6 pt-4">
-							<Box className="flex flex-col gap-1 max-w-7xl">
-								<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
-									Migration Dashboard
-								</Typography>
-								<Typography color="#6E6E6E" fontSize="13px" fontWeight="400" className="mt-1">
-									Use the tabs to dive into specific categories and take necessary actions to ensure a
-									smooth upgrade process.
-								</Typography>
-							</Box>
-
-							{/* Stat Cards Grid */}
-							<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-								<Box className="flex flex-col gap-2 p-5 rounded-xl border border-[#2F2F2F] bg-[#161616]">
-									<Typography color="#ADADAD" fontSize="13px" fontWeight="500">
-										Application Data
-									</Typography>
-									<Typography
-										color={customIndicesList.length === 0 ? "#52D97F" : "#FFF"}
-										fontSize="28px"
-										fontWeight="600"
-									>
-										{customIndicesList.length}
-									</Typography>
-									<Typography color="#6E6E6E" fontSize="12px">
-										Indices pending migration
-									</Typography>
-								</Box>
-
-								<Box className="flex flex-col gap-2 p-5 rounded-xl border border-[#2F2F2F] bg-[#161616]">
-									<Typography color="#ADADAD" fontSize="13px" fontWeight="500">
-										Internal System Data
-									</Typography>
-									<Typography
-										color={systemIndicesList.length === 0 ? "#52D97F" : "#FFF"}
-										fontSize="28px"
-										fontWeight="600"
-									>
-										{systemIndicesList.length}
-									</Typography>
-									<Typography color="#6E6E6E" fontSize="12px">
-										Indices pending migration
-									</Typography>
-								</Box>
-
-								<Box className="flex flex-col gap-2 p-5 rounded-xl border border-[#2F2F2F] bg-[#161616]">
-									<Typography color="#ADADAD" fontSize="13px" fontWeight="500">
-										Data Streams
-									</Typography>
-									<Typography
-										color={dataStreamList.length === 0 ? "#52D97F" : "#FFF"}
-										fontSize="28px"
-										fontWeight="600"
-									>
-										{dataStreamList.length}
-									</Typography>
-									<Typography color="#6E6E6E" fontSize="12px">
-										Streams pending migration
-									</Typography>
-								</Box>
-							</div>
-						</Box>
-					</Tab>
-
 					<Tab key="custom" title={`Custom Indices (${customIndicesList.length})`}>
 						<Box className="flex flex-col gap-6 pt-4">
 							<Box className="flex flex-col gap-1 max-w-7xl">
@@ -700,6 +754,8 @@ function ManageIndices() {
 					</Tab>
 				</Tabs>
 			</Box>
+
+			{ConfirmationModal}
 		</Box>
 	)
 }
