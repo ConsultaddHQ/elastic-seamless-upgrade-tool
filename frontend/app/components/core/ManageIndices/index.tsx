@@ -13,7 +13,7 @@ import {
 } from "@heroui/react"
 import { Box, Typography } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { Convertshape2, TickCircle, Warning2, Trash, Refresh, DocumentCopy, InfoCircle } from "iconsax-react"
+import { TickCircle, Warning2, Trash, Refresh, DocumentCopy, InfoCircle, Convertshape2 } from "iconsax-react"
 import { useCallback, type Key, useState, useEffect, useMemo } from "react"
 import { useNavigate, useParams } from "react-router"
 import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
