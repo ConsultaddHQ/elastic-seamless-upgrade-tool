@@ -200,21 +200,6 @@ function ManageIndices() {
 			indicesToPoll.forEach(async (indexName) => {
 				try {
 					const status = await clusterUpgradeApi.checkReindexStatus(clusterId, indexName)
-
-					if (status.progressPercentage === 0 && !status.taskId) {
-						toast.error(
-							`Reindex aborted for ${indexName}. It is likely empty. Please use Delete instead.`,
-							{ duration: 6000 }
-						)
-						setActiveTasks((prev) => {
-							const newTasks = { ...prev }
-							delete newTasks[indexName]
-							return newTasks
-						})
-						setActiveActionIndex(null)
-						return
-					}
-
 					const isCompleted = status.progressPercentage === 100
 
 					setActiveTasks((prev) => ({
@@ -247,7 +232,7 @@ function ManageIndices() {
 		if (!clusterId) return
 		openConfirmation({
 			title: "Reindex Data",
-			message: `Are you sure you want to reindex "${indexName}"? This will copy the data to a new format.`,
+			message: `Are you sure you want to reindex "${indexName}"? <br/>This will copy the data to a new format.`,
 			confirmText: "Reindex",
 			cancelText: "Cancel",
 			Icon: Refresh,
@@ -287,7 +272,7 @@ function ManageIndices() {
 
 		openConfirmation({
 			title: "Bulk Reindex",
-			message: `Are you sure you want to reindex ${validKeys.length} selected items?`,
+			message: `Are you sure you want to reindex ${validKeys.length} selected items?  <br/>This will copy the data to a new format.`,
 			confirmText: "Reindex All",
 			cancelText: "Cancel",
 			Icon: Refresh,
