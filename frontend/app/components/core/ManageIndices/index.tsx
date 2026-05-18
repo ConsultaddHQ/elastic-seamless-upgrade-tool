@@ -737,7 +737,7 @@ function ManageIndices() {
 									</Box>
 									<Typography color="#6E6E6E" fontSize="13px" fontWeight="400" className="mt-1">
 										These hidden indices (starting with a dot) power the internal mechanics of your
-										cluster, storing Kibana dashboards, security roles, and automated tasks. Click{" "}
+										cluster, storing Kibana dashboards, security roles, and automated tasks. Click
 										<strong>Auto-Migrate System</strong> to let Elasticsearch update its standard
 										configurations natively. Any leftover legacy system files shown below must be
 										manually reindexed or deleted.

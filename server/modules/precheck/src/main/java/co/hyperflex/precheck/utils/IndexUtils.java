@@ -232,4 +232,9 @@ public class IndexUtils {
 
     return 0L;
   }
+
+  public Integer getMajorVersion(String version) {
+    String major = version.split("\\.")[0];
+    return Integer.parseInt(major);
+  }
 }

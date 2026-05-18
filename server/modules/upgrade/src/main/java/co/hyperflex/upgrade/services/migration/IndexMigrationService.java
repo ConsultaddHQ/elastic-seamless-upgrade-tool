@@ -1,6 +1,7 @@
 package co.hyperflex.upgrade.services.migration;
 
 import co.hyperflex.clients.client.ApiRequest;
+import co.hyperflex.clients.elastic.ElasticClient;
 import co.hyperflex.clients.elastic.ElasticsearchClientProvider;
 import co.hyperflex.clients.elastic.dto.GetElasticDeprecationResponse;
 import co.hyperflex.clients.elastic.dto.cat.indices.IndicesRecord;
@@ -36,7 +37,18 @@ public class IndexMigrationService {
   }
 
   public List<IndexReindexInfo> getReindexIndicesMetadata(String clusterId) {
-    var client = elasticsearchClientProvider.getClient(clusterId);
+    List<IndexReindexInfo> results = new ArrayList<>();
+    ElasticClient client = elasticsearchClientProvider.getClient(clusterId);
+
+    String currentVersion = clusterUpgradeJobService.getUpgradeJobById(clusterId).getCurrentVersion();
+    String targetVersion = clusterUpgradeJobService.getUpgradeJobById(clusterId).getTargetVersion();
+
+    Integer currentMajor = indexUtils.getMajorVersion(currentVersion);
+    Integer targetMajor = indexUtils.getMajorVersion(targetVersion);
+
+    if (currentMajor + 1 != targetMajor) {
+      return results;
+    }
 
     // 1. Fetch data from your Deprecations API
     GetElasticDeprecationResponse deprecations = client.getDeprecation();
@@ -74,8 +86,6 @@ public class IndexMigrationService {
     Map<String, IndicesRecord> indicesStatsMap = allIndices.stream()
         .filter(r -> r.getIndex() != null)
         .collect(Collectors.toMap(IndicesRecord::getIndex, r -> r, (r1, r2) -> r1));
-
-    List<IndexReindexInfo> results = new ArrayList<>();
 
     // 4. Map Standard Indices
     for (String indexName : incompatibleIndices) {
