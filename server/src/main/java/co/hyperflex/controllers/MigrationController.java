@@ -4,8 +4,8 @@ package co.hyperflex.controllers;
 import co.hyperflex.upgrade.services.dtos.MigrationInfoResponse;
 import co.hyperflex.upgrade.services.dtos.ReindexProgressInfo;
 import co.hyperflex.upgrade.services.migration.FeatureMigrationResponse;
+import co.hyperflex.upgrade.services.migration.FeatureMigrationService;
 import co.hyperflex.upgrade.services.migration.IndexMigrationService;
-import co.hyperflex.upgrade.services.migration.MigrationService;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -22,22 +22,23 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/clusters/{clusterId}/migrations")
 public class MigrationController {
 
-  private final MigrationService migrationService;
   private final IndexMigrationService indexMigrationService;
+  private final FeatureMigrationService featureMigrationService;
 
-  public MigrationController(MigrationService migrationService, IndexMigrationService indexMigrationService) {
-    this.migrationService = migrationService;
+  public MigrationController(IndexMigrationService indexMigrationService,
+                             FeatureMigrationService featureMigrationService) {
     this.indexMigrationService = indexMigrationService;
+    this.featureMigrationService = featureMigrationService;
   }
 
   @GetMapping("/info")
   public MigrationInfoResponse getMigrationInfo(@PathVariable String clusterId) {
-    return migrationService.getMigrationInfo(clusterId);
+    return featureMigrationService.getMigrationInfo(clusterId);
   }
 
   @PostMapping("/migrate-system-features")
   public FeatureMigrationResponse migrateSystemFeatures(@PathVariable String clusterId) {
-    return migrationService.migrate(clusterId);
+    return featureMigrationService.migrate(clusterId);
   }
 
   @DeleteMapping(value = "/indices/{indexName}", produces = MediaType.APPLICATION_JSON_VALUE)
