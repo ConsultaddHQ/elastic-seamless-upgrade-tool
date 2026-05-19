@@ -12,6 +12,8 @@ import co.hyperflex.clients.elastic.dto.GetElasticDeprecationResponse;
 import co.hyperflex.clients.kibana.KibanaClient;
 import co.hyperflex.clients.kibana.KibanaClientProvider;
 import co.hyperflex.clients.kibana.dto.GetKibanaDeprecationResponse;
+import co.hyperflex.core.services.upgrade.ClusterUpgradeJobService;
+import co.hyperflex.core.upgrade.ClusterUpgradeJobEntity;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -28,6 +30,8 @@ class DeprecationServiceTest {
   private ElasticsearchClientProvider elasticsearchClientProvider;
   @Mock
   private KibanaClientProvider kibanaClientProvider;
+  @Mock
+  private ClusterUpgradeJobService clusterUpgradeJobService; // Added missing mock
   @Mock
   private ElasticClient elasticClient;
   @Mock
@@ -61,6 +65,13 @@ class DeprecationServiceTest {
   void getElasticDeprecations_returnsCorrectly() {
     // Arrange
     when(elasticsearchClientProvider.getClient(CLUSTER_ID)).thenReturn(elasticClient);
+
+    // Mock the job service to simulate a major version jump
+    ClusterUpgradeJobEntity dummyJob = new ClusterUpgradeJobEntity();
+    dummyJob.setCurrentVersion("8.14.0");
+    dummyJob.setTargetVersion("9.0.0");
+    when(clusterUpgradeJobService.getActiveJobByClusterId(CLUSTER_ID)).thenReturn(dummyJob);
+
     ElasticDeprecation deprecation = new ElasticDeprecation("Details", "critical", "Message", "URL");
     GetElasticDeprecationResponse elasticResponse = new GetElasticDeprecationResponse(
         List.of(deprecation), Collections.emptyMap(), Collections.emptyMap(), Collections.emptyList(),
@@ -101,6 +112,13 @@ class DeprecationServiceTest {
   void getElasticDeprecationCounts_returnsCorrectCounts() {
     // Arrange
     when(elasticsearchClientProvider.getClient(CLUSTER_ID)).thenReturn(elasticClient);
+
+    // Mock the job service to simulate a major version jump
+    ClusterUpgradeJobEntity dummyJob = new ClusterUpgradeJobEntity();
+    dummyJob.setCurrentVersion("8.14.0");
+    dummyJob.setTargetVersion("9.0.0");
+    when(clusterUpgradeJobService.getActiveJobByClusterId(CLUSTER_ID)).thenReturn(dummyJob);
+
     ElasticDeprecation critical = new ElasticDeprecation(null, "critical", null, null);
     ElasticDeprecation warning = new ElasticDeprecation(null, "warning", null, null);
     GetElasticDeprecationResponse elasticResponse = new GetElasticDeprecationResponse(
