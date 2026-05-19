@@ -6,6 +6,7 @@ import co.hyperflex.clients.elastic.ElasticsearchClientProvider;
 import co.hyperflex.clients.elastic.dto.GetElasticDeprecationResponse;
 import co.hyperflex.clients.elastic.dto.cat.indices.IndicesRecord;
 import co.hyperflex.core.services.upgrade.ClusterUpgradeJobService;
+import co.hyperflex.core.upgrade.ClusterUpgradeJobEntity;
 import co.hyperflex.precheck.utils.IndexUtils;
 import co.hyperflex.upgrade.services.dtos.IndexReindexInfo;
 import co.hyperflex.upgrade.services.dtos.ReindexProgressInfo;
@@ -39,13 +40,15 @@ public class IndexMigrationService {
   public List<IndexReindexInfo> getReindexIndicesMetadata(String clusterId) {
     List<IndexReindexInfo> results = new ArrayList<>();
     ElasticClient client = elasticsearchClientProvider.getClient(clusterId);
+    ClusterUpgradeJobEntity job = clusterUpgradeJobService.getActiveJobByClusterId(clusterId);
 
-    String currentVersion = clusterUpgradeJobService.getUpgradeJobById(clusterId).getCurrentVersion();
-    String targetVersion = clusterUpgradeJobService.getUpgradeJobById(clusterId).getTargetVersion();
+    String currentVersion = job.getCurrentVersion();
+    String targetVersion = job.getTargetVersion();
 
     Integer currentMajor = indexUtils.getMajorVersion(currentVersion);
     Integer targetMajor = indexUtils.getMajorVersion(targetVersion);
 
+    // Reindexing Is Required at the time of Major Version jumps only
     if (currentMajor + 1 != targetMajor) {
       return results;
     }
