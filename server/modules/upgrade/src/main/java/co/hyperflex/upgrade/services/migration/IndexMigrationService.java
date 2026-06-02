@@ -252,7 +252,7 @@ public class IndexMigrationService {
       }
 
       // 3. STANDARD INDEX REINDEX
-      String destIndexName = indexName + "-reindexed";
+      String destIndexName = "reindexed-" + indexName;
 
       if (!applyWriteBlock(clusterId, indexName)) {
         throw new RuntimeException("Failed to lock source index [" + indexName + "] for reindexing.");
@@ -351,7 +351,7 @@ public class IndexMigrationService {
             return new ReindexProgressInfo(false, null, 0, 0);
           }
 
-          String destIndexName = indexName + "-reindexed";
+          String destIndexName = "reindexed-" + indexName;
 
           // Verify destination index was actually created
           try {
