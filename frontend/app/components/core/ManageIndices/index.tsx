@@ -13,7 +13,7 @@ import {
 } from "@heroui/react"
 import { Box, Typography } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { TickCircle, Warning2, Trash, Refresh, DocumentCopy, InfoCircle, Convertshape2 } from "iconsax-react"
+import { Convertshape2, TickCircle, Warning2, Trash, Refresh, DocumentCopy, InfoCircle } from "iconsax-react"
 import { useCallback, type Key, useState, useEffect, useMemo } from "react"
 import { useNavigate, useParams } from "react-router"
 import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
@@ -88,9 +88,9 @@ function ManageIndices() {
 	const [activeTasks, setActiveTasks] = useState<Record<string, TaskProgress>>({})
 
 	const [selectedKeys, setSelectedKeys] = useState<any>(new Set([]))
-	const [searchQuery, setSearchQuery] = useState("") // NEW: Search State
+	const [searchQuery, setSearchQuery] = useState("")
 
-	const { openConfirmation, ConfirmationModal } = useConfirmationModal() // NEW: Modal Hook
+	const { openConfirmation, ConfirmationModal } = useConfirmationModal()
 
 	const disabledKeys = useMemo(() => {
 		return new Set([...deletedIndices, ...Object.keys(activeTasks)])
@@ -437,14 +437,12 @@ function ManageIndices() {
 	)
 
 	const renderIndicesTable = (dataList: any[], emptyTitle: string, emptySub: string) => {
-		// First, filter out completed/deleted tasks
-		const baseFilteredList = dataList.filter((item: any) => {
+		const filteredList = dataList.filter((item: any) => {
 			const itemName = item.index || item.name
 			return !deletedIndices.includes(itemName) && !activeTasks[itemName]?.isCompleted
 		})
 
-		// Filter by Search Query
-		const searchedList = baseFilteredList.filter((item: any) => {
+		const searchedList = filteredList.filter((item: any) => {
 			const itemName = item.index || item.name
 			return itemName.toLowerCase().includes(searchQuery.toLowerCase())
 		})
@@ -454,18 +452,16 @@ function ManageIndices() {
 
 		const topContent = (
 			<Box className="flex flex-col gap-4 mb-2">
-				{/* SEARCH INPUT BAR */}
 				<Box className="flex w-full">
 					<input
 						type="text"
 						placeholder="Search by index name..."
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
-						className="w-full md:w-100 px-4 py-2 bg-[#1A1A1A] border border-[#2F2F2F] rounded-xl text-sm text-[#FFF] placeholder:text-[#6E6E6E] focus:outline-none focus:border-[#BDA0FF] transition-colors"
+						className="w-full md:w-80 px-4 py-2 bg-[#1A1A1A] border border-[#2F2F2F] rounded-xl text-sm text-[#FFF] placeholder:text-[#6E6E6E] focus:outline-none focus:border-[#BDA0FF] transition-colors"
 					/>
 				</Box>
 
-				{/* BULK ACTIONS BANNER */}
 				{hasSelection && (
 					<Box className="flex flex-row items-center justify-between w-full bg-[#BDA0FF]/10 border border-[#BDA0FF]/20 rounded-xl p-3 animate-appearance-in">
 						<Typography color="#BDA0FF" fontSize="14px" fontWeight="600">
@@ -627,7 +623,6 @@ function ManageIndices() {
 						tabContent: "group-data-[selected=true]:text-[#FFF] text-[#ADADAD] text-base font-medium",
 					}}
 				>
-					{/* OVERVIEW SUMMARY TAB */}
 					<Tab key="summary" title="Overview">
 						<Box className="flex flex-col gap-6 pt-4">
 							<Box className="flex flex-col gap-1 max-w-7xl">
@@ -691,8 +686,56 @@ function ManageIndices() {
 									</Typography>
 								</Box>
 							</div>
+
+							{/* NEW: Step-by-Step Instructions */}
+							<Box className="flex flex-col gap-4 mt-2 p-5 rounded-xl border border-[#2F2F2F] bg-[#161616]">
+								<Typography color="#FFF" fontSize="16px" fontWeight="600">
+									Recommended Migration Steps
+								</Typography>
+								<div className="flex flex-col gap-4">
+									<div className="flex gap-3 items-start">
+										<div className="flex items-center justify-center min-w-6 h-6 rounded-full bg-[#BDA0FF]/20 text-[#BDA0FF] text-xs font-bold">
+											1
+										</div>
+										<Typography color="#ADADAD" fontSize="13px" className="mt-0.5">
+											<strong className="text-white font-medium">
+												Auto-Migrate System Data:
+											</strong>{" "}
+											Go to the <em>System Indices</em> tab and click the{" "}
+											<strong>Auto-Migrate System</strong> button first. This allows Elasticsearch
+											to automatically update its internal configurations and hidden files.
+										</Typography>
+									</div>
+									<div className="flex gap-3 items-start">
+										<div className="flex items-center justify-center min-w-6 h-6 rounded-full bg-[#BDA0FF]/20 text-[#BDA0FF] text-xs font-bold">
+											2
+										</div>
+										<Typography color="#ADADAD" fontSize="13px" className="mt-0.5">
+											<strong className="text-white font-medium">
+												Clean Up Remaining System Indices:
+											</strong>{" "}
+											If any system indices are still listed after the auto-migration completes,
+											manually delete them (if no longer needed) or reindex them.
+										</Typography>
+									</div>
+									<div className="flex gap-3 items-start">
+										<div className="flex items-center justify-center min-w-6 h-6 rounded-full bg-[#BDA0FF]/20 text-[#BDA0FF] text-xs font-bold">
+											3
+										</div>
+										<Typography color="#ADADAD" fontSize="13px" className="mt-0.5">
+											<strong className="text-white font-medium">
+												Reindex Application Data:
+											</strong>{" "}
+											Visit the <em>Custom Indices</em> and <em>Data Streams</em> tabs to review
+											your application data. Select the data you want to keep and click{" "}
+											<strong>Reindex</strong>, or use the delete option for obsolete records.
+										</Typography>
+									</div>
+								</div>
+							</Box>
 						</Box>
 					</Tab>
+
 					<Tab key="custom" title={`Custom Indices (${customIndicesList.length})`}>
 						<Box className="flex flex-col gap-6 pt-4">
 							<Box className="flex flex-col gap-1 max-w-7xl">
@@ -737,7 +780,7 @@ function ManageIndices() {
 									</Box>
 									<Typography color="#6E6E6E" fontSize="13px" fontWeight="400" className="mt-1">
 										These hidden indices (starting with a dot) power the internal mechanics of your
-										cluster, storing Kibana dashboards, security roles, and automated tasks. Click
+										cluster, storing Kibana dashboards, security roles, and automated tasks. Click{" "}
 										<strong>Auto-Migrate System</strong> to let Elasticsearch update its standard
 										configurations natively. Any leftover legacy system files shown below must be
 										manually reindexed or deleted.
