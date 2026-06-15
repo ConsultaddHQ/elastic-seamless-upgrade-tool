@@ -1,10 +1,10 @@
 package co.hyperflex.controllers;
 
 
+import co.hyperflex.upgrade.services.dtos.MigrationInfoResponse;
 import co.hyperflex.upgrade.services.migration.FeatureMigrationResponse;
 import co.hyperflex.upgrade.services.migration.IndexMigrationResponse;
 import co.hyperflex.upgrade.services.migration.MigrationService;
-import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,7 +22,7 @@ public class MigrationController {
   }
 
   @GetMapping("/info")
-  public Map<String, Object> getMigrationInfo(@PathVariable String clusterId) {
+  public MigrationInfoResponse getMigrationInfo(@PathVariable String clusterId) {
     return migrationService.getMigrationInfo(clusterId);
   }
 

@@ -1,4 +1,4 @@
-import { Box, IconButton, Typography } from "@mui/material"
+import { Box, CircularProgress, IconButton, Typography } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { useFormik, type FormikErrors } from "formik"
 import { Add, Trash } from "iconsax-react"
@@ -323,11 +323,15 @@ function EditClusterDetail() {
 						)}
 					</Box>
 					<Box className="flex flex-row items-center justify-end gap-[6px] py-6">
-						<OutlinedBorderButton
-							type="submit"
-							disabled={!formik.dirty || formik.isSubmitting || isPending}
-						>
-							{formik.isSubmitting ? "Updating" : "Update"}
+						<OutlinedBorderButton type="submit" disabled={!formik.dirty || isPending}>
+							{isPending ? (
+								<>
+									Updating
+									<CircularProgress size={16} color="inherit" sx={{ mr: 1 }} />
+								</>
+							) : (
+								"Update"
+							)}
 						</OutlinedBorderButton>
 					</Box>
 				</Box>

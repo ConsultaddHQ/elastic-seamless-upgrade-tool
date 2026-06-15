@@ -2,9 +2,11 @@ package co.hyperflex.ssh;
 
 import jakarta.validation.constraints.NotNull;
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.security.KeyPair;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -12,6 +14,8 @@ import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.channel.ClientChannel;
 import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.session.ClientSession;
+import org.apache.sshd.common.config.keys.FilePasswordProvider;
+import org.apache.sshd.common.util.io.resource.PathResource;
 import org.apache.sshd.common.util.security.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +36,8 @@ public class SshCommandExecutor implements AutoCloseable {
     this.timeoutSeconds = timeoutSeconds;
     this.becomeStrategy = becomeStrategy;
     this.client = SshClient.setUpDefaultClient();
+    // Disable host key verification (like StrictHostKeyChecking=no)
+    client.setServerKeyVerifier((clientSession, remoteAddress, serverKey) -> true);
     client.start();
     session = connect(host, port, username, privateKeyPath);
   }
@@ -39,25 +45,47 @@ public class SshCommandExecutor implements AutoCloseable {
   private ClientSession connect(String host, int port, String username, String privateKeyPath) {
     final ClientSession session;
     try {
+      // Validate a key file first
+      logger.info("Loading SSH key from: {}", privateKeyPath);
+      File keyFile = new File(privateKeyPath);
+      if (!keyFile.exists()) {
+        throw new SshConnectionException("SSH key file not found: " + privateKeyPath);
+      }
+      if (!keyFile.canRead()) {
+        throw new SshConnectionException("SSH key file not readable. Check permissions: " + privateKeyPath);
+      }
 
       session = client.connect(username, host, port)
           .verify(timeoutSeconds, TimeUnit.SECONDS)
           .getSession();
 
-      try (var stream = new FileInputStream(privateKeyPath)) {
-        Iterable<KeyPair> keyPairs = SecurityUtils.loadKeyPairIdentities(session, null, stream, null);
-        for (KeyPair kp : keyPairs) {
-          session.addPublicKeyIdentity(kp);
-        }
+      Collection<KeyPair> keyPairs =
+          SecurityUtils.getKeyPairResourceParser()
+              .loadKeyPairs(
+                  session,
+                  new PathResource(Path.of(privateKeyPath)),
+                  FilePasswordProvider.EMPTY
+              );
+
+      if (keyPairs == null || keyPairs.isEmpty()) {
+        throw new SshConnectionException("No valid SSH keys found in: " + privateKeyPath);
       }
+
+      for (KeyPair kp : keyPairs) {
+        logger.info("Loaded SSH key algorithm: {}", kp.getPrivate().getAlgorithm());
+        session.addPublicKeyIdentity(kp);
+      }
+
       session.auth().verify(timeoutSeconds, TimeUnit.SECONDS);
+
     } catch (Exception e) {
       if (e.getCause() instanceof TimeoutException) {
-        logger.warn("Timeout waiting for private key verification");
-        throw new SshConnectionException("Unable to establish SSH connection to host (IP: " + host + ").", e);
+        logger.warn("Timeout waiting for private key verification. Error {}", e.getMessage());
+        throw new SshConnectionException("Timeout: " + e.getMessage());
       }
-      logger.warn("Unable to establish SSH connection to host", e);
-      throw new SshConnectionException("SSH authentication failed for host (IP: " + host + ").", e);
+      logger.error("SSH connection failed for {}@{}:{} - Key: {}. Error: {}",
+          username, host, port, privateKeyPath, e.getMessage(), e);
+      throw new SshConnectionException("SSH authentication failed: " + e.getMessage());
     }
     return session;
   }
@@ -88,7 +116,7 @@ public class SshCommandExecutor implements AutoCloseable {
       }
     } finally {
       if (client != null && client.isOpen()) {
-        client.close();
+        client.stop();
       }
     }
   }

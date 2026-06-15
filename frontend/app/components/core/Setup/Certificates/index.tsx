@@ -6,6 +6,7 @@ import Files from "react-files"
 import { toast } from "sonner"
 import { ConatinedButton, OutlinedButton } from "~/components/utilities/Buttons"
 import StringManager from "~/constants/StringManager"
+import { CircularProgress } from "@mui/material"
 
 function Certificates({ backStep, onSubmit, isSubmitting }: TCertificateComp) {
 	const [certFiles, setCertFiles] = useState<File[]>([])
@@ -128,11 +129,20 @@ function Certificates({ backStep, onSubmit, isSubmitting }: TCertificateComp) {
 				</Box>
 			</Box>
 			<Box className="flex justify-end gap-2">
-				<OutlinedButton onClick={backStep}>
+				<OutlinedButton onClick={backStep} disabled={isSubmitting}>
 					<ArrowLeft size="20px" color="currentColor" /> Back
 				</OutlinedButton>
 				<ConatinedButton onClick={handleSubmit} disabled={isSubmitting}>
-					{isSubmitting ? "Submitting" : "Continue"} <ArrowRight size="20px" color="currentColor" />
+					{isSubmitting ? (
+						<>
+							Submitting
+							<CircularProgress size={18} color="inherit" sx={{ mr: 1 }} />
+						</>
+					) : (
+						<>
+							Continue <ArrowRight size="20px" color="currentColor" />
+						</>
+					)}
 				</ConatinedButton>
 			</Box>
 		</Box>

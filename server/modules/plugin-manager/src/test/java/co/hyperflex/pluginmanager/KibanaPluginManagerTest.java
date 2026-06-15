@@ -3,6 +3,7 @@ package co.hyperflex.pluginmanager;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import co.hyperflex.ssh.CommandResult;
@@ -36,10 +37,14 @@ class KibanaPluginManagerTest {
     return "/usr/share/kibana/bin/kibana-plugin ";
   }
 
+  private String getPluginDirectory() {
+    return "/usr/share/kibana/plugins/";
+  }
+
   @Test
   void listPlugins_whenPluginsExist_shouldReturnPluginList() throws IOException {
-    String commandOutput = "plugin1\nplugin2 ";
-    when(executor.execute(getBaseCommand() + "list")).thenReturn(new CommandResult(0, commandOutput, ""));
+    String commandOutput = "plugin1\nplugin2";
+    when(executor.execute(anyString())).thenReturn(new CommandResult(0, commandOutput, ""));
     List<String> plugins = pluginManager.listPlugins();
     assertEquals(2, plugins.size());
     assertTrue(plugins.contains("plugin1"));
@@ -48,7 +53,7 @@ class KibanaPluginManagerTest {
 
   @Test
   void removePlugin_whenCommandSucceeds_shouldNotThrowException() throws IOException {
-    when(executor.execute(getBaseCommand() + "remove my-plugin")).thenReturn(new CommandResult(0, "", ""));
+    when(executor.execute("rm -rf " + getPluginDirectory() + "my-plugin")).thenReturn(new CommandResult(0, "", ""));
     assertDoesNotThrow(() -> pluginManager.removePlugin("my-plugin"));
   }
 

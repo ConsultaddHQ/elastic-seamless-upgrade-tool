@@ -28,10 +28,13 @@ const columns = [
 
 function ManageIndices() {
 	const { clusterId } = useParams()
-    const navigate = useNavigate()
+	const navigate = useNavigate()
 
-	
-	const { data: migrationInfo, refetch: refetchMigrationInfo, isLoading: isLoadingMigrationInfo } = useQuery({
+	const {
+		data: migrationInfo,
+		refetch: refetchMigrationInfo,
+		isLoading: isLoadingMigrationInfo,
+	} = useQuery({
 		queryKey: ["migration-info", clusterId],
 		queryFn: () => clusterUpgradeApi.getMigrationInfo(clusterId!),
 		enabled: !!clusterId,
@@ -46,29 +49,29 @@ function ManageIndices() {
 
 	const systemIndicesStatus = migrationInfo?.systemIndices?.status
 	const isSystemMigrationInProgress = systemIndicesStatus === "IN_PROGRESS"
-	const isSystemMigrationCompleted = systemIndicesStatus === "NO_MIGRATION_NEEDED" || systemIndicesStatus === "COMPLETED"
+	const isSystemMigrationCompleted =
+		systemIndicesStatus === "NO_MIGRATION_NEEDED" || systemIndicesStatus === "COMPLETED"
 
-	const customIndices = migrationInfo?.customIndices
-    const isValidUpgradePath = migrationInfo?.isValidUpgradePath
-    const reindexPossible = migrationInfo?.reindex?.possible
-    const reindexReason = migrationInfo?.reindex?.reason
+	const reindexNeedingIndices = migrationInfo?.reindexNeedingIndices
+	const isValidUpgradePath = migrationInfo?.isValidUpgradePath
+	const reindexPossible = migrationInfo?.reindexStatus?.possible
+	const reindexReason = migrationInfo?.reindexStatus?.reason
 
-    const { isPending: isReindexing, mutate: reindexIndices } = useMutation({
-        mutationFn: (data: { clusterId: string }) => clusterUpgradeApi.reindexIndices(data.clusterId),
-        onSuccess: () => {
-             refetchMigrationInfo()
-        },
-    })
+	const { isPending: isReindexing, mutate: reindexIndices } = useMutation({
+		mutationFn: (data: { clusterId: string }) => clusterUpgradeApi.reindexIndices(data.clusterId),
+		onSuccess: () => {
+			refetchMigrationInfo()
+		},
+	})
 
-    const handleReindexAll = () => {
-        reindexIndices({ clusterId: clusterId! })
-    }
+	const handleReindexAll = () => {
+		reindexIndices({ clusterId: clusterId! })
+	}
 
 	// Placeholder for single Reindex mutation
 	// const handleReindex = (indexName: string) => {
 	// 	console.log("Reindex clicked for", indexName)
 	// }
-
 
 	const renderCell = useCallback((row: any, columnKey: Key) => {
 		const cellValue = row[columnKey as keyof typeof row]
@@ -101,14 +104,15 @@ function ManageIndices() {
 				/>
 			</Box>
 
-            {!isValidUpgradePath && (
-                <Box className="flex flex-row items-center gap-2 p-4 rounded-xl bg-[#FFF7E6] border border-[#FFE066]">
-                    <Warning2 size="20" color="#B28C00" variant="Bold"/>
-                    <Typography color="#665200" fontSize="14px" fontWeight="500">
-                        Currently the cluster is in view only mode, Select a valid upgrade path to migrate features and indices
-                    </Typography>
-                </Box>
-            )}
+			{isValidUpgradePath != null && !isValidUpgradePath && (
+				<Box className="flex flex-row items-center gap-2 p-4 rounded-xl bg-[#FFF7E6] border border-[#FFE066]">
+					<Warning2 size="20" color="#B28C00" variant="Bold" />
+					<Typography color="#665200" fontSize="14px" fontWeight="500">
+						Currently the cluster is in view only mode, Select a valid upgrade path to migrate features and
+						indices
+					</Typography>
+				</Box>
+			)}
 
 			{/* System Indices Section */}
 			<Box className="flex flex-col p-6 rounded-2xl bg-[#0d0d0d] border border-[#2F2F2F] gap-4">
@@ -153,13 +157,11 @@ function ManageIndices() {
 								</Box>
 							</Tooltip>
 						) : (
-                             <Box
-                                className="flex flex-row w-fit items-center gap-2 px-[7px] py-[5px] rounded-3xl bg-[#52D97F21] text-[#52D97F]"
-                            >
-                                <TickCircle size="16" color="#52D97F" variant="Bold" />
-                                Completed
-                            </Box>
-                        )}
+							<Box className="flex flex-row w-fit items-center gap-2 px-[7px] py-[5px] rounded-3xl bg-[#52D97F21] text-[#52D97F]">
+								<TickCircle size="16" color="#52D97F" variant="Bold" />
+								Completed
+							</Box>
+						)}
 					</Box>
 				</Box>
 			</Box>
@@ -213,7 +215,7 @@ function ManageIndices() {
 					</TableHeader>
 					<TableBody
 						items={
-							customIndices?.map((item: any) => ({
+							reindexNeedingIndices?.map((item: any) => ({
 								...item,
 								uid: item.index,
 								name: item.index,

@@ -9,6 +9,7 @@ import co.hyperflex.clients.elastic.dto.cat.indices.IndicesRecord;
 import co.hyperflex.clients.elastic.dto.cat.master.MasterRecord;
 import co.hyperflex.clients.elastic.dto.cat.shards.ShardsRecord;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -128,14 +129,38 @@ public class ElasticClientImpl extends AbstractElasticClient {
   public List<GetAllocationExplanationResponse> getAllocationExplanation() {
     String unassigned = "UNASSIGNED";
     List<ShardsRecord> shards = getShards();
+
     return shards.stream().filter(s -> unassigned.equals(s.getState())).map(shard -> {
       boolean isPrimaryShard = "p".equals(shard.getPrirep());
       var body = "{\"index\":\"" + shard.getIndex() + "\",\"shard\":" + shard.getShard() + ",\"primary\":" + isPrimaryShard + "}";
       Map data = restClient.post().uri("/_cluster/allocation/explain").body(body).retrieve().body(Map.class);
+
+      List<String> fullExplanation = new ArrayList<>();
+      Set<String> deciderSet = new HashSet<>();
+
+      List<Map<String, Object>> nodeDecisions = (List<Map<String, Object>>) data.get("node_allocation_decisions");
+
+      if (nodeDecisions != null) {
+        for (Map<String, Object> node : nodeDecisions) {
+          List<Map<String, Object>> deciders = (List<Map<String, Object>>) node.get("deciders");
+          if (deciders != null) {
+            for (Map<String, Object> decider : deciders) {
+              // Only add deciders that explicitly said "NO"
+              if ("NO".equals(decider.get("decision"))) {
+                fullExplanation.add((String) decider.get("explanation"));
+                deciderSet.add((String) decider.get("decider"));
+              }
+            }
+          }
+        }
+      }
+
       return new GetAllocationExplanationResponse(
           shard.getIndex(),
           shard.getShard() + (isPrimaryShard ? "(primary)" : ""),
-          data.get("allocate_explanation").toString()
+          data.get("allocate_explanation").toString(),
+          deciderSet,
+          fullExplanation
       );
     }).toList();
   }

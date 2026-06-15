@@ -33,21 +33,30 @@ export default function LoginPage() {
 			username: "",
 			password: "",
 		},
-		onSubmit: async (values) => {
-			const response = await axiosJSON("/auth/login", {
-				method: "POST",
-				data: { ...values },
-			})
-			const accessToken = response.data.accessToken
-			useLocalStore.getState().setSessionName(accessToken)
-			navigate("/")
+		onSubmit: async (values, { setSubmitting }) => {
+			try {
+				const response = await axiosJSON("/auth/login", {
+					method: "POST",
+					data: { ...values },
+				})
+				const accessToken = response.data.accessToken
+				useLocalStore.getState().setSessionName(accessToken)
+				navigate("/")
+			} catch (error) {
+				console.error("Login failed:", error)
+			} finally {
+				setSubmitting(false)
+			}
 		},
 	})
+
 	return (
 		<Box
-			className="w-full flex items-center justify-center mt-[50px]" // centers child vertically and horizontally
+			component="form"
+			onSubmit={formik.handleSubmit}
+			className="w-full flex items-center justify-center mt-[50px]"
 			padding={{ xs: "32px 16px", lg: "32px 56px 32px 152px" }}
-			sx={{ minHeight: "100vh" }} // ensures full viewport height for vertical centering
+			sx={{ minHeight: "100vh" }}
 		>
 			<CssBaseline />
 			<Box className="flex flex-col w-full gap-10 max-w-4xl">
@@ -141,11 +150,18 @@ export default function LoginPage() {
 						<Box className="flex flex-col gap-[24px]">
 							<Box className="flex flex-col gap-[8px] max-w-[515px]">
 								<Button
+									type="submit"
 									color="primary"
 									className="bg-white w-full text-[#0A0A0A]"
-									onPress={() => formik.handleSubmit()}
+									isLoading={formik.isSubmitting}
 								>
-									Login <ArrowRight color="#0A0A0A" size={16} />
+									{formik.isSubmitting ? (
+										"Logging in..."
+									) : (
+										<>
+											Login <ArrowRight color="#0A0A0A" size={16} />
+										</>
+									)}
 								</Button>
 							</Box>
 						</Box>

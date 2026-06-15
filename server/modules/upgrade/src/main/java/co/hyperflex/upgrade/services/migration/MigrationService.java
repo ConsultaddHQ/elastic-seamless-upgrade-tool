@@ -2,14 +2,18 @@ package co.hyperflex.upgrade.services.migration;
 
 import co.hyperflex.clients.client.ApiRequest;
 import co.hyperflex.clients.elastic.ElasticsearchClientProvider;
+import co.hyperflex.core.exceptions.AppException;
+import co.hyperflex.core.exceptions.HttpStatus;
 import co.hyperflex.core.services.upgrade.ClusterUpgradeJobService;
+import co.hyperflex.core.upgrade.ClusterUpgradeJobEntity;
 import co.hyperflex.core.utils.VersionUtils;
 import co.hyperflex.precheck.utils.IndexUtils;
 import co.hyperflex.upgrade.services.dtos.IndexReindexInfo;
+import co.hyperflex.upgrade.services.dtos.MigrationInfoResponse;
+import co.hyperflex.upgrade.services.dtos.ReindexStatus;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -22,50 +26,56 @@ public class MigrationService {
   private final ClusterUpgradeJobService clusterUpgradeJobService;
   private final IndexUtils indexUtils;
 
-  public MigrationService(ElasticsearchClientProvider elasticsearchClientProvider, ClusterUpgradeJobService clusterUpgradeJobService,
+  public MigrationService(ElasticsearchClientProvider elasticsearchClientProvider,
+                          ClusterUpgradeJobService clusterUpgradeJobService,
                           IndexUtils indexUtils) {
     this.elasticsearchClientProvider = elasticsearchClientProvider;
     this.clusterUpgradeJobService = clusterUpgradeJobService;
     this.indexUtils = indexUtils;
   }
 
-  public Map<String, Object> getMigrationInfo(String clusterId) {
-    var upgradeJob = clusterUpgradeJobService.getLatestJobByClusterId(clusterId);
-    Boolean isValidUpgradePath = VersionUtils.isValidUpgrade(upgradeJob.getCurrentVersion(), upgradeJob.getTargetVersion());
+  public MigrationInfoResponse getMigrationInfo(String clusterId) {
 
-    List<IndexReindexInfo> reindexNeedingIndices = getReindexIndexesMetadata(clusterId);
+    try {
+      ClusterUpgradeJobEntity upgradeJob = clusterUpgradeJobService.getLatestJobByClusterId(clusterId);
+      String currentVer = upgradeJob.getCurrentVersion();
+      String targetVer = upgradeJob.getTargetVersion();
 
-    boolean isReindexPossible = true;
-    String reason = null;
+      boolean isValidUpgradePath = VersionUtils.isValidUpgrade(currentVer, targetVer);
+      List<IndexReindexInfo> reindexNeedingIndices = getReindexIndicesMetadata(clusterId, upgradeJob);
+      GetFeatureMigrationResponse featureMigrationResponse = getFeatureMigrationResponse(clusterId, upgradeJob);
 
-    if (!reindexNeedingIndices.isEmpty()) {
-      if (!isValidUpgradePath) {
-        reason = "Currently you are in view only mode, Select Target version with valid upgrade path";
-        isReindexPossible = false;
-      } else if (!VersionUtils.isVersionGte(upgradeJob.getCurrentVersion(), "8.18.0")) {
-        reason = "Directly Reindexing Legacy backing indices is generally available from version 8.18.0, You have to reindex them manually";
-        isReindexPossible = false;
-      } else if (!getFeatureMigrationResponse(clusterId).status().equals(FeatureMigrationStatus.NO_MIGRATION_NEEDED)) {
-        reason = "First Migrate Features";
-        isReindexPossible = false;
-      }
-    } else {
-      isReindexPossible = false;
+      ReindexStatus status = determineReindexStatus(reindexNeedingIndices, isValidUpgradePath, currentVer, featureMigrationResponse);
+
+      return new MigrationInfoResponse(
+          isValidUpgradePath,
+          featureMigrationResponse,
+          reindexNeedingIndices,
+          status
+      );
+    } catch (Exception e) {
+      log.error("Failed to get migration info for cluster {}", clusterId, e);
+      throw new AppException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
-
-    Map<String, Object> reindexObj = new java.util.HashMap<>();
-    reindexObj.put("possible", isReindexPossible);
-    reindexObj.put("reason", reason); // can be null
-
-    Map<String, Object> resp = new java.util.HashMap<>();
-    resp.put("systemIndices", getFeatureMigrationResponse(clusterId));
-    resp.put("customIndices", reindexNeedingIndices);
-    resp.put("reindex", reindexObj);
-    resp.put("isValidUpgradePath", isValidUpgradePath);
-
-    return resp;
   }
 
+  private ReindexStatus determineReindexStatus(List<IndexReindexInfo> indices, boolean isValidUpgradePath, String currentVer,
+                                               GetFeatureMigrationResponse featureMigrationResponse) {
+    if (indices.isEmpty()) {
+      return new ReindexStatus(false, "No indices require reindexing");
+    }
+    if (!isValidUpgradePath) {
+      return new ReindexStatus(false, "Currently in view only mode. Select valid target version.");
+    }
+    if (!VersionUtils.isVersionGte(currentVer, "8.18.0")) {
+      return new ReindexStatus(false, "Direct reindexing available from 8.18.0. Manual reindex required.");
+    }
+    if (featureMigrationResponse.status() != FeatureMigrationStatus.NO_MIGRATION_NEEDED) {
+      return new ReindexStatus(false, "First Migrate Features");
+    }
+
+    return new ReindexStatus(true, null);
+  }
 
   public FeatureMigrationResponse migrate(String clusterId) {
     var upgradeJob = clusterUpgradeJobService.getLatestJobByClusterId(clusterId);
@@ -77,20 +87,19 @@ public class MigrationService {
   }
 
 
-  public List<IndexReindexInfo> getReindexIndexesMetadata(String clusterId) {
+  public List<IndexReindexInfo> getReindexIndicesMetadata(String clusterId, ClusterUpgradeJobEntity upgradeJob) {
     var client = elasticsearchClientProvider.getClient(clusterId);
     var indices = client.getIndices();
-    var upgradeJob = clusterUpgradeJobService.getLatestJobByClusterId(clusterId);
     int targetLucene = IndexUtils.mapEsVersionToLucene(upgradeJob.getTargetVersion());
 
-    return indices.stream().filter(indicesRecord -> !indexUtils.isLuceneCompatible(clusterId, indicesRecord.getIndex(), targetLucene))
+    return indices.stream()
+        .filter(indicesRecord -> !indexUtils.isLuceneCompatible(clusterId, indicesRecord.getIndex(), targetLucene))
         .map(indicesRecord -> new IndexReindexInfo(indicesRecord.getIndex(), indicesRecord.getDocsSize(), indicesRecord.getDocsCount()))
         .toList();
   }
 
 
-  public @NotNull GetFeatureMigrationResponse getFeatureMigrationResponse(String clusterId) {
-    var upgradeJob = clusterUpgradeJobService.getLatestJobByClusterId(clusterId);
+  public @NotNull GetFeatureMigrationResponse getFeatureMigrationResponse(String clusterId, ClusterUpgradeJobEntity upgradeJob) {
     if (VersionUtils.isVersionGte(upgradeJob.getCurrentVersion(), "7.16.0")) {
       var client = elasticsearchClientProvider.getClient(clusterId);
       var response = client.execute(ApiRequest.builder(JsonNode.class).get().uri("/_migration/system_features").build());
@@ -106,7 +115,7 @@ public class MigrationService {
     var upgradeJob = clusterUpgradeJobService.getLatestJobByClusterId(clusterId);
     if (VersionUtils.isVersionGte(upgradeJob.getCurrentVersion(), "8.18.0")) {
       var client = elasticsearchClientProvider.getClient(clusterId);
-      client.execute(ApiRequest.builder(JsonNode.class).post().uri("\n" + "/_migration/reindex").build());
+      client.execute(ApiRequest.builder(JsonNode.class).post().uri("/_migration/reindex").build());
     }
     return new IndexMigrationResponse();
   }

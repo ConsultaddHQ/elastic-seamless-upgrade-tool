@@ -102,7 +102,7 @@ function Setup() {
 			default:
 				return <Typography color="#FFF">No more steps found</Typography>
 		}
-	}, [step])
+	}, [step, HandleSubmit, isPending, creds])
 
 	return (
 		<Box className="flex flex-col gap-10 w-full">

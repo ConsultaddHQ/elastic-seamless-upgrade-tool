@@ -1,4 +1,4 @@
-import { Box, IconButton, InputAdornment, Typography } from "@mui/material"
+import { Box, CircularProgress, IconButton, InputAdornment, Typography } from "@mui/material"
 import { Eye, EyeSlash } from "iconsax-react"
 import { toast } from "sonner"
 import Input from "~/components/utilities/Input"
@@ -307,8 +307,15 @@ export function EditClusterCredential() {
 				</Box>
 			</Box>
 			<Box className="flex flex-row items-center justify-end gap-[6px]">
-				<OutlinedBorderButton type="submit" disabled={!formik.dirty || formik.isSubmitting || isPending}>
-					{formik.isSubmitting ? "Updating" : "Update"}
+				<OutlinedBorderButton type="submit" disabled={!formik.dirty || isPending}>
+					{isPending ? (
+						<>
+							Updating
+							<CircularProgress size={16} color="inherit" sx={{ mr: 1 }} />
+						</>
+					) : (
+						"Update"
+					)}
 				</OutlinedBorderButton>
 			</Box>
 		</form>

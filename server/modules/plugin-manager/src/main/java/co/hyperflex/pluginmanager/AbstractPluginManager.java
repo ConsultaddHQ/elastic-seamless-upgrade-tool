@@ -21,25 +21,25 @@ public abstract class AbstractPluginManager implements PluginManager {
   @Override
   public List<String> listPlugins() {
     try {
-      var result = executor.execute(getBaseCommand() + "list");
-      if (!result.isSuccess()) {
-        throw new RuntimeException("Failed to list plugins: " + result.stderr());
-      }
-      if (result.stdout().contains("No plugins installed")) {
+      var result = executor.execute("ls -1 " + getPluginDirectory());
+      if (!result.isSuccess() || result.stdout().isBlank()) {
         return Collections.emptyList();
       }
-      return Arrays.stream(result.stdout().split("\n")).map(String::trim).filter(p -> !p.isBlank()).toList();
+      return Arrays.stream(result.stdout().split("\n"))
+          .map(String::trim)
+          .filter(p -> !p.isBlank())
+          .toList();
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new RuntimeException("Failed to list plugins via filesystem.", e);
     }
   }
 
   @Override
   public void removePlugin(String pluginName) {
     try {
-      var result = executor.execute(getBaseCommand() + "remove " + pluginName);
+      var result = executor.execute("rm -rf " + getPluginDirectory() + pluginName);
       if (!result.isSuccess()) {
-        throw new RuntimeException("Failed to remove plugin " + pluginName + ": " + result.stderr());
+        throw new RuntimeException("Failed to forcefully remove plugin folder " + pluginName + ": " + result.stderr());
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -61,7 +61,7 @@ public abstract class AbstractPluginManager implements PluginManager {
       var source = pluginSourceResolver.resolve(pluginName, version);
       var result = executor.execute(getBaseCommand() + "install --batch " + source);
       if (!result.isSuccess()) {
-        throw new RuntimeException("Failed to install [plugin: " + pluginName + "] from [source: " + source + "] : " + result.stderr());
+        throw new RuntimeException("Failed to install [plugin: " + pluginName + "] from : " + result.stderr());
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -69,4 +69,6 @@ public abstract class AbstractPluginManager implements PluginManager {
   }
 
   protected abstract String getBaseCommand();
+
+  protected abstract String getPluginDirectory();
 }

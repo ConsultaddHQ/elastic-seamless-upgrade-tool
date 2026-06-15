@@ -39,10 +39,14 @@ class ElasticPluginManagerTest {
     return "/usr/share/elasticsearch/bin/elasticsearch-plugin ";
   }
 
+  private String getPluginDirectory() {
+    return "/usr/share/elasticsearch/plugins/";
+  }
+
   @Test
   void listPlugins_whenPluginsExist_shouldReturnPluginList() throws IOException {
     String commandOutput = "plugin1\nplugin2";
-    when(executor.execute(getBaseCommand() + "list")).thenReturn(new CommandResult(0, commandOutput, ""));
+    when(executor.execute("ls -1 " + getPluginDirectory())).thenReturn(new CommandResult(0, commandOutput, ""));
     List<String> plugins = pluginManager.listPlugins();
     assertEquals(2, plugins.size());
     assertTrue(plugins.contains("plugin1"));
@@ -51,39 +55,41 @@ class ElasticPluginManagerTest {
 
   @Test
   void listPlugins_whenNoPluginsInstalled_shouldReturnEmptyList() throws IOException {
-    String commandOutput = "No plugins installed";
-    when(executor.execute(getBaseCommand() + "list")).thenReturn(new CommandResult(0, commandOutput, ""));
+    // A blank stdout represents an empty folder via ls
+    when(executor.execute("ls -1 " + getPluginDirectory())).thenReturn(new CommandResult(0, "", ""));
     List<String> plugins = pluginManager.listPlugins();
     assertTrue(plugins.isEmpty());
   }
 
   @Test
-  void listPlugins_whenCommandFails_shouldThrowRuntimeException() throws IOException {
-    when(executor.execute(getBaseCommand() + "list")).thenReturn(new CommandResult(1, "", "error"));
-    assertThrows(RuntimeException.class, () -> pluginManager.listPlugins());
+  void listPlugins_whenCommandFails_shouldReturnEmptyList() throws IOException {
+    // if ls fails (e.g. folder missing), the code now safely returns an empty list
+    when(executor.execute("ls -1 " + getPluginDirectory())).thenReturn(new CommandResult(1, "", "No such file or directory"));
+    List<String> plugins = pluginManager.listPlugins();
+    assertTrue(plugins.isEmpty());
   }
 
   @Test
   void listPlugins_whenExecutorThrowsIOException_shouldThrowRuntimeException() throws IOException {
-    when(executor.execute(getBaseCommand() + "list")).thenThrow(new IOException());
+    when(executor.execute("ls -1 " + getPluginDirectory())).thenThrow(new IOException());
     assertThrows(RuntimeException.class, () -> pluginManager.listPlugins());
   }
 
   @Test
   void removePlugin_whenCommandSucceeds_shouldNotThrowException() throws IOException {
-    when(executor.execute(getBaseCommand() + "remove my-plugin")).thenReturn(new CommandResult(0, "", ""));
+    when(executor.execute("rm -rf " + getPluginDirectory() + "my-plugin")).thenReturn(new CommandResult(0, "", ""));
     assertDoesNotThrow(() -> pluginManager.removePlugin("my-plugin"));
   }
 
   @Test
   void removePlugin_whenCommandFails_shouldThrowRuntimeException() throws IOException {
-    when(executor.execute(getBaseCommand() + "remove my-plugin")).thenReturn(new CommandResult(1, "", "error"));
+    when(executor.execute("rm -rf " + getPluginDirectory() + "my-plugin")).thenReturn(new CommandResult(1, "", "error"));
     assertThrows(RuntimeException.class, () -> pluginManager.removePlugin("my-plugin"));
   }
 
   @Test
   void removePlugin_whenExecutorThrowsIOException_shouldThrowRuntimeException() throws IOException {
-    when(executor.execute(getBaseCommand() + "remove my-plugin")).thenThrow(new IOException());
+    when(executor.execute("rm -rf " + getPluginDirectory() + "my-plugin")).thenThrow(new IOException());
     assertThrows(RuntimeException.class, () -> pluginManager.removePlugin("my-plugin"));
   }
 

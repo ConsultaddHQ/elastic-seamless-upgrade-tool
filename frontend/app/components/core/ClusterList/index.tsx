@@ -68,25 +68,29 @@ function ClusterList() {
 				case "es_version":
 					return <span className="text-[#FFF]">{row.version}</span>
 				case "status":
+					const status = row.status?.toLowerCase()
+
 					return (
 						<Box
 							className={cn(
-								"flex flex-row w-fit items-center gap-2 px-[7px] py-[5px] rounded-3xl capitalize",
+								"flex flex-row w-fit items-center gap-2 px-[10px] py-[5px] rounded-3xl capitalize",
 								{
-									"bg-[#E3C04521] text-[#E0B517]": row.status === "yellow",
-									"bg-[#E7554721] text-[#E75547]": row.status === "red",
-									"bg-[#52D97F21] text-[#52D97F]": row.status === "green",
+									"bg-[#E3C04521] text-[#E0B517]": status === "yellow",
+									"bg-[#E7554721] text-[#E75547]": status === "red",
+									"bg-[#52D97F21] text-[#52D97F]": status === "green",
+									"bg-[#80808021] text-[#808080]": status === "offline",
 								}
 							)}
 						>
 							<span
 								className={cn("w-[6px] h-[6px] min-h-[6px] min-w-[6px] rounded-sm", {
-									"bg-[#E0B517]": row.status === "yellow",
-									"bg-[#E75547]": row.status === "red",
-									"bg-[#52D97F]": row.status === "green",
+									"bg-[#E0B517]": status === "yellow",
+									"bg-[#E75547]": status === "red",
+									"bg-[#52D97F]": status === "green",
+									"bg-[#808080]": status === "offline",
 								})}
 							/>
-							{row.status}
+							{row.status || "Offline"}
 						</Box>
 					)
 				case "action":
@@ -101,7 +105,7 @@ function ClusterList() {
 										confirmText: "Delete",
 										onConfirm: async () => {
 											await clusterApi.deleteCluster(row.id)
-											await refetch();
+											await refetch()
 											toast.success("Cluster deleted successfully")
 										},
 									})

@@ -74,4 +74,16 @@ public class LuceneIndexCompatibilityPrecheck extends BaseIndexPrecheck {
   public boolean skippable() {
     return false;
   }
+
+  @Override
+  public boolean shouldRun(IndexContext context) {
+    var indexName = context.getIndexName();
+
+    if (SYSTEM_INDICES_TO_SKIP.contains(indexName)) {
+      context.getLogger().info("Skipping system index [{}] as it is managed internally by Elasticsearch.", indexName);
+      return false;
+    }
+
+    return true;
+  }
 }

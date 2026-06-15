@@ -1,11 +1,8 @@
-import { Box, Typography } from "@mui/material"
+import { Box, CircularProgress, Typography } from "@mui/material"
 import { useMutation } from "@tanstack/react-query"
 import { useFormik } from "formik"
-import _ from "lodash"
 import { toast } from "sonner"
 import Input from "~/components/utilities/Input"
-// @ts-ignore-block
-import Files from "react-files"
 import { useParams } from "react-router"
 import axiosJSON from "~/apis/http"
 import useSafeRouteStore from "~/store/safeRoutes"
@@ -80,11 +77,15 @@ function EditSshDetail() {
 						/>
 					</Box>
 					<Box className="flex flex-row items-center justify-end gap-[6px]">
-						<OutlinedBorderButton
-							type="submit"
-							disabled={!formik.dirty || formik.isSubmitting || isPending}
-						>
-							{formik.isSubmitting ? "Updating" : "Update"}
+						<OutlinedBorderButton type="submit" disabled={!formik.dirty || isPending}>
+							{isPending ? (
+								<>
+									Updating
+									<CircularProgress size={16} color="inherit" sx={{ mr: 1 }} />
+								</>
+							) : (
+								"Update"
+							)}
 						</OutlinedBorderButton>
 					</Box>
 				</Box>
