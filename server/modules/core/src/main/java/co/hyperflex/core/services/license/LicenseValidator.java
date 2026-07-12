@@ -1,4 +1,5 @@
 package co.hyperflex.core.services.license;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
@@ -12,7 +13,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.crypto.spec.SecretKeySpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
@@ -23,15 +23,16 @@ import org.springframework.stereotype.Component;
 @Component
 public class LicenseValidator {
 
-
   private static final Logger logger = LoggerFactory.getLogger(LicenseValidator.class);
-  private Path license;
   private static final Pattern JWT_PATTERN =
       Pattern.compile("([A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+)");
+  private Path license;
 
   public String extractJwt(String text) {
     Matcher m = JWT_PATTERN.matcher(text);
-    if (m.find()) return m.group(1);
+    if (m.find()) {
+      return m.group(1);
+    }
     throw new RuntimeException("No JWT token found in license file");
   }
 
@@ -53,41 +54,34 @@ public class LicenseValidator {
     }
   }
 
-  public License validateLicense(String content){
+  public License validateLicense(String content) {
     License license = new License();
-    try{
-
-      String token = content;
+    try {
       RSAPublicKey publicKey = loadPublicKey();
-      SecretKeySpec secretKey = new SecretKeySpec(publicKey.getEncoded(),publicKey.getAlgorithm());
-      Jws<Claims> jws = Jwts.parser().setSigningKey(publicKey).build().parseSignedClaims(token);
+      Jws<Claims> jws = Jwts.parser().setSigningKey(publicKey).build().parseSignedClaims(content);
       Claims claims = jws.getBody();
       logger.info("Claims: {}", claims);
-        LicensePayload licensePayload = new LicensePayload(
-            claims.get("productId").toString(),
-            LocalDate.parse(claims.get("expiryDate").toString(), DateTimeFormatter.ISO_LOCAL_DATE),
-            LocalDate.parse(claims.get("startDate").toString(),DateTimeFormatter.ISO_LOCAL_DATE),
-           claims.get("consumerId").toString(),
-            claims.get("iat").toString(),
-            claims.get("consumerName").toString()
-        );
+      LicensePayload licensePayload = new LicensePayload(
+          claims.get("productId").toString(),
+          LocalDate.parse(claims.get("expiryDate").toString(), DateTimeFormatter.ISO_LOCAL_DATE),
+          LocalDate.parse(claims.get("startDate").toString(), DateTimeFormatter.ISO_LOCAL_DATE),
+          claims.get("consumerId").toString(),
+          claims.get("iat").toString(),
+          claims.get("consumerName").toString()
+      );
+      license.setPayload(licensePayload);
+      if (licensePayload.getExpiryDate().isBefore(LocalDate.now())) {
+        license.setStatus(LicenseStatus.EXPIRED);
+      } else if (licensePayload.getStartDate().isAfter(LocalDate.now())) {
+        license.setStatus(LicenseStatus.INVALID);
+      } else {
+        license.setStatus(LicenseStatus.ACTIVE);
         license.setPayload(licensePayload);
-        if(licensePayload.getExpiryDate().isBefore(LocalDate.now())){
-          license.setStatus(LicenseStatus.EXPIRED);
-        }
-        else if(licensePayload.getStartDate().isAfter(LocalDate.now())){
-          license.setStatus(LicenseStatus.INVALID);
-        }
-        else{
-          license.setStatus(LicenseStatus.ACTIVE);
-          license.setPayload(licensePayload);
-        }
+      }
 
       return license;
     } catch (Exception e) {
-
-      logger.error("JWT signature verification failed.");
-      license.setStatus(LicenseStatus.INVALID);
+      logger.error("License validation failed: {}", e.getMessage());
       license.setStatus(LicenseStatus.INVALID);
       return license;
     }

@@ -1,7 +1,6 @@
 package co.hyperflex.core.services.license;
 
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public class License {
@@ -9,7 +8,7 @@ public class License {
   private LicensePayload payload;
   private LocalDateTime lastVerifiedAt;
 
-  License(){
+  License() {
 
   }
 

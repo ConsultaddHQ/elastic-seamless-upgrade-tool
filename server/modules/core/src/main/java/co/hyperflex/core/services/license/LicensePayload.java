@@ -1,16 +1,14 @@
 package co.hyperflex.core.services.license;
 
-import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import java.time.LocalDate;
-import java.util.Date;
 
 public class LicensePayload {
-      private  String productId;
-      private  LocalDate expiryDate;
-      private  LocalDate startDate;
-      private  String consumerId;
-      private  String iat;
-      private  String consumerName;
+  private String productId;
+  private LocalDate expiryDate;
+  private LocalDate startDate;
+  private String consumerId;
+  private String iat;
+  private String consumerName;
 
   public LicensePayload(String productId, LocalDate expiryDate, LocalDate startDate, String iat, String consumerId, String consumerName) {
     this.productId = productId;

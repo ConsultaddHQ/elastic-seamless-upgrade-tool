@@ -1,10 +1,11 @@
 import { addToast, Button, Divider, ToastProvider, useDisclosure } from "@heroui/react"
 import { Box, Tooltip, Typography } from "@mui/material"
-import { Edit, ElementPlus, LogoutCurve, Magicpen, Refresh2, Setting2, TickCircle, Warning2 } from "iconsax-react"
+import { Edit, ElementPlus, LogoutCurve, Magicpen, Refresh2, Setting2, TickCircle, Warning2, Key } from "iconsax-react"
 import { useEffect } from "react"
 import { FiArrowUpRight, FiX } from "react-icons/fi"
 import { Link, Outlet, useLocation, useNavigate } from "react-router"
 import EditCluster from "~/components/core/EditCluster"
+import LicenseModal from "~/components/core/License"
 import Settings from "~/components/core/Settings"
 import UpcomingFeature from "~/components/core/UpcomingFeature"
 import { useConfirmationModal } from "~/components/utilities/ConfirmationModal"
@@ -23,6 +24,7 @@ function Common() {
 	const { pathname } = useLocation()
 	const navigate = useNavigate()
 	const setSession = useLocalStore((state) => state.setSessionName)
+	const { isOpen: isLicenseOpen, onOpen: onLicenseOpen, onOpenChange: onLicenseOpenChange } = useDisclosure()
 
 	const logout = () => {
 		openConfirmation({
@@ -142,6 +144,19 @@ function Common() {
 							<Divider orientation="vertical" className="bg-[#3A3544]" />
 						</>
 					) : null}
+					<Tooltip title="License key" arrow>
+						<Button
+							isIconOnly
+							aria-label="License key"
+							variant="light"
+							radius="none"
+							className="min-w-11 min-h-11"
+							onPress={onLicenseOpen}
+						>
+							<Key color="currentColor" size="20px" />
+						</Button>
+					</Tooltip>
+					<Divider orientation="vertical" className="bg-[#3A3544]" />
 					<Tooltip title="Upcoming features" arrow>
 						<Button
 							aria-label="Settings"
@@ -168,6 +183,7 @@ function Common() {
 				</Box>
 			</Box>
 			<EditCluster isOpen={isEditOpen} onOpenChange={onEditOpenChange} />
+			<LicenseModal isOpen={isLicenseOpen} onOpenChange={onLicenseOpenChange} />
 			<UpcomingFeature isOpen={isOpen} onOpenChange={onOpenChange} />
 			<Settings isOpen={isSettingsOpen} onOpenChange={onSettingsOpenChange} />
 			<Outlet />
