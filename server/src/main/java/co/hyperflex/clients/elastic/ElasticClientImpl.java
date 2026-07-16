@@ -48,6 +48,14 @@ public class ElasticClientImpl extends AbstractElasticClient {
   }
 
   @Override
+  public List<IndicesRecord> getAllIndices() {
+    // Added expand_wildcards to include hidden and data stream backing indices
+    var uri = "/_cat/indices?format=json&expand_wildcards=hidden,all";
+    return restClient.get().uri(uri).retrieve().body(new ParameterizedTypeReference<>() {
+    });
+  }
+
+  @Override
   public List<MasterRecord> getActiveMasters() {
     var uri = "/_cat/master?v&format=json";
     return restClient.get().uri(uri).retrieve().body(new ParameterizedTypeReference<>() {

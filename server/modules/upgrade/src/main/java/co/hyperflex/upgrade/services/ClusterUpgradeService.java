@@ -163,7 +163,7 @@ public class ClusterUpgradeService {
       var featureMigrationStatus = isClusterUpgrading ? FeatureMigrationStatus.NO_MIGRATION_NEEDED :
           featureMigrationService.getFeatureMigrationResponse(clusterId).status();
 
-      var indicesToBeReIndexed = indexMigrationService.getReindexIndexesMetadata(clusterId);
+      var indicesToBeReIndexed = indexMigrationService.getReindexIndicesMetadata(clusterId);
 
       var customIndexMigrationStatus =
           (isClusterUpgrading || indicesToBeReIndexed.isEmpty()) ? CustomIndexMigrationStatus.NO_MIGRATION_NEEDED :
