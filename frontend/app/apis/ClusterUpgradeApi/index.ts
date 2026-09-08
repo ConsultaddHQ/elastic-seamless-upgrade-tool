@@ -17,6 +17,7 @@ class ClusterUpgradeApi {
 		const response = await axiosJSON.get(`/clusters/${clusterId}/upgrades/info`)
 		return response.data
 	}
+	
 	async getUpgradeLogs(clusterId: string, nodeId: string) {
 		const response = await axiosJSON.get(`/clusters/${clusterId}/upgrades/nodes/${nodeId}/logs`)
 		return response.data.logs ?? []
@@ -66,15 +67,20 @@ class ClusterUpgradeApi {
 		return response.data
 	}
 
-	async getCustomIndicesToMigrate(clusterId: string) {
-		const response = await axiosJSON.get(`/clusters/${clusterId}/upgrade/reindex-indices`)
-		return response.data
-	}
+	async deleteIndex(clusterId: string, indexName: string) {
+        const response = await axiosJSON.delete(`/clusters/${clusterId}/migrations/indices/${encodeURIComponent(indexName)}`)
+        return response.data
+    }
 
-	async reindexIndices(clusterId: string) {
-		const response = await axiosJSON.post(`/clusters/${clusterId}/migrations/reindex-indices`)
-		return response.data
-	}
+	async reindexSingle(clusterId: string, indexName: string) {
+        const response = await axiosJSON.post(`/clusters/${clusterId}/migrations/indices/${encodeURIComponent(indexName)}/reindex`)
+        return response.data
+    }
+
+    async checkReindexStatus(clusterId: string, indexName: string) {
+        const response = await axiosJSON.get(`/clusters/${clusterId}/migrations/indices/${encodeURIComponent(indexName)}/reindex/status`)
+        return response.data
+    }
 }
 
 export const clusterUpgradeApi = new ClusterUpgradeApi()

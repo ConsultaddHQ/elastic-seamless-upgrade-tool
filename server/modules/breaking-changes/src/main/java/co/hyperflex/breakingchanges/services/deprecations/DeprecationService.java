@@ -9,6 +9,8 @@ import co.hyperflex.clients.elastic.dto.GetElasticDeprecationResponse;
 import co.hyperflex.clients.kibana.KibanaClient;
 import co.hyperflex.clients.kibana.KibanaClientProvider;
 import co.hyperflex.clients.kibana.dto.GetKibanaDeprecationResponse;
+import co.hyperflex.core.services.upgrade.ClusterUpgradeJobService;
+import co.hyperflex.core.upgrade.ClusterUpgradeJobEntity;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -22,11 +24,13 @@ public class DeprecationService {
   private static final Logger log = LoggerFactory.getLogger(DeprecationService.class);
   private final ElasticsearchClientProvider elasticsearchClientProvider;
   private final KibanaClientProvider kibanaClientProvider;
+  private final ClusterUpgradeJobService clusterUpgradeJobService;
 
   public DeprecationService(ElasticsearchClientProvider elasticsearchClientProvider,
-                            KibanaClientProvider kibanaClientProvider) {
+                            KibanaClientProvider kibanaClientProvider, ClusterUpgradeJobService clusterUpgradeJobService) {
     this.elasticsearchClientProvider = elasticsearchClientProvider;
     this.kibanaClientProvider = kibanaClientProvider;
+    this.clusterUpgradeJobService = clusterUpgradeJobService;
   }
 
   public List<GetDeprecationsResponse> getKibanaDeprecations(String clusterId) {
@@ -70,9 +74,23 @@ public class DeprecationService {
   public List<GetDeprecationsResponse> getElasticDeprecations(String clusterId) {
     ElasticClient elasticClient =
         elasticsearchClientProvider.getClient(clusterId);
+    List<GetDeprecationsResponse> responses = new LinkedList<>();
+
+    ClusterUpgradeJobEntity job = clusterUpgradeJobService.getActiveJobByClusterId(clusterId);
+
+    String currentVersion = job.getCurrentVersion();
+    String targetVersion = job.getTargetVersion();
+
+    Integer currentMajor = getMajorVersion(currentVersion);
+    Integer targetMajor = getMajorVersion(targetVersion);
+
+    // Reindexing Is Required at the time of Major Version jumps only
+    // by default Elastic Deprecation api, consider the next major version
+    if (currentMajor + 1 != targetMajor) {
+      return responses;
+    }
 
     GetElasticDeprecationResponse deprecation = elasticClient.getDeprecation();
-    List<GetDeprecationsResponse> responses = new LinkedList<>();
     Optional.ofNullable(deprecation.clusterSettings()).ifPresent(deprecations -> {
       processMigrationDeprecations(deprecations, responses);
     });
@@ -121,4 +139,8 @@ public class DeprecationService {
     }
   }
 
+  private Integer getMajorVersion(String version) {
+    String major = version.split("\\.")[0];
+    return Integer.parseInt(major);
+  }
 }
