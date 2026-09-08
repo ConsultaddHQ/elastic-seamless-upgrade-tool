@@ -1,34 +1,100 @@
-import { Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Tooltip } from "@heroui/react"
+import {
+	Spinner,
+	Table,
+	TableBody,
+	TableCell,
+	TableColumn,
+	TableHeader,
+	TableRow,
+	Tooltip,
+	Tabs,
+	Tab,
+	Progress,
+} from "@heroui/react"
 import { Box, Typography } from "@mui/material"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { Convertshape2, Folder, InfoCircle, TickCircle, Warning2 } from "iconsax-react"
-import { useCallback, type Key } from "react"
+import { Convertshape2, TickCircle, Warning2, Trash, Refresh, DocumentCopy, InfoCircle } from "iconsax-react"
+import { useCallback, type Key, useState, useEffect, useMemo } from "react"
 import { useNavigate, useParams } from "react-router"
 import { clusterUpgradeApi } from "~/apis/ClusterUpgradeApi"
 import { OutlinedBorderButton } from "~/components/utilities/Buttons"
 import AppBreadcrumb from "~/components/utilities/AppBreadcrumb"
+import { toast } from "sonner"
+import ConfirmationModal from "~/components/utilities/ConfirmationModal"
+
+export interface OpenConfirmationOptions {
+	title: string
+	message: string | React.ReactNode
+	confirmText?: string
+	cancelText?: string
+	onConfirm: () => void
+	Icon?: React.ElementType<{ color?: string | undefined; size?: string | number | undefined }>
+}
+
+export function useConfirmationModal() {
+	const [modalOptions, setModalOptions] = useState<OpenConfirmationOptions | null>(null)
+
+	const openConfirmation = useCallback((options: OpenConfirmationOptions) => {
+		setModalOptions(options)
+	}, [])
+
+	const handleCancel = useCallback(() => {
+		setModalOptions(null)
+	}, [])
+
+	const handleConfirm = useCallback(() => {
+		if (modalOptions?.onConfirm) modalOptions.onConfirm()
+		setModalOptions(null)
+	}, [modalOptions])
+
+	const ConfirmationModalComponent = modalOptions ? (
+		<ConfirmationModal
+			isOpen={true}
+			title={modalOptions.title}
+			message={modalOptions.message}
+			confirmText={modalOptions.confirmText}
+			cancelText={modalOptions.cancelText}
+			onConfirm={handleConfirm}
+			onCancel={handleCancel}
+			Icon={modalOptions.Icon}
+		/>
+	) : null
+
+	return { openConfirmation, ConfirmationModal: ConfirmationModalComponent }
+}
 
 const columns = [
-	{
-		key: "name",
-		label: "Index name",
-		align: "start" as const,
-	},
-	{
-		key: "docsCount",
-		label: "Docs Count",
-		align: "start" as const,
-	},
-	{
-		key: "size",
-		label: "Size",
-		align: "start" as const,
-	},
+	{ key: "name", label: "Index Name", align: "start" as const },
+	{ key: "docsCount", label: "Docs Count", align: "start" as const },
+	{ key: "size", label: "Total Size", align: "start" as const },
+	{ key: "storageTier", label: "Storage Tier", align: "start" as const },
+	{ key: "estimateSummary", label: "Reindex Estimate summary", align: "start" as const },
+	{ key: "estimateTime", label: "Reindex Estimate time", align: "start" as const },
+	{ key: "actions", label: "Actions", align: "end" as const },
 ]
+
+type TaskProgress = {
+	progressPercentage: number
+	remainingDocs: number
+	isCompleted: boolean
+}
 
 function ManageIndices() {
 	const { clusterId } = useParams()
 	const navigate = useNavigate()
+
+	const [deletedIndices, setDeletedIndices] = useState<string[]>([])
+	const [activeActionIndex, setActiveActionIndex] = useState<string | null>(null)
+	const [activeTasks, setActiveTasks] = useState<Record<string, TaskProgress>>({})
+
+	const [selectedKeys, setSelectedKeys] = useState<any>(new Set([]))
+	const [searchQuery, setSearchQuery] = useState("")
+
+	const { openConfirmation, ConfirmationModal } = useConfirmationModal()
+
+	const disabledKeys = useMemo(() => {
+		return new Set([...deletedIndices, ...Object.keys(activeTasks)])
+	}, [deletedIndices, activeTasks])
 
 	const {
 		data: migrationInfo,
@@ -40,54 +106,472 @@ function ManageIndices() {
 		enabled: !!clusterId,
 	})
 
+	useEffect(() => {
+		if (migrationInfo?.reindexNeedingIndices) {
+			const restoredTasks: Record<string, TaskProgress> = {}
+
+			migrationInfo.reindexNeedingIndices.forEach((item: any) => {
+				if (item.progress && item.progress.isReindexing) {
+					const itemName = item.index || item.name
+					if (itemName) {
+						restoredTasks[itemName] = {
+							progressPercentage: item.progress.progressPercentage || 0,
+							remainingDocs: item.progress.remainingDocs || 0,
+							isCompleted: false,
+						}
+					}
+				}
+			})
+
+			if (Object.keys(restoredTasks).length > 0) {
+				setActiveTasks((prev) => {
+					const merged = { ...prev }
+					let hasChanges = false
+					Object.keys(restoredTasks).forEach((key) => {
+						if (!merged[key]) {
+							merged[key] = restoredTasks[key]
+							hasChanges = true
+						}
+					})
+					return hasChanges ? merged : prev
+				})
+			}
+		}
+	}, [migrationInfo])
+
 	const { isPending: isMigratingSystemFeatures, mutate: migrateSystemFeatures } = useMutation({
 		mutationFn: (data: { clusterId: string }) => clusterUpgradeApi.migrateSystemFeatures(data.clusterId),
 		onSuccess: () => {
+			toast.success("System features migration initiated.")
 			refetchMigrationInfo()
 		},
+		onError: (error: any) => {
+			toast.error(error?.response?.data?.message || error?.message || "Failed to initiate system migration.")
+		},
+	})
+
+	const { isPending: isReindexingSingle, mutate: reindexSingleIndex } = useMutation({
+		mutationFn: (data: { clusterId: string; indexName: string }) =>
+			clusterUpgradeApi.reindexSingle(data.clusterId, data.indexName),
+		onSuccess: (data: any, variables) => {
+			setActiveTasks((prev) => ({
+				...prev,
+				[variables.indexName]: { progressPercentage: 0, remainingDocs: 0, isCompleted: false },
+			}))
+		},
+		onError: (error: any) => {
+			toast.error(error?.response?.data?.message || error?.message || "Failed to start reindex process.")
+		},
+		onSettled: () => setActiveActionIndex(null),
+	})
+
+	const { isPending: isDeleting, mutate: deleteSingleIndex } = useMutation({
+		mutationFn: (data: { clusterId: string; indexName: string }) =>
+			clusterUpgradeApi.deleteIndex(data.clusterId, data.indexName),
+		onSuccess: (data: any, variables) => {
+			setDeletedIndices((prev) => [...prev, variables.indexName])
+			refetchMigrationInfo()
+		},
+		onError: (error: any) => {
+			toast.error(error?.response?.data?.message || error?.message || "Failed to delete index.")
+		},
+		onSettled: () => setActiveActionIndex(null),
 	})
 
 	const systemIndicesStatus = migrationInfo?.systemIndices?.status
 	const isSystemMigrationInProgress = systemIndicesStatus === "IN_PROGRESS"
 	const isSystemMigrationCompleted =
 		systemIndicesStatus === "NO_MIGRATION_NEEDED" || systemIndicesStatus === "COMPLETED"
-
-	const reindexNeedingIndices = migrationInfo?.reindexNeedingIndices
 	const isValidUpgradePath = migrationInfo?.isValidUpgradePath
-	const reindexPossible = migrationInfo?.reindexStatus?.possible
-	const reindexReason = migrationInfo?.reindexStatus?.reason
 
-	const { isPending: isReindexing, mutate: reindexIndices } = useMutation({
-		mutationFn: (data: { clusterId: string }) => clusterUpgradeApi.reindexIndices(data.clusterId),
-		onSuccess: () => {
-			refetchMigrationInfo()
-		},
-	})
+	useEffect(() => {
+		if (isSystemMigrationInProgress) {
+			const interval = setInterval(() => refetchMigrationInfo(), 2000)
+			return () => clearInterval(interval)
+		}
+	}, [isSystemMigrationInProgress, refetchMigrationInfo])
 
-	const handleReindexAll = () => {
-		reindexIndices({ clusterId: clusterId! })
+	useEffect(() => {
+		if (!clusterId) return
+		const indicesToPoll = Object.keys(activeTasks).filter((name) => !activeTasks[name].isCompleted)
+		if (indicesToPoll.length === 0) return
+
+		const intervalId = setInterval(() => {
+			indicesToPoll.forEach(async (indexName) => {
+				try {
+					const status = await clusterUpgradeApi.checkReindexStatus(clusterId, indexName)
+					const isCompleted = status.progressPercentage === 100
+
+					setActiveTasks((prev) => ({
+						...prev,
+						[indexName]: {
+							progressPercentage: status.progressPercentage || 0,
+							remainingDocs: status.remainingDocs || 0,
+							isCompleted: isCompleted,
+						},
+					}))
+
+					if (isCompleted) {
+						toast.success(`Reindex completed for ${indexName}`)
+						refetchMigrationInfo()
+					}
+				} catch (error) {
+					console.error(`Failed to fetch status for ${indexName}`, error)
+				}
+			})
+		}, 4000)
+		return () => clearInterval(intervalId)
+	}, [activeTasks, clusterId])
+
+	const allIndices = migrationInfo?.reindexNeedingIndices || []
+	const dataStreamList = allIndices.filter((item: any) => item.dataStream)
+	const systemIndicesList = allIndices.filter((item: any) => item.systemIndex && !item.dataStream)
+	const customIndicesList = allIndices.filter((item: any) => !item.systemIndex && !item.dataStream)
+
+	const handleReindex = (indexName: string) => {
+		if (!clusterId) return
+		openConfirmation({
+			title: "Reindex Data",
+			message: `Are you sure you want to reindex "${indexName}"? This will copy the data to a new format.`,
+			confirmText: "Reindex",
+			cancelText: "Cancel",
+			Icon: Refresh,
+			onConfirm: () => {
+				setActiveActionIndex(indexName)
+				reindexSingleIndex({ clusterId, indexName })
+				toast.success(`Reindex started for ${indexName}`)
+			},
+		})
 	}
 
-	// Placeholder for single Reindex mutation
-	// const handleReindex = (indexName: string) => {
-	// 	console.log("Reindex clicked for", indexName)
-	// }
+	const handleDelete = (indexName: string) => {
+		if (!clusterId) return
+		openConfirmation({
+			title: "Delete Data",
+			message: `Are you sure you want to permanently delete "${indexName}"? This action cannot be undone.`,
+			confirmText: "Delete",
+			cancelText: "Cancel",
+			Icon: Trash,
+			onConfirm: () => {
+				setActiveActionIndex(indexName)
+				deleteSingleIndex({ clusterId, indexName })
+				toast.success(`Index deleted: ${indexName}`)
+			},
+		})
+	}
 
-	const renderCell = useCallback((row: any, columnKey: Key) => {
-		const cellValue = row[columnKey as keyof typeof row]
-		switch (columnKey) {
-			case "name":
-				return <span className="text-[#ADADAD]">{cellValue}</span>
-			case "docsCount":
-			case "size":
-				return <span className="text-[#ADADAD]">{cellValue}</span>
-			default:
-				return cellValue
-		}
-	}, [])
+	const handleBulkReindex = (searchedList: any[]) => {
+		if (!clusterId) return
+		const keysToProcess =
+			selectedKeys === "all"
+				? searchedList.map((i: any) => i.index || i.name)
+				: (Array.from(selectedKeys) as string[])
+
+		const validKeys = keysToProcess.filter((name) => !activeTasks[name] && !deletedIndices.includes(name))
+		if (validKeys.length === 0) return
+
+		openConfirmation({
+			title: "Bulk Reindex",
+			message: `Are you sure you want to reindex ${validKeys.length} selected items? This will copy the data to a new format.`,
+			confirmText: "Reindex All",
+			cancelText: "Cancel",
+			Icon: Refresh,
+			onConfirm: () => {
+				validKeys.forEach((name) => reindexSingleIndex({ clusterId, indexName: name }))
+				toast.success(`Bulk reindex initiated for ${validKeys.length} indices`)
+				setSelectedKeys(new Set([]))
+			},
+		})
+	}
+
+	const handleBulkDelete = (searchedList: any[]) => {
+		if (!clusterId) return
+		const keysToProcess =
+			selectedKeys === "all"
+				? searchedList.map((i: any) => i.index || i.name)
+				: (Array.from(selectedKeys) as string[])
+
+		const validKeys = keysToProcess.filter((name) => !activeTasks[name] && !deletedIndices.includes(name))
+		if (validKeys.length === 0) return
+
+		openConfirmation({
+			title: "Bulk Delete",
+			message: `Are you sure you want to permanently delete ${validKeys.length} selected items? This action cannot be undone.`,
+			confirmText: "Delete All",
+			cancelText: "Cancel",
+			Icon: Trash,
+			onConfirm: () => {
+				validKeys.forEach((name) => deleteSingleIndex({ clusterId, indexName: name }))
+				toast.success(`Bulk delete initiated for ${validKeys.length} indices`)
+				setSelectedKeys(new Set([]))
+			},
+		})
+	}
+
+	const stopClick = (e: React.MouseEvent) => e.stopPropagation()
+
+	const renderCell = useCallback(
+		(row: any, columnKey: Key) => {
+			const cellValue = row[columnKey as keyof typeof row]
+			const localProgress = activeTasks[row.name]
+			const isThisRowReindexing = isReindexingSingle && activeActionIndex === row.name
+			const isThisRowDeleting = isDeleting && activeActionIndex === row.name
+			const isAnyActionRunning = isReindexingSingle || isDeleting
+
+			switch (columnKey) {
+				case "name":
+					return (
+						<div
+							onClick={stopClick}
+							className="flex items-center gap-3 w-full cursor-default py-2 group pl-4"
+						>
+							<span className="text-[#ADADAD] font-medium break-all">{cellValue}</span>
+							<Tooltip content="copy name" placement="top">
+								<button
+									onClick={(e) => {
+										e.stopPropagation()
+										navigator.clipboard.writeText(cellValue)
+										toast.success("Copied to clipboard", { duration: 2000 })
+									}}
+									className="opacity-0 group-hover:opacity-100 p-[5px] rounded border border-[#2F2F2F] bg-[#1E1E1E] text-[#ADADAD] hover:bg-[#BDA0FF]/10 hover:border-[#BDA0FF]/30 hover:text-[#BDA0FF] transition-all flex-shrink-0"
+								>
+									<DocumentCopy size="16" color="#FF8A65" />
+								</button>
+							</Tooltip>
+						</div>
+					)
+				case "docsCount":
+				case "size":
+				case "storageTier":
+				case "estimateSummary":
+				case "estimateTime":
+					return (
+						<div onClick={stopClick} className="w-full h-full flex items-center cursor-default">
+							<span className="text-[#ADADAD]">{cellValue || "-"}</span>
+						</div>
+					)
+				case "actions":
+					if (localProgress) {
+						return (
+							<div
+								onClick={stopClick}
+								className="flex flex-row items-center justify-end w-full h-full cursor-default"
+							>
+								<Box className="flex flex-col w-[200px] gap-1 justify-center">
+									<Box className="flex justify-between items-center w-full">
+										<Typography color="#BDA0FF" fontSize="12px" fontWeight="600" lineHeight="1">
+											Reindexing...
+										</Typography>
+										<Typography color="#FFF" fontSize="12px" fontWeight="600" lineHeight="1">
+											{localProgress.progressPercentage}%
+										</Typography>
+									</Box>
+									<Progress
+										size="sm"
+										aria-label="Reindexing progress"
+										value={localProgress.progressPercentage}
+										classNames={{
+											track: "bg-[#2F2F2F] h-[4px]",
+											indicator: "bg-[#BDA0FF] h-[4px]",
+										}}
+									/>
+									<Typography color="#6E6E6E" fontSize="10px" textAlign="right" lineHeight="1">
+										{`${localProgress.remainingDocs.toLocaleString()} docs remaining`}
+									</Typography>
+								</Box>
+							</div>
+						)
+					}
+
+					return (
+						<div
+							onClick={stopClick}
+							className="flex flex-row items-center justify-end gap-3 w-full h-full cursor-default"
+						>
+							<button
+								onClick={(e) => {
+									e.stopPropagation()
+									!isAnyActionRunning && handleDelete(row.name)
+								}}
+								disabled={isAnyActionRunning}
+								className={`flex items-center justify-center gap-[6px] px-3 py-1.5 rounded-lg border transition-all text-[12px] font-medium outline-none ${
+									isAnyActionRunning
+										? "opacity-50 cursor-not-allowed border-[#FF6B6B]/20 bg-[#FF6B6B]/5 text-[#FF6B6B]/50"
+										: "cursor-pointer border-[#FF6B6B]/30 bg-[#FF6B6B]/10 hover:bg-[#FF6B6B]/20 hover:border-[#FF6B6B]/50 text-[#FF6B6B] active:scale-95"
+								}`}
+							>
+								{isThisRowDeleting ? (
+									<Spinner size="sm" color="danger" />
+								) : (
+									<Trash size="14" color="white" />
+								)}
+								<span>Delete</span>
+							</button>
+
+							<button
+								onClick={(e) => {
+									e.stopPropagation()
+									isValidUpgradePath && !isAnyActionRunning && handleReindex(row.name)
+								}}
+								disabled={!isValidUpgradePath || isAnyActionRunning}
+								className={`flex items-center justify-center gap-[6px] px-3 py-1.5 rounded-lg border transition-all text-[12px] font-medium outline-none ${
+									!isValidUpgradePath || isAnyActionRunning
+										? "opacity-50 cursor-not-allowed border-[#BDA0FF]/20 bg-[#BDA0FF]/5 text-[#BDA0FF]/50"
+										: "cursor-pointer border-[#BDA0FF]/30 bg-[#BDA0FF]/10 hover:bg-[#BDA0FF]/20 hover:border-[#BDA0FF]/50 text-[#BDA0FF] active:scale-95"
+								}`}
+							>
+								{isThisRowReindexing ? (
+									<Spinner size="sm" color="current" />
+								) : (
+									<Refresh size="14" color="white" />
+								)}
+								<span>Reindex</span>
+							</button>
+						</div>
+					)
+				default:
+					return cellValue
+			}
+		},
+		[isValidUpgradePath, isReindexingSingle, isDeleting, activeActionIndex, activeTasks]
+	)
+
+	const renderIndicesTable = (dataList: any[], emptyTitle: string, emptySub: string) => {
+		const filteredList = dataList.filter((item: any) => {
+			const itemName = item.index || item.name
+			return !deletedIndices.includes(itemName) && !activeTasks[itemName]?.isCompleted
+		})
+
+		const searchedList = filteredList.filter((item: any) => {
+			const itemName = item.index || item.name
+			return itemName.toLowerCase().includes(searchQuery.toLowerCase())
+		})
+
+		const hasSelection = selectedKeys === "all" || selectedKeys.size > 0
+		const selectedCount = selectedKeys === "all" ? searchedList.length : selectedKeys.size
+
+		const topContent = (
+			<Box className="flex flex-col gap-4 mb-2">
+				<Box className="flex w-full">
+					<input
+						type="text"
+						placeholder="Search by index name..."
+						value={searchQuery}
+						onChange={(e) => setSearchQuery(e.target.value)}
+						className="w-full md:w-80 px-4 py-2 bg-[#1A1A1A] border border-[#2F2F2F] rounded-xl text-sm text-[#FFF] placeholder:text-[#6E6E6E] focus:outline-none focus:border-[#BDA0FF] transition-colors"
+					/>
+				</Box>
+
+				{hasSelection && (
+					<Box className="flex flex-row items-center justify-between w-full bg-[#BDA0FF]/10 border border-[#BDA0FF]/20 rounded-xl p-3 animate-appearance-in">
+						<Typography color="#BDA0FF" fontSize="14px" fontWeight="600">
+							{selectedCount} item{selectedCount !== 1 ? "s" : ""} selected
+						</Typography>
+						<Box className="flex items-center gap-3">
+							<button
+								onClick={() => handleBulkDelete(searchedList)}
+								className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#FF6B6B]/30 bg-[#FF6B6B]/10 text-[#FF6B6B] text-[13px] font-medium hover:bg-[#FF6B6B]/20 transition-all active:scale-95 outline-none"
+							>
+								<Trash color="white" size="14" />
+								Delete Selected
+							</button>
+							<button
+								onClick={() => handleBulkReindex(searchedList)}
+								disabled={!isValidUpgradePath}
+								className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[13px] font-medium transition-all outline-none ${
+									isValidUpgradePath
+										? "bg-[#BDA0FF] border-[#BDA0FF] text-[#0D0D0D] hover:bg-[#A886FF] active:scale-95"
+										: "bg-[#3A3A3A] border-[#2F2F2F] text-[#6E6E6E] cursor-not-allowed"
+								}`}
+							>
+								<Refresh color="white" size="14" variant="Bold" />
+								Reindex Selected
+							</button>
+						</Box>
+					</Box>
+				)}
+			</Box>
+		)
+
+		return (
+			<Table
+				selectionBehavior="toggle"
+				disallowEmptySelection={false}
+				onRowAction={() => {}}
+				removeWrapper
+				layout="fixed"
+				selectionMode="multiple"
+				selectedKeys={selectedKeys}
+				onSelectionChange={setSelectedKeys}
+				disabledKeys={disabledKeys}
+				topContent={topContent}
+				classNames={{
+					base: "w-full h-auto",
+					table: "w-full min-w-full",
+					th: "text-[#9D90BB] text-xs bg-[#161616] first:rounded-l-xl last:rounded-r-xl border-none",
+					td: "text-sm font-normal leading-normal border-b-[0.5px] border-solid border-[#1E1E1E] first:rounded-l-xl last:rounded-r-xl",
+					tr: "[&>th]:h-[42px] [&>td]:h-[60px] hover:bg-[#28282A] transition-colors group-data-[selected=true]:bg-[#BDA0FF]/5",
+				}}
+			>
+				<TableHeader columns={columns}>
+					{(column) => (
+						<TableColumn
+							key={column.key}
+							align={column.align}
+							className={
+								column.key === "name"
+									? "w-[24%] pl-4"
+									: column.key === "estimateSummary"
+									? "w-[14%]"
+									: column.key === "estimateTime"
+									? "w-[14%]"
+									: column.key === "actions"
+									? "w-[18%]"
+									: "w-[8%]"
+							}
+						>
+							{column.label}
+						</TableColumn>
+					)}
+				</TableHeader>
+				<TableBody
+					items={
+						searchedList.map((item: any) => ({
+							...item,
+							uid: item.index || item.name,
+							name: item.index || item.name,
+						})) || []
+					}
+					isLoading={isLoadingMigrationInfo}
+					loadingContent={<Spinner color="secondary" />}
+					emptyContent={
+						<Box className="flex flex-col items-center h-full w-full gap-4 py-10">
+							<Box className="flex items-center justify-center bg-[#1A1A1A] rounded-[10px] size-12">
+								<TickCircle size="24px" color="#52D97F" />
+							</Box>
+							<Box className="flex flex-col items-center gap-[5px]">
+								<Typography color="#F1F0F0" fontSize="16px" fontWeight="400">
+									{searchQuery ? "No results match your search" : emptyTitle}
+								</Typography>
+								<Typography color="#A6A6A6" fontSize="12px" fontWeight="400">
+									{searchQuery ? "Try a different keyword" : emptySub}
+								</Typography>
+							</Box>
+						</Box>
+					}
+				>
+					{(item: any) => (
+						<TableRow key={item.uid}>
+							{(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
+						</TableRow>
+					)}
+				</TableBody>
+			</Table>
+		)
+	}
 
 	return (
-		<Box className="flex flex-col w-full h-full gap-6">
+		<Box className="flex flex-col w-full min-h-full gap-6 pb-10">
 			<Box className="flex flex-row justify-between items-center">
 				<AppBreadcrumb
 					items={[
@@ -97,156 +581,275 @@ function ManageIndices() {
 							onClick: () => navigate(`/${clusterId}/upgrade-assistant`),
 						},
 						{
-							label: "Migrate Indices",
+							label: "Prepare Data for Upgrade",
 							color: "#BDA0FF",
 						},
 					]}
 				/>
 			</Box>
 
+			<Box className="flex flex-col gap-1 px-2">
+				<Typography color="#FFF" fontSize="20px" fontWeight="600">
+					Data Migration & Reindexing
+				</Typography>
+				<Typography color="#A6A6A6" fontSize="14px" fontWeight="400" className="max-w-7xl">
+					Before upgrading your cluster, older data formats need to be converted to match the new system
+					requirements.
+				</Typography>
+			</Box>
+
 			{isValidUpgradePath != null && !isValidUpgradePath && (
 				<Box className="flex flex-row items-center gap-2 p-4 rounded-xl bg-[#FFF7E6] border border-[#FFE066]">
 					<Warning2 size="20" color="#B28C00" variant="Bold" />
 					<Typography color="#665200" fontSize="14px" fontWeight="500">
-						Currently the cluster is in view only mode, Select a valid upgrade path to migrate features and
-						indices
+						Currently the cluster is in view-only mode. Select a valid upgrade path to enable data
+						migration.
 					</Typography>
 				</Box>
 			)}
 
-			{/* System Indices Section */}
-			<Box className="flex flex-col p-6 rounded-2xl bg-[#0d0d0d] border border-[#2F2F2F] gap-4">
-				<Box className="flex flex-row justify-between items-center">
-					<Box className="flex flex-col gap-1">
-						<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
-							Migrate system indices
-						</Typography>
-						<Typography color="#6E6E6E" fontSize="13px" fontWeight="400">
-							Prepare the system indices that store internal information for the upgrade. This step is
-							required only for major version upgrades.
-						</Typography>
-					</Box>
-					<Box>
-						{isSystemMigrationInProgress ? (
-							<Typography color="#6E6E6E" fontSize="13px">
-								Migrating system features...
-							</Typography>
-						) : !isSystemMigrationCompleted || !isValidUpgradePath ? (
-							<Tooltip
-								content={
-									!isValidUpgradePath
-										? "Cluster is in view only mode"
-										: systemIndicesStatus === "MIGRATION_UNAVAILABLE"
-										? "migrating system indices is available fom version 7.16, you need to manually reindex or delete them to continue"
-										: null
-								}
-								isDisabled={!!isValidUpgradePath && systemIndicesStatus !== "MIGRATION_UNAVAILABLE"}
-								placement="top"
-							>
-								<Box>
-									<OutlinedBorderButton
-										disabled={
-											!isValidUpgradePath ||
-											isMigratingSystemFeatures ||
-											systemIndicesStatus === "MIGRATION_UNAVAILABLE"
-										}
-										onClick={() => migrateSystemFeatures({ clusterId: clusterId! })}
-									>
-										Migrate
-									</OutlinedBorderButton>
-								</Box>
-							</Tooltip>
-						) : (
-							<Box className="flex flex-row w-fit items-center gap-2 px-[7px] py-[5px] rounded-3xl bg-[#52D97F21] text-[#52D97F]">
-								<TickCircle size="16" color="#52D97F" variant="Bold" />
-								Completed
-							</Box>
-						)}
-					</Box>
-				</Box>
-			</Box>
-
-			{/* Custom Indices Section */}
-			<Box className="flex flex-col flex-grow p-6 rounded-2xl bg-[#0d0d0d] border border-[#2F2F2F] gap-4 overflow-hidden">
-				<Box className="flex flex-row justify-between items-center">
-					<Box className="flex flex-row items-center gap-2">
-						<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
-							Reindex Indices
-						</Typography>
-						<Tooltip content="Reindex legacy backing indices" placement="top">
-							<Box className="cursor-pointer">
-								<InfoCircle size="16" color="#ADADAD" />
-							</Box>
-						</Tooltip>
-					</Box>
-					{/* <Tooltip
-						content={!isValidUpgradePath ? "Cluster is in view only mode" : reindexReason}
-						isDisabled={!isValidUpgradePath ? false : !!reindexPossible}
-						placement="top"
-					>
-						<Box>
-							<OutlinedBorderButton
-								onClick={handleReindexAll}
-								disabled={!isValidUpgradePath || !reindexPossible || !customIndices || customIndices.length === 0 || isReindexing}
-							>
-								{isReindexing ? "Reindexing..." : "Reindex"}
-							</OutlinedBorderButton>
-						</Box>
-					</Tooltip> */}
-				</Box>
-
-				<Table
-					removeWrapper
-					layout="auto"
-					isHeaderSticky
+			<Box className="flex flex-col p-4 md:p-6 rounded-2xl bg-[#0d0d0d] border border-[#2F2F2F] gap-4">
+				<Tabs
+					aria-label="Indices Categories"
+					variant="underlined"
+					onSelectionChange={() => {
+						setSelectedKeys(new Set([]))
+						setSearchQuery("")
+					}}
 					classNames={{
-						base: "h-full overflow-scroll",
-						th: "text-[#9D90BB] text-xs bg-[#161616] first:rounded-l-xl last:rounded-r-xl",
-						td: "text-sm font-normal leading-normal border-b-[0.5px] border-solid border-[#1E1E1E] first:rounded-l-xl last:rounded-r-xl",
-						tr: "[&>th]:h-[42px] [&>td]:h-[60px] hover:bg-[#28282A]",
+						tabList: "gap-6 w-full relative rounded-none p-0 border-b border-[#2F2F2F]",
+						cursor: "w-full bg-[#BDA0FF]",
+						tab: "max-w-fit px-0 h-12",
+						tabContent: "group-data-[selected=true]:text-[#FFF] text-[#ADADAD] text-base font-medium",
 					}}
 				>
-					<TableHeader columns={columns}>
-						{(column) => (
-							<TableColumn key={column.key} align={column.align}>
-								{column.label}
-							</TableColumn>
-						)}
-					</TableHeader>
-					<TableBody
-						items={
-							reindexNeedingIndices?.map((item: any) => ({
-								...item,
-								uid: item.index,
-								name: item.index,
-							})) || []
-						}
-						isLoading={isLoadingMigrationInfo}
-						loadingContent={<Spinner color="secondary" />}
-						emptyContent={
-							<Box className="flex flex-col items-center h-full w-full gap-4 pt-20">
-								<Box className="flex items-center justify-center bg-[#1A1A1A] rounded-[10px] size-12">
-									<Folder size="24px" color="#ADADAD" />
+					<Tab key="summary" title="Overview">
+						<Box className="flex flex-col gap-6 pt-4">
+							<Box className="flex flex-col gap-1 max-w-7xl">
+								<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
+									Migration Dashboard
+								</Typography>
+								<Typography color="#6E6E6E" fontSize="13px" fontWeight="400" className="mt-1">
+									Use this dashboard to quickly identify how many indices and data streams require
+									migration before you can safely upgrade. Click into each category for detailed
+									actions.
+								</Typography>
+							</Box>
+
+							{/* Stat Cards Grid */}
+							<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+								<Box className="flex flex-col gap-2 p-5 rounded-xl border border-[#2F2F2F] bg-[#161616]">
+									<Typography color="#ADADAD" fontSize="13px" fontWeight="500">
+										Application Data
+									</Typography>
+									<Typography
+										color={customIndicesList.length === 0 ? "#52D97F" : "#FFF"}
+										fontSize="28px"
+										fontWeight="600"
+									>
+										{customIndicesList.length}
+									</Typography>
+									<Typography color="#6E6E6E" fontSize="12px">
+										Indices pending migration
+									</Typography>
 								</Box>
-								<Box className="flex flex-col items-center gap-[5px]">
-									<Typography color="#F1F0F0" fontSize="16px" fontWeight="400">
-										No indices to migrate
+
+								<Box className="flex flex-col gap-2 p-5 rounded-xl border border-[#2F2F2F] bg-[#161616]">
+									<Typography color="#ADADAD" fontSize="13px" fontWeight="500">
+										Internal System Data
 									</Typography>
-									<Typography color="#A6A6A6" fontSize="12px" fontWeight="400">
-										There are no indices requiring migration at this time.
+									<Typography
+										color={systemIndicesList.length === 0 ? "#52D97F" : "#FFF"}
+										fontSize="28px"
+										fontWeight="600"
+									>
+										{systemIndicesList.length}
 									</Typography>
+									<Typography color="#6E6E6E" fontSize="12px">
+										Indices pending migration
+									</Typography>
+								</Box>
+
+								<Box className="flex flex-col gap-2 p-5 rounded-xl border border-[#2F2F2F] bg-[#161616]">
+									<Typography color="#ADADAD" fontSize="13px" fontWeight="500">
+										Data Streams
+									</Typography>
+									<Typography
+										color={dataStreamList.length === 0 ? "#52D97F" : "#FFF"}
+										fontSize="28px"
+										fontWeight="600"
+									>
+										{dataStreamList.length}
+									</Typography>
+									<Typography color="#6E6E6E" fontSize="12px">
+										Streams pending migration
+									</Typography>
+								</Box>
+							</div>
+
+							{/* NEW: Step-by-Step Instructions */}
+							<Box className="flex flex-col gap-4 mt-2 p-5 rounded-xl border border-[#2F2F2F] bg-[#161616]">
+								<Typography color="#FFF" fontSize="16px" fontWeight="600">
+									Recommended Migration Steps
+								</Typography>
+								<div className="flex flex-col gap-4">
+									<div className="flex gap-3 items-start">
+										<div className="flex items-center justify-center min-w-6 h-6 rounded-full bg-[#BDA0FF]/20 text-[#BDA0FF] text-xs font-bold">
+											1
+										</div>
+										<Typography color="#ADADAD" fontSize="13px" className="mt-0.5">
+											<strong className="text-white font-medium">
+												Auto-Migrate System Data:
+											</strong>{" "}
+											Go to the <em>System Indices</em> tab and click the{" "}
+											<strong>Auto-Migrate System</strong> button first. This allows Elasticsearch
+											to automatically update its internal configurations and hidden files.
+										</Typography>
+									</div>
+									<div className="flex gap-3 items-start">
+										<div className="flex items-center justify-center min-w-6 h-6 rounded-full bg-[#BDA0FF]/20 text-[#BDA0FF] text-xs font-bold">
+											2
+										</div>
+										<Typography color="#ADADAD" fontSize="13px" className="mt-0.5">
+											<strong className="text-white font-medium">
+												Clean Up Remaining System Indices:
+											</strong>{" "}
+											If any system indices are still listed after the auto-migration completes,
+											manually delete them (if no longer needed) or reindex them.
+										</Typography>
+									</div>
+									<div className="flex gap-3 items-start">
+										<div className="flex items-center justify-center min-w-6 h-6 rounded-full bg-[#BDA0FF]/20 text-[#BDA0FF] text-xs font-bold">
+											3
+										</div>
+										<Typography color="#ADADAD" fontSize="13px" className="mt-0.5">
+											<strong className="text-white font-medium">
+												Reindex Application Data:
+											</strong>{" "}
+											Visit the <em>Custom Indices</em> and <em>Data Streams</em> tabs to review
+											your application data. Select the data you want to keep and click{" "}
+											<strong>Reindex</strong>, or use the delete option for obsolete records.
+										</Typography>
+									</div>
+								</div>
+							</Box>
+						</Box>
+					</Tab>
+
+					<Tab key="custom" title={`Custom Indices (${customIndicesList.length})`}>
+						<Box className="flex flex-col gap-6 pt-4">
+							<Box className="flex flex-col gap-1 max-w-7xl">
+								<Box className="flex flex-row items-center gap-2">
+									<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
+										Your Application Data
+									</Typography>
+									<Tooltip content="Standard indices created by your applications." placement="top">
+										<Box className="cursor-pointer flex items-center">
+											<InfoCircle size="16" color="#ADADAD" />
+										</Box>
+									</Tooltip>
+								</Box>
+								<Typography color="#6E6E6E" fontSize="13px" fontWeight="400" className="mt-1">
+									These are standard indices containing your core business data, catalogs, and custom
+									application logs. You must manually initiate a <strong>Reindex</strong> for these
+									legacy formats so your applications can continue reading and writing data seamlessly
+									after the version upgrade. Unneeded legacy logs can be safely deleted.
+								</Typography>
+							</Box>
+							{renderIndicesTable(
+								customIndicesList,
+								"Application Data Ready",
+								"All of your custom data is already compatible."
+							)}
+						</Box>
+					</Tab>
+
+					<Tab key="system" title={`System Indices (${systemIndicesList.length})`}>
+						<Box className="flex flex-col gap-6 pt-4">
+							<Box className="flex flex-row justify-between items-start">
+								<Box className="flex flex-col gap-1 max-w-4xl">
+									<Box className="flex flex-row items-center gap-2">
+										<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
+											Internal System Data
+										</Typography>
+										<Tooltip content="Hidden indices managing cluster state." placement="top">
+											<Box className="cursor-pointer flex items-center">
+												<InfoCircle size="16" color="#ADADAD" />
+											</Box>
+										</Tooltip>
+									</Box>
+									<Typography color="#6E6E6E" fontSize="13px" fontWeight="400" className="mt-1">
+										These hidden indices (starting with a dot) power the internal mechanics of your
+										cluster, storing Kibana dashboards, security roles, and automated tasks. Click{" "}
+										<strong>Auto-Migrate System</strong> to let Elasticsearch update its standard
+										configurations natively. Any leftover legacy system files shown below must be
+										manually reindexed or deleted.
+									</Typography>
+								</Box>
+								<Box className="pt-2">
+									{isSystemMigrationInProgress ? (
+										<Box className="flex flex-row w-fit items-center gap-2 px-[12px] py-[6px] rounded-3xl bg-[#BDA0FF]/10 text-[#BDA0FF] border border-[#BDA0FF]/20">
+											<Spinner size="sm" color="current" />
+											<span className="text-[13px] font-medium">Migrating System...</span>
+										</Box>
+									) : !isSystemMigrationCompleted || !isValidUpgradePath ? (
+										<OutlinedBorderButton
+											disabled={
+												!isValidUpgradePath ||
+												isMigratingSystemFeatures ||
+												systemIndicesStatus === "MIGRATION_UNAVAILABLE"
+											}
+											onClick={() => migrateSystemFeatures({ clusterId: clusterId! })}
+										>
+											Auto-Migrate System
+										</OutlinedBorderButton>
+									) : (
+										<Box className="flex flex-row w-fit items-center gap-2 px-[7px] py-[5px] rounded-3xl bg-[#52D97F21] text-[#52D97F]">
+											<TickCircle size="16" color="#52D97F" variant="Bold" />
+											Auto-Migration Complete
+										</Box>
+									)}
 								</Box>
 							</Box>
-						}
-					>
-						{(item: any) => (
-							<TableRow key={item.uid}>
-								{(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
-							</TableRow>
-						)}
-					</TableBody>
-				</Table>
+							{renderIndicesTable(
+								systemIndicesList,
+								"System Data Ready",
+								"No older system data requires manual reindexing."
+							)}
+						</Box>
+					</Tab>
+
+					<Tab key="data-streams" title={`Data Streams (${dataStreamList.length})`}>
+						<Box className="flex flex-col gap-6 pt-4">
+							<Box className="flex flex-col gap-1 max-w-7xl">
+								<Box className="flex flex-row items-center gap-2">
+									<Typography color="#FFF" fontSize="16px" fontWeight="600" lineHeight="normal">
+										Data Streams
+									</Typography>
+									<Tooltip content="Append-only time-series data structures." placement="top">
+										<Box className="cursor-pointer flex items-center">
+											<InfoCircle size="16" color="#ADADAD" />
+										</Box>
+									</Tooltip>
+								</Box>
+								<Typography color="#6E6E6E" fontSize="13px" fontWeight="400" className="mt-1">
+									These are continuous, append-only time-series structures used for high-volume logs
+									and metrics. Initiating a <strong>Reindex</strong> utilizes the native Elastic Data
+									Stream API to automatically roll over the stream and upgrade all hidden backing
+									indices behind the scenes with zero ingestion downtime.
+								</Typography>
+							</Box>
+							{renderIndicesTable(
+								dataStreamList,
+								"Data Streams Ready",
+								"All of your data streams are already compatible."
+							)}
+						</Box>
+					</Tab>
+				</Tabs>
 			</Box>
+
+			{ConfirmationModal}
 		</Box>
 	)
 }
